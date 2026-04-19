@@ -1,0 +1,501 @@
+@model PayroTech.Models.Entities.ApplicationUser
+@{
+    ViewData["Title"] = "ID Card";
+    Layout = null;
+    var requestId  = (int)(ViewBag.RequestId ?? 0);
+    var roleLabel  = Model.Role switch
+    {
+        PayroTech.Models.Enums.UserRole.CompanyAdmin => "Manager",
+        PayroTech.Models.Enums.UserRole.HR           => "HR Staff",
+        PayroTech.Models.Enums.UserRole.Accountant   => "Accountant",
+        PayroTech.Models.Enums.UserRole.Employee     => "Employee",
+        _                                            => Model.Role.ToString()
+    };
+    var roleColor = Model.Role switch
+    {
+        PayroTech.Models.Enums.UserRole.CompanyAdmin => "#0891b2",
+        PayroTech.Models.Enums.UserRole.HR           => "#059669",
+        PayroTech.Models.Enums.UserRole.Accountant   => "#ea8a1a",
+        _                                            => "#2563eb"
+    };
+    var companyName = Model.Company?.CompanyName ?? "PayroTech";
+    var staffCode   = string.IsNullOrEmpty(Model.StaffCode) ? Model.EmployeeNumber : Model.StaffCode;
+    var deptName    = Model.Department?.DepartmentName ?? "";
+    var qrUrl       = ViewBag.QRCodeDataUrl as string ?? "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>ID Card — @Model.FullName</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ── Print: hide action bar only ── */
+        @@media print {
+            .no-print { display:none !important; }
+        }
+
+        * { box-sizing:border-box; margin:0; padding:0; }
+
+        body {
+            font-family:'Inter',sans-serif;
+            background:#e5e7eb;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            padding:30px 20px;
+        }
+
+        /* ── Action bar ── */
+        .action-bar {
+            width:100%;
+            max-width:360px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:20px;
+        }
+
+        .btn-back {
+            background:#fff;
+            border:1px solid #d1d5db;
+            border-radius:8px;
+            padding:8px 16px;
+            font-size:.875rem;
+            font-weight:600;
+            color:#374151;
+            cursor:pointer;
+            text-decoration:none;
+            display:flex;
+            align-items:center;
+            gap:6px;
+        }
+        .btn-back:hover { background:#f9fafb; }
+
+        .btn-download {
+            background:linear-gradient(135deg,#2563eb,#1d4ed8);
+            border:none;
+            border-radius:8px;
+            padding:8px 20px;
+            font-size:.875rem;
+            font-weight:600;
+            color:#fff;
+            cursor:pointer;
+            display:flex;
+            align-items:center;
+            gap:6px;
+            transition:all .2s;
+        }
+        .btn-download:hover { filter:brightness(1.1); transform:translateY(-1px); }
+        .btn-download:disabled { background:#9ca3af; cursor:not-allowed; transform:none; }
+
+        /* ── Cards wrapper ── */
+        .cards-wrapper {
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:24px;
+        }
+
+        .card-label {
+            font-size:.75rem;
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            color:#6b7280;
+            margin-bottom:6px;
+            text-align:center;
+        }
+
+        /* ── Single card — portrait CR80 proportions ── */
+        .id-card {
+            width:320px;
+            background:#fff;
+            border-radius:18px;
+            overflow:hidden;
+            box-shadow:0 8px 32px rgba(0,0,0,.18);
+        }
+
+        /* ════════════ FRONT ════════════ */
+
+        /* Top branding bar */
+        .front-top {
+            background:#1a3a5c;
+            padding:16px 20px 14px;
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:6px;
+        }
+        .company-name {
+            color:#fff;
+            font-size:11px;
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:1.2px;
+            opacity:.85;
+        }
+        .system-sub {
+            color:#38bdf8;
+            font-size:8.5px;
+            letter-spacing:.4px;
+            margin-top:1px;
+        }
+
+        /* Photo section — same size as QR on back */
+        .front-photo {
+            padding:24px 20px 16px;
+            display:flex;
+            justify-content:center;
+        }
+        .photo-box {
+            width:160px;   /* same as QR on back */
+            height:160px;
+            border-radius:12px;
+            overflow:hidden;
+            border:4px solid @(roleColor);
+            box-shadow:0 4px 16px rgba(0,0,0,.15);
+            background:#f3f4f6;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .photo-box img {
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+        .photo-initials {
+            font-size:52px;
+            font-weight:800;
+            color:@(roleColor);
+        }
+
+        /* Name + role */
+        .front-info {
+            padding:0 20px 20px;
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:8px;
+        }
+        .staff-name {
+            font-size:20px;
+            font-weight:800;
+            color:#111827;
+            line-height:1.2;
+        }
+        .role-pill {
+            background:@(roleColor);
+            color:#fff;
+            font-size:11px;
+            font-weight:700;
+            padding:4px 16px;
+            border-radius:20px;
+            text-transform:uppercase;
+            letter-spacing:.8px;
+        }
+
+        /* Front footer */
+        .front-footer {
+            background:#1a3a5c;
+            padding:8px 20px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        .footer-brand {
+            color:#38bdf8;
+            font-size:9px;
+            font-weight:700;
+            letter-spacing:1px;
+            text-transform:uppercase;
+        }
+        .footer-valid {
+            color:rgba(255,255,255,.65);
+            font-size:8px;
+        }
+
+        /* ════════════ BACK ════════════ */
+
+        /* Back top bar */
+        .back-top {
+            background:#1a3a5c;
+            padding:14px 20px 10px;
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:4px;
+        }
+
+        /* Staff ID section */
+        .back-id {
+            padding:16px 20px 12px;
+            text-align:center;
+            border-bottom:1px solid #e5e7eb;
+        }
+        .id-label {
+            font-size:9px;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            color:#9ca3af;
+            font-weight:600;
+            margin-bottom:4px;
+        }
+        .id-code {
+            font-family:'Courier New',monospace;
+            font-size:18px;
+            font-weight:800;
+            color:#111827;
+            letter-spacing:2px;
+        }
+        .dept-text {
+            font-size:11px;
+            color:#6b7280;
+            margin-top:4px;
+        }
+
+        /* QR section — large, same size as photo */
+        .back-qr {
+            padding:20px;
+            display:flex;
+            justify-content:center;
+        }
+        .qr-box {
+            width:160px;   /* same as photo on front */
+            height:160px;
+            background:#fff;
+            border:3px solid @(roleColor);
+            border-radius:12px;
+            padding:6px;
+            box-shadow:0 4px 16px rgba(0,0,0,.12);
+        }
+        .qr-box img {
+            width:100%;
+            height:100%;
+        }
+        .qr-hint {
+            text-align:center;
+            font-size:9px;
+            color:#9ca3af;
+            margin-top:6px;
+            padding-bottom:4px;
+        }
+
+        /* Back footer */
+        .back-footer {
+            background:#1a3a5c;
+            padding:8px 20px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+
+        /* ── Hint ── */
+        .hint {
+            color:#6b7280;
+            font-size:12px;
+            margin-top:14px;
+            text-align:center;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Action bar -->
+<div class="action-bar no-print">
+    <a href="javascript:history.back()" class="btn-back">← Back</a>
+    <button class="btn-download" id="dlBtn" onclick="downloadID()">
+        ⬇ Download ID
+    </button>
+</div>
+
+<div class="cards-wrapper">
+
+    <!-- ── FRONT ── -->
+    <div>
+        <div class="card-label no-print">Front</div>
+        <div class="id-card" id="frontCard">
+
+            <div class="front-top">
+                <div class="company-name">@companyName</div>
+                <div class="system-sub">Attendance and Time Tracking System</div>
+            </div>
+
+            <div class="front-photo">
+                <div class="photo-box">
+                    @if (!string.IsNullOrEmpty(Model.FaceImagePath))
+                    {
+                        <img src="@Model.FaceImagePath" alt="@Model.FullName" />
+                    }
+                    else
+                    {
+                        <span class="photo-initials">
+                            @(Model.FirstName?.Length > 0 ? Model.FirstName[0].ToString() : "")@(Model.LastName?.Length > 0 ? Model.LastName[0].ToString() : "")
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <div class="front-info">
+                <div class="staff-name">@Model.FullName</div>
+                <div class="role-pill">@roleLabel</div>
+            </div>
+
+            <div class="front-footer">
+                <span class="footer-brand">PayroTech</span>
+                <span class="footer-valid">Valid until @DateTime.Now.AddYears(1).ToString("MMM yyyy")</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── BACK ── -->
+    <div>
+        <div class="card-label no-print">Back</div>
+        <div class="id-card" id="backCard">
+
+            <div class="back-top">
+                <div class="company-name">@companyName</div>
+                <div class="system-sub">Staff Identification Card</div>
+            </div>
+
+            <div class="back-id">
+                <div class="id-label">Staff ID</div>
+                <div class="id-code">@(string.IsNullOrEmpty(staffCode) ? "—" : staffCode)</div>
+                @if (!string.IsNullOrEmpty(deptName))
+                {
+                    <div class="dept-text">@deptName</div>
+                }
+            </div>
+
+            <div class="back-qr">
+                @if (!string.IsNullOrEmpty(qrUrl))
+                {
+                    <div>
+                        <div class="qr-box">
+                            <img src="@qrUrl" alt="QR Code" />
+                        </div>
+                        <div class="qr-hint">Scan at kiosk for attendance</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="qr-box" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px;">
+                        No QR
+                    </div>
+                }
+            </div>
+
+            <div class="back-footer">
+                <span class="footer-brand">PayroTech</span>
+                <span class="footer-valid">If found, return to @companyName</span>
+            </div>
+
+        </div>
+    </div>
+
+</div><!-- /cards-wrapper -->
+
+<p class="hint no-print">Click "Download ID" to save both cards as a PDF file.</p>
+
+<!-- PDF generation libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+const requestId = @Json.Serialize(requestId);
+const staffName = @Json.Serialize(Model.FullName);
+
+async function downloadID() {
+    const btn = document.getElementById('dlBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle;"></span>Generating PDF…';
+
+    try {
+        const { jsPDF } = window.jspdf;
+
+        // Capture front card
+        const frontEl = document.getElementById('frontCard');
+        const backEl  = document.getElementById('backCard');
+
+        const frontCanvas = await html2canvas(frontEl, {
+            scale: 3,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+
+        const backCanvas = await html2canvas(backEl, {
+            scale: 3,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+
+        // A4 portrait PDF
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = pdf.internal.pageSize.getWidth();   // 210mm
+        const pageH = pdf.internal.pageSize.getHeight();  // 297mm
+
+        // Card width = 80mm (CR80 standard), centered on page
+        const cardW = 80;
+        const cardH = (frontCanvas.height / frontCanvas.width) * cardW;
+        const xPos  = (pageW - cardW) / 2;
+
+        // Front card — top half
+        const frontImg = frontCanvas.toDataURL('image/png');
+        pdf.addImage(frontImg, 'PNG', xPos, 20, cardW, cardH);
+        pdf.setFontSize(8);
+        pdf.setTextColor(150);
+        pdf.text('FRONT', pageW / 2, 18, { align: 'center' });
+
+        // Back card — below front
+        const backImg  = backCanvas.toDataURL('image/png');
+        const backH    = (backCanvas.height / backCanvas.width) * cardW;
+        const backY    = 20 + cardH + 15;
+        pdf.addImage(backImg, 'PNG', xPos, backY, cardW, backH);
+        pdf.text('BACK', pageW / 2, backY - 2, { align: 'center' });
+
+        // Footer
+        pdf.setFontSize(7);
+        pdf.setTextColor(180);
+        pdf.text('PayroTech — Staff ID Card', pageW / 2, pageH - 8, { align: 'center' });
+
+        // Save the PDF
+        const fileName = `ID-${staffName.replace(/\s+/g, '_')}.pdf`;
+        pdf.save(fileName);
+
+        // Mark as printed in backend
+        const token = $('input[name="__RequestVerificationToken"]').val();
+        const url   = requestId > 0
+            ? '/IDCard/MarkRequestPrinted?requestId=' + requestId
+            : '/IDCard/MarkAsPrinted';
+        try { await $.post(url, { __RequestVerificationToken: token }); } catch(e) {}
+
+        btn.innerHTML = '✓ Downloaded!';
+        btn.style.background = '#059669';
+
+        // Redirect to dashboard after short delay
+        setTimeout(() => { window.location.href = '/'; }, 2000);
+
+    } catch(err) {
+        console.error('PDF generation error:', err);
+        btn.disabled = false;
+        btn.innerHTML = '⬇ Download ID';
+        alert('Could not generate PDF. Please try again.');
+    }
+}
+</script>
+<style>
+@@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+@Html.AntiForgeryToken()
+</body>
+</html>

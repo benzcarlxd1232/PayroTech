@@ -1,0 +1,220 @@
+@{
+    ViewData["Title"] = "Revenue Reports";
+    Layout = "_SuperAdminLayout";
+
+    var monthlyData = ViewBag.MonthlyData as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var totalRevenue = (decimal)(ViewBag.TotalRevenue ?? 0m);
+    var totalCompanies = (int)(ViewBag.TotalCompanies ?? 0);
+    var activeCompanies = (int)(ViewBag.ActiveCompanies ?? 0);
+    var expiringSoon = (int)(ViewBag.ExpiringSoon ?? 0);
+    var newThisMonth = (int)(ViewBag.NewThisMonth ?? 0);
+}
+
+<style>
+    .stat-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,.08);
+        border: 1px solid #e2e8f0;
+    }
+    .stat-card .stat-icon {
+        width: 48px; height: 48px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+    }
+    .stat-card h3 { font-size: 1.8rem; font-weight: 700; margin: 0; }
+    .stat-card p { color: #64748b; margin: 0; font-size: .875rem; }
+    body.dark-mode .stat-card { background: var(--bg-card); border-color: var(--border-color); }
+    body.dark-mode .stat-card h3, body.dark-mode .stat-card p { color: var(--text-light); }
+</style>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">Total Revenue (Est.)</p>
+                    <h3 class="text-success">₱@totalRevenue.ToString("N0")</h3>
+                    <small class="text-muted">Based on active subscriptions</small>
+                </div>
+                <div class="stat-icon" style="background:#dcfce7;color:#16a34a;">
+                    <i class="bi bi-currency-exchange"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">Active Companies</p>
+                    <h3>@activeCompanies</h3>
+                    <small class="text-muted">of @totalCompanies total</small>
+                </div>
+                <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;">
+                    <i class="bi bi-building-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">New This Month</p>
+                    <h3>@newThisMonth</h3>
+                    <small class="text-muted">New subscriptions</small>
+                </div>
+                <div class="stat-icon" style="background:#dbeafe;color:#2563eb;">
+                    <i class="bi bi-plus-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">Expiring Soon</p>
+                    <h3 class="@(expiringSoon > 0 ? "text-warning" : "")">@expiringSoon</h3>
+                    <small class="text-muted">Within 30 days</small>
+                </div>
+                <div class="stat-icon" style="background:#fef3c7;color:#d97706;">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Revenue Chart -->
+<div class="table-card mb-4">
+    <div class="card-header">
+        <i class="bi bi-bar-chart me-2"></i>Monthly Revenue Trend (@DateTime.Now.Year)
+    </div>
+    <div class="p-4">
+        <canvas id="revenueBarChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- Companies Table -->
+<div class="table-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-table me-2"></i>Company Subscription Details</span>
+        <small class="text-muted">@totalCompanies companies total</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Company</th>
+                    <th>Plan</th>
+                    <th>Subscription Start</th>
+                    <th>Subscription End</th>
+                    <th class="text-end">Est. Monthly Value</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var companies = ViewBag.AllCompanies as IEnumerable<dynamic>;
+                    if (companies != null)
+                    {
+                        int rowNum = 1;
+                        foreach (var c in companies)
+                        {
+                            <tr>
+                                <td class="text-muted">@rowNum</td>
+                                <td><strong>@c.CompanyName</strong><br/><small class="text-muted">@c.CompanyCode</small></td>
+                                <td><span class="text-primary fw-semibold">Professional</span></td>
+                                <td>@(c.SubscriptionStart != null ? ((DateTime)c.SubscriptionStart).ToString("MMM dd, yyyy") : "—")</td>
+                                <td>@(c.SubscriptionEnd != null ? ((DateTime)c.SubscriptionEnd).ToString("MMM dd, yyyy") : "—")</td>
+                                <td class="text-end fw-semibold">₱2,500</td>
+                                <td>
+                                    @if ((bool)c.IsSubscriptionActive && (bool)c.IsActive)
+                                    {
+                                        <span class="fw-semibold" style="color:#16a34a;">Active</span>
+                                    }
+                                    else if (!(bool)c.IsSubscriptionActive)
+                                    {
+                                        <span class="fw-semibold" style="color:#dc2626;">Expired</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-semibold" style="color:#6b7280;">Inactive</span>
+                                    }
+                                </td>
+                            </tr>
+                            rowNum++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No company data available.</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const monthlyData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        (ViewBag.MonthlyData as IEnumerable<object>) ?? new List<object>()
+    ));
+
+    const labels = monthlyData.map(d => d.Month ?? d.month ?? '');
+    const revenues = monthlyData.map(d => d.Revenue ?? d.revenue ?? 0);
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#f1f5f9' : '#374151';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+    new Chart(document.getElementById('revenueBarChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Estimated Revenue (₱)',
+                data: revenues,
+                backgroundColor: 'rgba(124,58,237,0.75)',
+                borderColor: '#7c3aed',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: textColor } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => '₱' + ctx.parsed.y.toLocaleString('en-PH', { minimumFractionDigits: 2 })
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        color: textColor,
+                        callback: v => '₱' + v.toLocaleString()
+                    },
+                    grid: { color: gridColor }
+                },
+                x: {
+                    ticks: { color: textColor },
+                    grid: { color: gridColor }
+                }
+            }
+        }
+    });
+</script>
+}

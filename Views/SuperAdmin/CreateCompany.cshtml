@@ -1,0 +1,889 @@
+@model PayroTech.Models.ViewModels.CreateCompanyViewModel
+@using PayroTech.Models.Enums
+@{
+    ViewData["Title"] = "Walk-In Company Registration";
+    Layout = "_SuperAdminLayout";
+
+    var industryTypes = ViewBag.IndustryTypes as IEnumerable<string> ?? new[]
+    {
+        "Technology & IT","Healthcare & Medical","Education & Training",
+        "Retail & E-commerce","Manufacturing","Construction & Real Estate",
+        "Finance & Banking","Food & Beverage","Transportation & Logistics",
+        "Hospitality & Tourism","Professional Services","Media & Entertainment",
+        "Agriculture","Energy & Utilities","Telecommunications",
+        "Government & Public Sector","Non-Profit & NGO","Other"
+    };
+
+    var paymentMethods = ViewBag.PaymentMethods as IEnumerable<dynamic> ?? new[]
+    {
+        new { id = 1, name = "GCash" },
+        new { id = 2, name = "PayMaya" },
+        new { id = 3, name = "Bank Transfer" },
+        new { id = 4, name = "Credit/Debit Card" },
+        new { id = 5, name = "Over the Counter" }
+    };
+}
+
+@section Styles {
+    <link href="~/css/create-company.css" rel="stylesheet" asp-append-version="true">
+}
+
+<style>
+    .registration-container { max-width: 900px; margin: 0 auto; padding: 0 15px; }
+    #formStepper { overflow-x: auto; padding-bottom: 10px; margin-left: -15px; margin-right: -15px; padding-left: 15px; padding-right: 15px; }
+    #formStepper > div { min-width: fit-content; }
+    #formStepper::-webkit-scrollbar { height: 4px; }
+    #formStepper::-webkit-scrollbar-track { background: var(--pt-bg-secondary); border-radius: 4px; }
+    #formStepper::-webkit-scrollbar-thumb { background: var(--pt-primary-300); border-radius: 4px; }
+    .step-content { display: none; animation: pt-fadeInUp 0.3s ease; }
+    .step-content.active { display: block; }
+    .form-section { background: var(--pt-bg-card); border: 1px solid var(--pt-border-primary); border-radius: var(--pt-radius-xl); padding: var(--pt-space-6); margin-bottom: var(--pt-space-6); }
+    @@media (max-width: 768px) {
+        .registration-container { padding: 0 10px; }
+        .form-section { padding: var(--pt-space-4); }
+        .form-section-title { font-size: var(--pt-text-base) !important; }
+        .form-section-title i { width: 32px !important; height: 32px !important; font-size: 0.9rem !important; }
+        .plan-card { padding: var(--pt-space-3) !important; }
+        .plan-price { font-size: 1.3rem !important; }
+        .module-card { padding: var(--pt-space-3) !important; }
+        .navigation-buttons { flex-direction: column; gap: var(--pt-space-3); }
+        .navigation-buttons .btn { width: 100%; }
+        .row > [class*="col-"] { margin-bottom: var(--pt-space-3); }
+    }
+    @@media (max-width: 576px) {
+        .form-section { padding: var(--pt-space-3); margin-bottom: var(--pt-space-4); }
+        .plan-card .plan-features { font-size: 0.8rem; }
+        .summary-item { flex-direction: column; gap: var(--pt-space-1); }
+        .summary-label, .summary-value { width: 100%; }
+    }
+    .form-section-title { display: flex; align-items: center; gap: var(--pt-space-3); font-size: var(--pt-text-lg); font-weight: var(--pt-font-semibold); color: var(--pt-text-primary); margin-bottom: var(--pt-space-5); padding-bottom: var(--pt-space-3); border-bottom: 2px solid var(--pt-primary-100); }
+    .form-section-title i { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--pt-primary-500), var(--pt-primary-600)); color: white; border-radius: var(--pt-radius-lg); font-size: 1.1rem; }
+    .module-card { background: var(--pt-bg-secondary); border: 2px solid var(--pt-border-primary); border-radius: var(--pt-radius-lg); padding: var(--pt-space-4); cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
+    .module-card:hover { border-color: var(--pt-primary-300); transform: translateY(-2px); }
+    .module-card.selected { border-color: var(--pt-primary-500); background: var(--pt-primary-50); }
+    .module-card.disabled { opacity: 0.5; cursor: not-allowed; }
+    .module-card .module-icon { width: 48px; height: 48px; border-radius: var(--pt-radius-lg); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: var(--pt-space-3); }
+    .module-card .module-check { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: var(--pt-radius-full); background: var(--pt-success-500); color: white; display: none; align-items: center; justify-content: center; font-size: 0.8rem; }
+    .module-card.selected .module-check { display: flex; }
+    .module-card.default::before { content: 'DEFAULT'; position: absolute; top: 0; left: 0; background: var(--pt-success-500); color: white; font-size: 0.6rem; padding: 2px 8px; border-radius: 0 0 8px 0; font-weight: bold; }
+    .plan-card { background: var(--pt-bg-card); border: 2px solid var(--pt-border-primary); border-radius: var(--pt-radius-xl); padding: var(--pt-space-5); cursor: pointer; transition: all 0.3s ease; position: relative; }
+    .plan-card:hover { border-color: var(--pt-primary-300); box-shadow: var(--pt-shadow-md); }
+    .plan-card.selected { border-color: var(--pt-primary-500); box-shadow: 0 0 0 3px var(--pt-primary-100); }
+    .plan-card .plan-badge { position: absolute; top: -10px; right: 20px; background: linear-gradient(135deg, var(--pt-primary-500), var(--pt-primary-600)); color: white; padding: 4px 12px; border-radius: var(--pt-radius-full); font-size: 0.7rem; font-weight: bold; }
+    .plan-price { font-size: var(--pt-text-3xl); font-weight: var(--pt-font-bold); color: var(--pt-primary-600); }
+    .plan-price span { font-size: var(--pt-text-sm); font-weight: var(--pt-font-normal); color: var(--pt-text-secondary); }
+    .branch-input-group { background: var(--pt-bg-secondary); border-radius: var(--pt-radius-lg); padding: var(--pt-space-4); margin-bottom: var(--pt-space-3); border: 1px solid var(--pt-border-primary); }
+    .branch-input-group .branch-number { width: 30px; height: 30px; background: var(--pt-primary-500); color: white; border-radius: var(--pt-radius-full); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
+    .govt-compliance-card { background: var(--pt-bg-secondary); border: 1px solid var(--pt-border-primary); border-radius: var(--pt-radius-lg); padding: var(--pt-space-4); transition: all 0.2s ease; }
+    .govt-compliance-card:hover { background: var(--pt-bg-card); }
+    .govt-compliance-card.checked { border-color: var(--pt-success-500); background: var(--pt-success-50); }
+    .navigation-buttons { display: flex; justify-content: space-between; margin-top: var(--pt-space-6); padding-top: var(--pt-space-4); border-top: 1px solid var(--pt-border-primary); }
+    .password-display { font-family: var(--pt-font-mono); background: var(--pt-bg-secondary); padding: var(--pt-space-3) var(--pt-space-4); border-radius: var(--pt-radius-md); border: 1px dashed var(--pt-border-primary); font-size: 1.1rem; letter-spacing: 2px; }
+    .summary-item { display: flex; justify-content: space-between; padding: var(--pt-space-3) 0; border-bottom: 1px solid var(--pt-border-secondary); }
+    .summary-item:last-child { border-bottom: none; }
+    .summary-label { color: var(--pt-text-secondary); }
+    .summary-value { font-weight: var(--pt-font-medium); color: var(--pt-text-primary); }
+</style>
+
+<div class="registration-container">
+    @Html.AntiForgeryToken()
+    <div id="formStepper" class="mb-4">
+        <div class="pt-stepper">
+            <div class="pt-step active">
+                <div class="pt-step-indicator">1</div>
+                <span class="pt-step-label">Company Info</span>
+            </div>
+            <div class="pt-step-connector"></div>
+            <div class="pt-step pending">
+                <div class="pt-step-indicator">2</div>
+                <span class="pt-step-label">Admin Account</span>
+            </div>
+            <div class="pt-step-connector"></div>
+            <div class="pt-step pending">
+                <div class="pt-step-indicator">3</div>
+                <span class="pt-step-label">Subscription</span>
+            </div>
+            <div class="pt-step-connector"></div>
+            <div class="pt-step pending">
+                <div class="pt-step-indicator">4</div>
+                <span class="pt-step-label">Modules</span>
+            </div>
+            <div class="pt-step-connector"></div>
+            <div class="pt-step pending">
+                <div class="pt-step-indicator">5</div>
+                <span class="pt-step-label">Workforce</span>
+            </div>
+            <div class="pt-step-connector"></div>
+            <div class="pt-step pending">
+                <div class="pt-step-indicator">6</div>
+                <span class="pt-step-label">Compliance</span>
+            </div>
+            <div class="pt-step-connector"></div>
+            <div class="pt-step pending">
+                <div class="pt-step-indicator">7</div>
+                <span class="pt-step-label">Contract</span>
+            </div>
+            <div class="pt-step-connector"></div>
+            <div class="pt-step pending">
+                <div class="pt-step-indicator">8</div>
+                <span class="pt-step-label">Review</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 1: Company Information -->
+    <div class="step-content active" id="step1">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-building"></i><span>Company Information</span></div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="companyName" placeholder="e.g., ABC Corporation" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Industry Type <span class="text-danger">*</span></label>
+                    <select class="form-select" id="industryType" required>
+                        <option value="">Select Industry</option>
+                        @foreach (var industry in industryTypes)
+                        {
+                            <option value="@industry">@industry</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <input type="hidden" id="companyCode" value="">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Company Email <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="companyEmail" placeholder="company@@example.com" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Contact Number <span class="text-danger">*</span></label>
+                    <input type="tel" class="form-control" id="contactNumber" placeholder="+63 9XX XXX XXXX">
+                </div>
+            </div>
+            <hr class="my-4">
+            <h6 class="text-muted mb-3"><i class="bi bi-geo-alt me-2"></i>Company Address (Philippines)</h6>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Province <span class="text-danger">*</span></label>
+                    <select class="form-select" id="province" onchange="loadCities()" required>
+                        <option value="">Select Province</option>
+                        @if (ViewBag.Provinces != null)
+                        {
+                            var provinces = (IEnumerable<dynamic>)ViewBag.Provinces;
+                            foreach (var province in provinces.OrderBy(p => (string)p.name))
+                            {
+                                <option value="@province.code">@province.name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">City/Municipality <span class="text-danger">*</span></label>
+                    <select class="form-select" id="city" onchange="loadBarangays()" required disabled>
+                        <option value="">Select Province first</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Barangay</label>
+                    <select class="form-select" id="barangay" disabled>
+                        <option value="">Select City first</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Street Address</label>
+                <input type="text" class="form-control" id="streetAddress" placeholder="Building/Unit No., Street Name">
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <a href="/SuperAdmin/Companies" class="pt-btn pt-btn-secondary"><i class="bi bi-arrow-left me-2"></i>Cancel</a>
+            <button type="button" class="pt-btn pt-btn-primary" onclick="nextStep(2)">Continue <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <!-- Step 2: Company Admin Account -->
+    <div class="step-content" id="step2">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-person-badge"></i><span>Company Manager Account</span></div>
+            <p class="text-muted mb-4">This will be the primary administrator account for this company. A temporary password will be sent to their email.</p>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">First Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="adminFirstName" placeholder="First name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="adminLastName" placeholder="Last name" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Email (Username) <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="adminEmail" placeholder="admin@@company.com" required>
+                    <small class="text-muted">This will be their login username</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Contact Number <span class="text-danger">*</span></label>
+                    <input type="tel" class="form-control" id="adminContact" placeholder="+63 XXX XXX XXXX" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Temporary Password</label>
+                    <div class="password-display flex-grow-1" id="tempPassword" style="display: none;">--------</div>
+                    <small class="text-muted"><i class="bi bi-envelope me-1"></i>A temporary password will be auto-generated and sent to the Client's Email</small>
+                </div>
+            </div>
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Note:</strong> Upon first login, the user will be required to change their password.
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button type="button" class="pt-btn pt-btn-secondary" onclick="prevStep(1)"><i class="bi bi-arrow-left me-2"></i>Back</button>
+            <button type="button" class="pt-btn pt-btn-primary" onclick="nextStep(3)">Continue <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <!-- Step 3: Subscription Details -->
+    <div class="step-content" id="step3">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-credit-card"></i><span>Subscription Details</span></div>
+            <h6 class="mb-3">Select Subscription Plan</h6>
+            <div class="row mb-4" id="planCards"></div>
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Billing Cycle <span class="text-danger">*</span></label>
+                    <select class="form-select" id="billingCycle" onchange="updatePricing()">
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly (Save 17%)</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Number of Kiosks</label>
+                    <select class="form-select" id="kioskCount" onchange="updatePricing()">
+                        <option value="1" selected>1 Kiosk (+₱2,500/mo)</option>
+                        <option value="2">2 Kiosks (+₱5,000/mo)</option>
+                        <option value="3">3 Kiosks (+₱7,500/mo)</option>
+                        <option value="4">4 Kiosks (+₱10,000/mo)</option>
+                        <option value="5">5 Kiosks (+₱12,500/mo)</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Mode of Payment <span class="text-danger">*</span></label>
+                    <select class="form-select" id="paymentMethod">
+                        <option value="">Select Payment Method</option>
+                        @foreach (var method in paymentMethods)
+                        {
+                            <option value="@method.id">@method.name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="alert alert-success mt-3" id="pricingSummary">
+                <h6 class="mb-2"><i class="bi bi-calculator me-2"></i>Pricing Summary</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between mb-1"><span>Plan Price:</span><strong id="planPriceDisplay">₱0.00</strong></div>
+                        <div class="d-flex justify-content-between mb-1"><span>Kiosk Cost:</span><strong id="kioskPriceDisplay">₱0.00</strong></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between mb-1"><span>Billing Cycle:</span><strong id="billingDisplay">Monthly</strong></div>
+                        <div class="d-flex justify-content-between border-top pt-2 mt-2"><span class="fw-bold">Total Amount:</span><strong class="text-success fs-5" id="totalAmountDisplay">₱0.00</strong></div>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-2"><i class="bi bi-info-circle me-1"></i>Subscription starts after contract signing and payment confirmation. <span id="subscriptionPeriodNote">Monthly billing ends 1 month from activation.</span></small>
+            </div>
+            <input type="hidden" id="subscriptionStart" value="">
+            <input type="hidden" id="subscriptionEnd" value="">
+            <input type="hidden" id="amountPaid" value="0">
+        </div>
+        <div class="navigation-buttons">
+            <button type="button" class="pt-btn pt-btn-secondary" onclick="prevStep(2)"><i class="bi bi-arrow-left me-2"></i>Back</button>
+            <button type="button" class="pt-btn pt-btn-primary" onclick="nextStep(4)">Continue <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <!-- Step 4: Module Access -->
+    <div class="step-content" id="step4">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-grid-3x3-gap"></i><span>Module Access</span></div>
+            <p class="text-muted mb-4">Modules are automatically assigned based on subscription plan. <span class="pt-badge pt-badge-success">GREEN</span> modules are included in your selected plan.</p>
+            <div class="row" id="moduleCards"></div>
+        </div>
+        <div class="navigation-buttons">
+            <button type="button" class="pt-btn pt-btn-secondary" onclick="prevStep(3)"><i class="bi bi-arrow-left me-2"></i>Back</button>
+            <button type="button" class="pt-btn pt-btn-primary" onclick="nextStep(5)">Continue <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <!-- Step 5: Workforce Settings -->
+    <div class="step-content" id="step5">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-people"></i><span>Workforce Settings</span></div>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label class="form-label">Number of Branches <span class="text-danger">*</span></label>
+                    <select class="form-select" id="branchCount" onchange="renderBranchInputs()">
+                        <option value="1">1 Branch</option>
+                        <option value="2">2 Branches</option>
+                        <option value="3">3 Branches</option>
+                        <option value="4">4 Branches</option>
+                        <option value="5">5 Branches</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <label class="form-label">Maximum Employees (Estimate) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="maxEmployees" placeholder="e.g., 100" min="1" required>
+                    <small class="text-muted">Average across all branches</small>
+                </div>
+            </div>
+            <h6 class="mb-3"><i class="bi bi-geo me-2"></i>Branch Addresses</h6>
+            <div id="branchAddresses"></div>
+        </div>
+        <div class="navigation-buttons">
+            <button type="button" class="pt-btn pt-btn-secondary" onclick="prevStep(4)"><i class="bi bi-arrow-left me-2"></i>Back</button>
+            <button type="button" class="pt-btn pt-btn-primary" onclick="nextStep(6)">Continue <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <!-- Step 6: Government Compliance -->
+    <div class="step-content" id="step6">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-bank"></i><span>Government Compliance Details</span></div>
+            <div id="govtComplianceSection">
+                <div class="alert alert-warning mb-4" id="govtComplianceNotice" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Government compliance module is not included in the selected plan. This section is optional.
+                </div>
+                <p class="text-muted mb-4">Select which government agencies the company will comply with:</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="govt-compliance-card d-flex align-items-center gap-3 cursor-pointer" for="checkSSS">
+                            <input type="checkbox" class="form-check-input" id="checkSSS" checked onchange="toggleGovtCard(this)">
+                            <div><strong>SSS (Social Security System)</strong><p class="mb-0 text-muted small">Employee retirement, disability, death benefits</p></div>
+                        </label>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="govt-compliance-card d-flex align-items-center gap-3 cursor-pointer" for="checkPhilHealth">
+                            <input type="checkbox" class="form-check-input" id="checkPhilHealth" checked onchange="toggleGovtCard(this)">
+                            <div><strong>PhilHealth</strong><p class="mb-0 text-muted small">National health insurance program</p></div>
+                        </label>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="govt-compliance-card d-flex align-items-center gap-3 cursor-pointer" for="checkPagIbig">
+                            <input type="checkbox" class="form-check-input" id="checkPagIbig" checked onchange="toggleGovtCard(this)">
+                            <div><strong>Pag-IBIG (HDMF)</strong><p class="mb-0 text-muted small">Home development &amp; savings program</p></div>
+                        </label>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="govt-compliance-card d-flex align-items-center gap-3 cursor-pointer" for="checkTIN">
+                            <input type="checkbox" class="form-check-input" id="checkTIN" checked onchange="toggleGovtCard(this)">
+                            <div><strong>BIR (Tax/TIN)</strong><p class="mb-0 text-muted small">Withholding tax computation</p></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button type="button" class="pt-btn pt-btn-secondary" onclick="prevStep(5)"><i class="bi bi-arrow-left me-2"></i>Back</button>
+            <button type="button" class="pt-btn pt-btn-primary" onclick="nextStep(7)">Continue <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <!-- Step 7: Contract Signing -->
+    <div class="step-content" id="step7">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-file-earmark-text"></i><span>Contract &amp; Terms of Service</span></div>
+            <div class="alert alert-warning mb-4"><i class="bi bi-exclamation-triangle me-2"></i><strong>Important:</strong> Please read the following terms and conditions carefully before proceeding.</div>
+            <div class="border rounded p-4 mb-4" style="max-height: 400px; overflow-y: auto; background: var(--pt-bg-secondary);">
+                <h5>PayroTech Service Agreement</h5><hr>
+                <h6>1. Service Description</h6><p class="small">PayroTech provides a cloud-based payroll and HR management system ("Service") to help businesses manage employee attendance, payroll processing, and compliance with Philippine government regulations.</p>
+                <h6>2. Subscription Terms</h6><p class="small">• Subscription begins upon successful payment and contract signing<br>• Monthly subscriptions are billed on the same date each month<br>• Yearly subscriptions receive a 17% discount and are billed annually<br>• Subscription automatically renews unless cancelled 30 days before expiration</p>
+                <h6>3. Payment Terms</h6><p class="small">• All fees are non-refundable except as required by law<br>• Late payments may result in service suspension<br>• Kiosk hardware remains property of PayroTech and must be returned upon cancellation</p>
+                <h6>4. Data Privacy &amp; Security</h6><p class="small">• We comply with the Philippine Data Privacy Act of 2012 (RA 10173)<br>• Client data is encrypted and stored securely<br>• We do not share client data with third parties without consent<br>• Clients are responsible for maintaining the confidentiality of login credentials</p>
+                <h6>5. Service Level Agreement</h6><p class="small">• We guarantee 99.5% uptime for our services<br>• Scheduled maintenance will be communicated 48 hours in advance<br>• Support is available via email and phone during business hours</p>
+                <h6>6. Termination</h6><p class="small">• Either party may terminate with 30 days written notice<br>• Upon termination, client data will be retained for 90 days before deletion<br>• Client may request data export before termination</p>
+                <h6>7. Limitation of Liability</h6><p class="small">PayroTech shall not be liable for any indirect, incidental, or consequential damages arising from the use of our Service.</p>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="agreeTerms" onchange="toggleContractButton()">
+                <label class="form-check-label" for="agreeTerms"><strong>I have read and agree to the Terms of Service and Service Agreement</strong></label>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="agreePrivacy" onchange="toggleContractButton()">
+                <label class="form-check-label" for="agreePrivacy"><strong>I consent to the collection and processing of company data as described in the Data Privacy policy</strong></label>
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button type="button" class="pt-btn pt-btn-secondary" onclick="prevStep(6)"><i class="bi bi-arrow-left me-2"></i>Back</button>
+            <button type="button" class="pt-btn pt-btn-primary" id="continueToReviewBtn" onclick="nextStep(8)" disabled>Continue <i class="bi bi-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <!-- Step 8: Review & Submit -->
+    <div class="step-content" id="step8">
+        <div class="form-section">
+            <div class="form-section-title"><i class="bi bi-list-check"></i><span>Registration Summary</span></div>
+            <div class="row">
+                <div class="col-md-6"><h6 class="mb-3">Company Information</h6><div id="summaryCompany"></div></div>
+                <div class="col-md-6"><h6 class="mb-3">Subscription Details</h6><div id="summarySubscription"></div></div>
+            </div>
+        </div>
+        <div class="navigation-buttons">
+            <button type="button" class="pt-btn pt-btn-secondary" onclick="prevStep(7)"><i class="bi bi-arrow-left me-2"></i>Back</button>
+            <button type="button" class="pt-btn pt-btn-success pt-btn-lg" onclick="submitRegistration()"><i class="bi bi-check-circle me-2"></i>Complete Registration</button>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+<script>
+    // ── Data ─────────────────────────────────────────────────────────────
+    const IndustryTypes = [
+        "Technology & IT","Healthcare & Medical","Education & Training",
+        "Retail & E-commerce","Manufacturing","Construction & Real Estate",
+        "Finance & Banking","Food & Beverage","Transportation & Logistics",
+        "Hospitality & Tourism","Professional Services","Media & Entertainment",
+        "Agriculture","Energy & Utilities","Telecommunications",
+        "Government & Public Sector","Non-Profit & NGO","Other"
+    ];
+    const PaymentMethods = [
+        {id:1,name:"GCash",online:true},{id:2,name:"PayMaya",online:true},
+        {id:3,name:"Bank Transfer",online:false},{id:4,name:"Credit/Debit Card",online:true},
+        {id:5,name:"Over the Counter",online:false}
+    ];
+    const SubscriptionPlans = [
+        {level:1,name:'Basic',description:'For small businesses',price:{monthly:2999,yearly:29990},features:['Up to 20 employees','Attendance tracking','Basic payroll','Leave management'],modules:['employees','attendance','leave','payroll']},
+        {level:2,name:'Standard',description:'For growing companies',price:{monthly:4999,yearly:49990},features:['Up to 50 employees','All Basic features','Overtime tracking','Government compliance'],modules:['employees','attendance','leave','payroll','time_shift','salary_compliance']},
+        {level:3,name:'Professional',description:'For established businesses',price:{monthly:7999,yearly:79990},features:['Up to 150 employees','All Standard features','Advanced reports','Document management'],modules:['employees','attendance','leave','payroll','time_shift','salary_compliance','reports','documents']},
+        {level:4,name:'Enterprise',description:'For large organizations',price:{monthly:12999,yearly:129990},features:['Unlimited employees','All Professional features','HR ticketing','Priority support'],modules:['employees','attendance','leave','payroll','time_shift','salary_compliance','reports','documents','hr_tickets']}
+    ];
+    const Modules = {
+        employees:{id:'employees',name:'Employee Management',description:'Manage employee profiles, departments, and records',icon:'bi-people',color:'#3b82f6',default:true},
+        attendance:{id:'attendance',name:'Attendance Tracking',description:'Track daily attendance via kiosk or manual entry',icon:'bi-clock',color:'#10b981',default:true},
+        leave:{id:'leave',name:'Leave Management',description:'Handle leave requests, approvals, and balances',icon:'bi-calendar-x',color:'#f59e0b',default:true},
+        payroll:{id:'payroll',name:'Payroll Processing',description:'Compute and process employee salaries',icon:'bi-cash-stack',color:'#8b5cf6',default:true},
+        time_shift:{id:'time_shift',name:'Time & Shift',description:'Manage work schedules and overtime tracking',icon:'bi-alarm',color:'#ec4899',default:false},
+        salary_compliance:{id:'salary_compliance',name:'Government Compliance',description:'SSS, PhilHealth, Pag-IBIG, and BIR computations',icon:'bi-bank',color:'#06b6d4',default:false},
+        reports:{id:'reports',name:'Reports & Analytics',description:'Generate payroll, attendance, and HR reports',icon:'bi-bar-chart',color:'#84cc16',default:false},
+        documents:{id:'documents',name:'Document Management',description:'Store and manage HR documents and contracts',icon:'bi-folder',color:'#f97316',default:false},
+        hr_tickets:{id:'hr_tickets',name:'HR Ticketing',description:'Employee support tickets and HR requests',icon:'bi-ticket',color:'#a855f7',default:false}
+    };
+    // ─────────────────────────────────────────────────────────────────────
+
+    const stepLabels = ['Company Info','Admin Account','Subscription','Modules','Workforce','Compliance','Contract','Review'];
+    let currentStep = 1, selectedPlan = null;
+    const KIOSK_PRICE_MONTHLY = 2500;
+
+    // Initialize
+    function _doInit() {
+        renderStepper(0);
+
+        // Populate dropdowns from data
+        loadIndustryTypes();
+        loadPaymentMethods();
+
+        // Render dynamic sections
+        renderPlanCards();
+        renderBranchInputs();
+        setDefaultDates();
+        generatePassword();
+
+        // Wire events
+        const cn = document.getElementById('companyName');
+        if (cn) cn.addEventListener('blur', generateCompanyCode);
+        document.querySelectorAll('.govt-compliance-card input[type="checkbox"]').forEach(cb => {
+            if (cb.checked) cb.closest('.govt-compliance-card').classList.add('checked');
+        });
+
+        // Auto-select Basic plan
+        setTimeout(() => selectPlan(1), 100);
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _doInit);
+    } else {
+        _doInit();
+    }
+
+    // ── Navigation ───────────────────────────────────────────────────────
+    function nextStep(step) {
+        if (!validateCurrentStep()) return;
+        document.getElementById('step' + currentStep).classList.remove('active');
+        document.getElementById('step' + step).classList.add('active');
+        currentStep = step;
+        renderStepper(step - 1);
+        if (step === 4) renderModuleCards();
+        if (step === 8) updateSummary();
+        window.scrollTo({top:0,behavior:'smooth'});
+    }
+    function prevStep(step) {
+        document.getElementById('step' + currentStep).classList.remove('active');
+        document.getElementById('step' + step).classList.add('active');
+        currentStep = step;
+        renderStepper(step - 1);
+        window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function renderStepper(activeIndex) {
+        const host = document.getElementById('formStepper');
+        if (!host) return;
+
+        host.innerHTML = `
+            <div class="pt-stepper">
+                ${stepLabels.map((label, index) => `
+                    ${index > 0 ? `<div class="pt-step-connector ${index <= activeIndex ? 'completed' : ''}"></div>` : ''}
+                    <div class="pt-step ${index < activeIndex ? 'completed' : index === activeIndex ? 'active' : 'pending'}">
+                        <div class="pt-step-indicator">${index < activeIndex ? '<i class="bi bi-check"></i>' : index + 1}</div>
+                        <span class="pt-step-label">${label}</span>
+                    </div>
+                `).join('')}
+            </div>`;
+    }
+
+    // ── Validation ───────────────────────────────────────────────────────
+    function validateCurrentStep() {
+        let ok = true, msg = '';
+        switch(currentStep) {
+            case 1:
+                if (!document.getElementById('companyName').value.trim()) { msg='Company Name is required'; ok=false; }
+                else if (!document.getElementById('industryType').value) { msg='Industry Type is required'; ok=false; }
+                else if (!document.getElementById('companyEmail').value.trim()) { msg='Company Email is required'; ok=false; }
+                else if (!document.getElementById('province').value) { msg='Province is required'; ok=false; }
+                else if (!document.getElementById('city').value) { msg='City is required'; ok=false; }
+                break;
+            case 2:
+                if (!document.getElementById('adminFirstName').value.trim()) { msg='Admin First Name is required'; ok=false; }
+                else if (!document.getElementById('adminLastName').value.trim()) { msg='Admin Last Name is required'; ok=false; }
+                else if (!document.getElementById('adminEmail').value.trim()) { msg='Admin Email is required'; ok=false; }
+                else if (!document.getElementById('adminContact').value.trim()) { msg='Admin Contact Number is required'; ok=false; }
+                break;
+            case 3:
+                if (!selectedPlan) { msg='Please select a subscription plan'; ok=false; }
+                break;
+            case 5:
+                if (!document.getElementById('maxEmployees').value) { msg='Maximum Employees is required'; ok=false; }
+                else {
+                    const bc = parseInt(document.getElementById('branchCount').value)||1;
+                    for (let i=1;i<=bc;i++) {
+                        if (!document.getElementById('branch'+i+'Address')?.value.trim()) { msg='Branch '+i+' address is required'; ok=false; break; }
+                    }
+                }
+                break;
+        }
+        if (!ok) { try { PT.Toast.error(msg,'Validation Error'); } catch(e) { alert(msg); } }
+        return ok;
+    }
+    function toggleContractButton() {
+        document.getElementById('continueToReviewBtn').disabled =
+            !(document.getElementById('agreeTerms').checked && document.getElementById('agreePrivacy').checked);
+    }
+
+    // ── Address dropdowns (Dynamic API loading) ─────────────
+    async function loadCities() {
+        const code = document.getElementById('province').value;
+        const cs = document.getElementById('city');
+        const bs = document.getElementById('barangay');
+        
+        if (!cs || !bs) return;
+        
+        // Reset city and barangay
+        cs.innerHTML = '<option value="">Loading cities...</option>'; 
+        cs.disabled = true;
+        bs.innerHTML = '<option value="">Select City first</option>'; 
+        bs.disabled = true;
+        
+        if (!code) {
+            cs.innerHTML = '<option value="">Select Province first</option>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/LocationApi/cities/${code}`);
+            if (!response.ok) throw new Error('Failed to load cities');
+            
+            const cities = await response.json();
+            cs.innerHTML = '<option value="">Select City</option>';
+            
+            cities.sort().forEach(city => {
+                const o = document.createElement('option');
+                o.value = city;
+                o.textContent = city;
+                cs.appendChild(o);
+            });
+            
+            cs.disabled = false;
+        } catch (error) {
+            console.error('Error loading cities:', error);
+            cs.innerHTML = '<option value="">Error loading cities</option>';
+            try { PT.Toast.error('Failed to load cities. Please try again.', 'Error'); } catch(e) {}
+        }
+    }
+    
+    async function loadBarangays() {
+        const code = document.getElementById('province').value;
+        const city = document.getElementById('city').value;
+        const bs = document.getElementById('barangay');
+        
+        if (!bs) return;
+        
+        // Reset barangay
+        bs.innerHTML = '<option value="">Loading barangays...</option>'; 
+        bs.disabled = true;
+        
+        if (!code || !city) {
+            bs.innerHTML = '<option value="">Select City first</option>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/LocationApi/barangays/${code}/${encodeURIComponent(city)}`);
+            if (!response.ok) throw new Error('Failed to load barangays');
+            
+            const barangays = await response.json();
+            bs.innerHTML = '<option value="">Select Barangay</option>';
+            
+            if (barangays.length === 0) {
+                bs.innerHTML = '<option value="">No barangays available</option>';
+                bs.disabled = true;
+                return;
+            }
+            
+            barangays.sort().forEach(barangay => {
+                const o = document.createElement('option');
+                o.value = barangay;
+                o.textContent = barangay;
+                bs.appendChild(o);
+            });
+            
+            bs.disabled = false;
+        } catch (error) {
+            console.error('Error loading barangays:', error);
+            bs.innerHTML = '<option value="">Error loading barangays</option>';
+            try { PT.Toast.error('Failed to load barangays. Please try again.', 'Error'); } catch(e) {}
+        }
+    }
+
+    // ── Other dropdowns ───────────────────────────────────────────────────
+    function loadIndustryTypes() {
+        const s = document.getElementById('industryType');
+        if (!s) return;
+        s.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
+        IndustryTypes.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; s.appendChild(o); });
+    }
+    function loadPaymentMethods() {
+        const s = document.getElementById('paymentMethod');
+        if (!s) return;
+        s.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
+        PaymentMethods.forEach(m => { const o=document.createElement('option'); o.value=m.id; o.textContent=m.name; s.appendChild(o); });
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────
+    function generateCompanyCode() {
+        const name = document.getElementById('companyName').value;
+        if (!name) return;
+        document.getElementById('companyCode').value =
+            name.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().substring(0,6) +
+            Date.now().toString(36).toUpperCase().slice(-4);
+    }
+    function generatePassword() {
+        const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@@#$%';
+        let p=''; for(let i=0;i<10;i++) p+=chars.charAt(Math.floor(Math.random()*chars.length));
+        const el=document.getElementById('tempPassword'); if(el) el.textContent=p;
+    }
+
+    // ── Plan cards ────────────────────────────────────────────────────────
+    function renderPlanCards() {
+        document.getElementById('planCards').innerHTML = SubscriptionPlans.map(plan=>`
+            <div class="col-md-6 col-lg-3 mb-3">
+                <div class="plan-card" onclick="selectPlan(${plan.level},this)">
+                    ${plan.level===4?'<div class="plan-badge">POPULAR</div>':''}
+                    <h5 class="mb-1">${plan.name}</h5>
+                    <p class="text-muted small mb-3">${plan.description}</p>
+                    <div class="plan-price mb-3">₱${plan.price.monthly.toLocaleString()}<span>/mo</span></div>
+                    <ul class="list-unstyled small">${plan.features.slice(0,4).map(f=>`<li class="mb-1"><i class="bi bi-check text-success me-1"></i>${f}</li>`).join('')}</ul>
+                </div>
+            </div>`).join('');
+    }
+    function selectPlan(level, cardEl) {
+        selectedPlan=level;
+        document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+        if(cardEl) cardEl.classList.add('selected');
+        else { const cards=document.querySelectorAll('.plan-card'); if(cards[level-1]) cards[level-1].classList.add('selected'); }
+        updatePricing();
+        const plan=SubscriptionPlans.find(p=>p.level===level);
+        document.getElementById('govtComplianceNotice').style.display=plan.modules.includes('salary_compliance')?'none':'block';
+    }
+    function updatePricing() {
+        if(!selectedPlan) return;
+        const plan=SubscriptionPlans.find(p=>p.level===selectedPlan);
+        const cycle=document.getElementById('billingCycle').value;
+        const kiosks=parseInt(document.getElementById('kioskCount')?.value||1);
+        let pp=cycle==='yearly'?plan.price.yearly:plan.price.monthly;
+        let kp=kiosks*KIOSK_PRICE_MONTHLY; if(cycle==='yearly') kp=kp*12*0.83;
+        const total=pp+kp;
+        document.getElementById('planPriceDisplay').textContent='₱'+pp.toLocaleString('en-PH',{minimumFractionDigits:2});
+        document.getElementById('kioskPriceDisplay').textContent='₱'+kp.toLocaleString('en-PH',{minimumFractionDigits:2});
+        document.getElementById('billingDisplay').textContent=cycle==='yearly'?'Yearly (17% off)':'Monthly';
+        document.getElementById('totalAmountDisplay').textContent='₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2});
+        document.getElementById('amountPaid').value=total;
+        document.getElementById('subscriptionPeriodNote').textContent=cycle==='yearly'?'Yearly billing ends 12 months from activation.':'Monthly billing ends 1 month from activation.';
+        calculateEndDate();
+    }
+    function setDefaultDates() {
+        const t=new Date(); t.setDate(t.getDate()+1);
+        document.getElementById('subscriptionStart').value=t.toISOString().split('T')[0];
+        calculateEndDate();
+    }
+    function calculateEndDate() {
+        const sv=document.getElementById('subscriptionStart').value; if(!sv){setDefaultDates();return;}
+        const d=new Date(sv);
+        if(document.getElementById('billingCycle').value==='yearly') d.setFullYear(d.getFullYear()+1); else d.setMonth(d.getMonth()+1);
+        document.getElementById('subscriptionEnd').value=d.toISOString().split('T')[0];
+    }
+
+    // ── Module cards ──────────────────────────────────────────────────────
+    function renderModuleCards() {
+        const plan=selectedPlan?SubscriptionPlans.find(p=>p.level===selectedPlan):null;
+        const inc=plan?plan.modules:[];
+        document.getElementById('moduleCards').innerHTML=Object.values(Modules).map(mod=>`
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="module-card ${inc.includes(mod.id)?'selected':'disabled'} ${mod.default?'default':''}" data-module-id="${mod.id}">
+                    <div class="module-check"><i class="bi bi-check"></i></div>
+                    <div class="module-icon" style="background:${mod.color};"><i class="bi ${mod.icon}"></i></div>
+                    <h6 class="mb-2">${mod.name}</h6>
+                    <p class="text-muted small mb-0">${mod.description}</p>
+                </div>
+            </div>`).join('');
+    }
+
+    // ── Branch inputs ─────────────────────────────────────────────────────
+    function renderBranchInputs() {
+        const count=parseInt(document.getElementById('branchCount').value)||1;
+        let html='';
+        for(let i=1;i<=count;i++) html+=`<div class="branch-input-group"><div class="d-flex align-items-center gap-3 mb-3"><span class="branch-number">${i}</span><strong>${i===1?'Main Branch (Head Office)':'Branch '+i}</strong></div><input type="text" class="form-control" id="branch${i}Address" placeholder="Complete branch address" required></div>`;
+        document.getElementById('branchAddresses').innerHTML=html;
+    }
+    function toggleGovtCard(checkbox) { checkbox.closest('.govt-compliance-card').classList.toggle('checked',checkbox.checked); }
+
+    // ── Summary ───────────────────────────────────────────────────────────
+    function updateSummary() {
+        const plan=selectedPlan?SubscriptionPlans.find(p=>p.level===selectedPlan):null;
+        document.getElementById('summaryCompany').innerHTML=`
+            <div class="summary-item"><span class="summary-label">Company Name</span><span class="summary-value">${document.getElementById('companyName').value||'-'}</span></div>
+            <div class="summary-item"><span class="summary-label">Industry</span><span class="summary-value">${document.getElementById('industryType').value||'-'}</span></div>
+            <div class="summary-item"><span class="summary-label">Email</span><span class="summary-value">${document.getElementById('companyEmail').value||'-'}</span></div>
+            <div class="summary-item"><span class="summary-label">Admin</span><span class="summary-value">${document.getElementById('adminFirstName').value} ${document.getElementById('adminLastName').value}</span></div>
+            <div class="summary-item"><span class="summary-label">Branches</span><span class="summary-value">${document.getElementById('branchCount').value}</span></div>
+            <div class="summary-item"><span class="summary-label">Max Employees</span><span class="summary-value">${document.getElementById('maxEmployees').value||'-'}</span></div>`;
+        document.getElementById('summarySubscription').innerHTML=`
+            <div class="summary-item"><span class="summary-label">Plan</span><span class="summary-value">${plan?plan.name:'-'}</span></div>
+            <div class="summary-item"><span class="summary-label">Kiosks</span><span class="summary-value">${document.getElementById('kioskCount')?.value||'1'}</span></div>
+            <div class="summary-item"><span class="summary-label">Billing</span><span class="summary-value">${document.getElementById('billingCycle').value==='yearly'?'Yearly':'Monthly'}</span></div>
+            <div class="summary-item"><span class="summary-label">Start</span><span class="summary-value">${document.getElementById('subscriptionStart').value}</span></div>
+            <div class="summary-item"><span class="summary-label">End</span><span class="summary-value">${document.getElementById('subscriptionEnd').value}</span></div>
+            <div class="summary-item"><span class="summary-label">Total</span><span class="summary-value fw-bold text-success">₱${parseFloat(document.getElementById('amountPaid').value||0).toLocaleString('en-PH',{minimumFractionDigits:2})}</span></div>
+            <div class="summary-item"><span class="summary-label">Payment</span><span class="summary-value">${document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex]?.text||'-'}</span></div>`;
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────
+    async function submitRegistration() {
+        const req=[{id:'companyName',label:'Company Name'},{id:'companyEmail',label:'Company Email'},{id:'adminFirstName',label:'Admin First Name'},{id:'adminLastName',label:'Admin Last Name'},{id:'adminEmail',label:'Admin Email'}];
+        for(const f of req){if(!document.getElementById(f.id).value.trim()){PT.Toast.error(`${f.label} is required`,'Validation Error');return;}}
+        if(!selectedPlan){PT.Toast.error('Please select a subscription plan','Validation Error');return;}
+
+        const province=document.getElementById('province').options[document.getElementById('province').selectedIndex]?.text||'';
+        const fullAddress=[document.getElementById('streetAddress').value,document.getElementById('barangay').value,document.getElementById('city').value,province].filter(x=>x).join(', ');
+
+        const btn=event.target; btn.disabled=true; btn.innerHTML='<i class="bi bi-hourglass-split me-2"></i>Creating Company...';
+        const fd=new FormData();
+        fd.append('CompanyName',document.getElementById('companyName').value);
+        fd.append('CompanyCode',document.getElementById('companyCode').value||'');
+        fd.append('Email',document.getElementById('companyEmail').value);
+        fd.append('ContactNumber',document.getElementById('contactNumber').value||'');
+        fd.append('Address',fullAddress);
+        fd.append('SubscriptionStart',document.getElementById('subscriptionStart').value);
+        fd.append('SubscriptionEnd',document.getElementById('subscriptionEnd').value);
+        fd.append('AdminEmail',document.getElementById('adminEmail').value);
+        fd.append('AdminFirstName',document.getElementById('adminFirstName').value);
+        fd.append('AdminLastName',document.getElementById('adminLastName').value);
+        if(selectedPlan){const plan=SubscriptionPlans.find(p=>p.level===selectedPlan);plan?.modules?.forEach((m,i)=>{const v=getModuleTypeInt(m);if(v>=0)fd.append(`EnabledModules[${i}]`,v);});}
+
+        const token=document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const pmId=parseInt(document.getElementById('paymentMethod').value);
+        const pm=PaymentMethods.find(m=>m.id===pmId);
+
+        if(pm?.online){
+            btn.innerHTML='<i class="bi bi-hourglass-split me-2"></i>Creating Payment Link...';
+            const plan=SubscriptionPlans.find(p=>p.level===selectedPlan);
+            const kiosks=parseInt(document.getElementById('kioskCount').value)||1;
+            const cycle=document.getElementById('billingCycle').value;
+            let pp=cycle==='yearly'?plan.price.yearly:plan.price.monthly;
+            let kp=kiosks*KIOSK_PRICE_MONTHLY; if(cycle==='yearly') kp=kp*12*0.83;
+            try{
+                const pr=await fetch('@Url.Action("CreatePaymentLink","SuperAdmin")',{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify({companyName:document.getElementById('companyName').value,planName:plan.name,amount:pp+kp,kioskCount:kiosks,billingCycle:cycle})});
+                const res=await pr.json();
+                if(res.success&&res.checkoutUrl){showPaymentModal(res.checkoutUrl,res.referenceNumber,res.paymentId,fd,token);return;}
+                PT.Toast.warning('Online payment not available. Please select Cash payment.','Payment Error');
+            }catch(e){PT.Toast.warning('Could not create payment link. Please select Cash payment.','Payment Error');}
+            btn.disabled=false; btn.innerHTML='<i class="bi bi-check-circle me-2"></i>Complete Registration'; return;
+        }
+
+        try{
+            const r=await fetch('@Url.Action("CreateCompany","SuperAdmin")',{method:'POST',headers:{'RequestVerificationToken':token},body:fd});
+            
+            // Always parse as JSON now (controller returns JSON)
+            let data;
+            try { data = await r.json(); } catch(e) { data = null; }
+            
+            if(data && data.success){
+                if(data.warning){
+                    PT.Toast.warning(data.message, 'Warning');
+                } else {
+                    PT.Toast.success('Company created successfully!','Success');
+                }
+                setTimeout(()=>{ window.location.href = data.redirectUrl || '@Url.Action("Companies","SuperAdmin")'; }, 2000);
+            } else {
+                const errMsg = (data && data.message) ? data.message : 'Failed to create company. Please try again.';
+                PT.Toast.error(errMsg,'Error');
+                btn.disabled=false;
+                btn.innerHTML='<i class="bi bi-check-circle me-2"></i>Complete Registration';
+            }
+        }catch(e){PT.Toast.error('Network error. Please try again.','Error');btn.disabled=false;btn.innerHTML='<i class="bi bi-check-circle me-2"></i>Complete Registration';}
+    }
+
+    function showPaymentModal(checkoutUrl,refNum,paymentId,fd,token){
+        let m=document.getElementById('paymentModal');
+        if(!m){m=document.createElement('div');m.id='paymentModal';m.className='modal fade';m.tabIndex=-1;
+        m.innerHTML=`<div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="bi bi-credit-card me-2"></i>Complete Payment</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><div class="p-3 bg-light border-bottom"><div class="d-flex justify-content-between"><span>Reference:</span><strong id="paymentReference"></strong></div></div><iframe id="paymentFrame" style="width:100%;height:500px;border:none;"></iframe></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-success" id="confirmPaymentBtn" onclick="confirmPaymentAndRegister()"><i class="bi bi-check-circle me-1"></i>I've Completed Payment</button></div></div></div>`;
+        document.body.appendChild(m);}
+        window.pendingFd=fd;window.pendingToken=token;
+        document.getElementById('paymentFrame').src=checkoutUrl;
+        document.getElementById('paymentReference').textContent=refNum||'N/A';
+        new bootstrap.Modal(m).show();
+    }
+    async function confirmPaymentAndRegister(){
+        const btn=document.getElementById('confirmPaymentBtn');btn.disabled=true;btn.innerHTML='<i class="bi bi-hourglass-split me-1"></i>Verifying...';
+        try{
+            const r=await fetch('@Url.Action("CreateCompany","SuperAdmin")',{method:'POST',headers:{'RequestVerificationToken':window.pendingToken},body:window.pendingFd});
+            let data;
+            try { data = await r.json(); } catch(e) { data = null; }
+            
+            if(data && data.success){
+                PT.Toast.success('Payment confirmed! Company created successfully.','Success');
+                bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+                setTimeout(()=>{ window.location.href = data.redirectUrl || '@Url.Action("Companies","SuperAdmin")'; },1500);
+            } else {
+                const errMsg = (data && data.message) ? data.message : 'Failed to create company.';
+                PT.Toast.error(errMsg,'Error');
+                btn.disabled=false;
+                btn.innerHTML='<i class="bi bi-check-circle me-1"></i>I\'ve Completed Payment';
+            }
+        }catch(e){PT.Toast.error('Error completing registration.','Error');btn.disabled=false;btn.innerHTML='<i class="bi bi-check-circle me-1"></i>I\'ve Completed Payment';}
+    }
+    function getModuleTypeInt(id){return {'employees':0,'attendance':1,'leave':2,'payroll':3,'time_shift':4,'salary_compliance':5,'reports':6,'documents':7,'hr_tickets':8}[id]??-1;}
+</script>
+}

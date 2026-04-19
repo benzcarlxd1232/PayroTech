@@ -1,0 +1,89 @@
+@{
+    ViewData["Title"] = "My Attendance";
+    Layout = "~/Views/Shared/_AccountantLayout.cshtml";
+    var attendance  = ViewBag.Attendance  as List<PayroTech.Models.Entities.Attendance> ?? new();
+    var employee    = ViewBag.Employee    as PayroTech.Models.Entities.Employee;
+    var user        = ViewBag.CurrentUser as PayroTech.Models.Entities.ApplicationUser;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">My Attendance</h4>
+        <p class="text-muted mb-0">@DateTime.Today.ToString("MMMM yyyy")</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-success">@attendance.Count(a => a.TimeIn != null)</div>
+            <div class="text-muted small">Days Present</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-warning">@attendance.Count(a => a.LateMinutes > 0)</div>
+            <div class="text-muted small">Late Arrivals</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-info">@(attendance.Sum(a => a.OvertimeMinutes) / 60)h</div>
+            <div class="text-muted small">Overtime</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-primary">@attendance.Count</div>
+            <div class="text-muted small">Total Records</div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold"><i class="bi bi-list-ul me-2"></i>Attendance Log</div>
+    @if (!attendance.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
+            <h6>No attendance records this month</h6>
+            <p class="text-muted small">Use the kiosk to clock in with your QR code.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Hours</th>
+                        <th>Late</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in attendance)
+                    {
+                        var badge = a.Status switch
+                        {
+                            PayroTech.Models.Enums.AttendanceStatus.Present => "bg-success-subtle text-success",
+                            PayroTech.Models.Enums.AttendanceStatus.Late    => "bg-warning-subtle text-warning",
+                            _ => "bg-secondary-subtle text-secondary"
+                        };
+                        <tr>
+                            <td class="ps-4 fw-medium">@a.Date.ToString("MMM dd, yyyy")</td>
+                            <td>@(a.TimeIn?.ToString("hh:mm tt") ?? "—")</td>
+                            <td>@(a.TimeOut?.ToString("hh:mm tt") ?? "—")</td>
+                            <td>@(a.WorkedMinutes > 0 ? $"{a.WorkedMinutes/60}h {a.WorkedMinutes%60}m" : "—")</td>
+                            <td>@(a.LateMinutes > 0 ? $"{a.LateMinutes} min" : "—")</td>
+                            <td class="text-center"><span class="badge @badge">@a.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

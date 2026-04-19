@@ -1,0 +1,258 @@
+@*
+    PayroTech Complete Table Template
+    Usage: Include this partial view in any page that needs a table
+    
+    Parameters:
+    - tableId: Unique identifier for the table
+    - title: Table title (optional)
+    - showSearch: Show search input (default: true)
+    - showFilters: Show filter chips (default: true)
+    - showBulkActions: Enable bulk selection (default: true)
+    - showPagination: Show pagination (default: true)
+*@
+
+@{
+    var tableId = ViewData["TableId"]?.ToString() ?? "dataTable";
+    var title = ViewData["TableTitle"]?.ToString();
+    var showSearch = ViewData["ShowSearch"] as bool? ?? true;
+    var showFilters = ViewData["ShowFilters"] as bool? ?? true;
+    var showBulkActions = ViewData["ShowBulkActions"] as bool? ?? true;
+    var showPagination = ViewData["ShowPagination"] as bool? ?? true;
+}
+
+<div class="pt-table-container" id="@tableId-container">
+    
+    <!-- Toolbar -->
+    <div class="pt-table-toolbar">
+        <div class="pt-table-toolbar-left">
+            @if (showSearch)
+            {
+                <div class="pt-table-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" 
+                           id="@tableId-search" 
+                           placeholder="Search..." 
+                           class="pt-input">
+                </div>
+            }
+            
+            @if (showFilters)
+            {
+                <div class="pt-table-filters">
+                    <div class="pt-filter-chip" data-filter="status">
+                        <span>Status</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="pt-filter-chip" data-filter="date">
+                        <span>Date</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="pt-table-toolbar-right">
+            <button class="pt-btn pt-btn-secondary" onclick="exportTable('@tableId')">
+                <i class="bi bi-download me-2"></i>Export
+            </button>
+            <button class="pt-btn pt-btn-primary" onclick="openCreateModal()">
+                <i class="bi bi-plus-lg me-2"></i>New
+            </button>
+        </div>
+    </div>
+    
+    <!-- Bulk Action Bar (Hidden by default) -->
+    @if (showBulkActions)
+    {
+        <div class="pt-bulk-action-bar" id="@tableId-bulk-bar">
+            <div class="pt-bulk-action-bar-left">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span id="@tableId-selected-count">0</span> selected
+            </div>
+            <div class="pt-bulk-action-bar-right">
+                <button class="pt-btn pt-btn-sm pt-btn-secondary" onclick="bulkAction('@tableId', 'export')">
+                    <i class="bi bi-download me-1"></i>Export
+                </button>
+                <button class="pt-btn pt-btn-sm pt-btn-secondary" onclick="bulkAction('@tableId', 'archive')">
+                    <i class="bi bi-archive me-1"></i>Archive
+                </button>
+                <button class="pt-btn pt-btn-sm pt-btn-danger" onclick="bulkAction('@tableId', 'delete')">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+                <button class="pt-btn pt-btn-sm pt-btn-ghost" onclick="clearSelection('@tableId')">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    }
+    
+    <!-- Table -->
+    <div class="pt-table-wrapper">
+        <table class="pt-table" id="@tableId">
+            <thead>
+                <tr>
+                    @if (showBulkActions)
+                    {
+                        <th class="pt-table-checkbox">
+                            <input type="checkbox" 
+                                   id="@tableId-select-all" 
+                                   onchange="toggleSelectAll('@tableId')">
+                        </th>
+                    }
+                    @RenderSection("TableHeaders", required: false)
+                </tr>
+            </thead>
+            <tbody id="@tableId-body">
+                @RenderSection("TableBody", required: false)
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Empty State -->
+    <div class="pt-table-empty" id="@tableId-empty" style="display: none;">
+        <div class="pt-table-empty-icon">
+            <i class="bi bi-inbox" style="font-size: 64px;"></i>
+        </div>
+        <div class="pt-table-empty-title">No data found</div>
+        <div class="pt-table-empty-desc">Try adjusting your search or filter to find what you're looking for.</div>
+        <button class="pt-btn pt-btn-primary mt-4" onclick="clearFilters('@tableId')">
+            <i class="bi bi-arrow-clockwise me-2"></i>Clear Filters
+        </button>
+    </div>
+    
+    <!-- Loading Skeleton -->
+    <div class="pt-table-skeleton" id="@tableId-skeleton" style="display: none;">
+        @for (int i = 0; i < 5; i++)
+        {
+            <div class="pt-skeleton-row">
+                <div class="pt-skeleton-cell" style="width: 40px;"></div>
+                <div class="pt-skeleton-cell" style="width: 200px;"></div>
+                <div class="pt-skeleton-cell" style="width: 150px;"></div>
+                <div class="pt-skeleton-cell" style="width: 120px;"></div>
+                <div class="pt-skeleton-cell" style="width: 100px;"></div>
+                <div class="pt-skeleton-cell" style="width: 80px;"></div>
+            </div>
+        }
+    </div>
+    
+    <!-- Pagination -->
+    @if (showPagination)
+    {
+        <div class="pt-table-footer">
+            <div class="pt-table-info">
+                Showing <span id="@tableId-start">1</span>-<span id="@tableId-end">10</span> 
+                of <span id="@tableId-total">0</span>
+            </div>
+            
+            <div class="pt-pagination" id="@tableId-pagination">
+                <button class="pt-pagination-btn" onclick="changePage('@tableId', 'prev')" disabled>
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="pt-pagination-btn active">1</button>
+                <button class="pt-pagination-btn">2</button>
+                <button class="pt-pagination-btn">3</button>
+                <span class="pt-pagination-ellipsis">...</span>
+                <button class="pt-pagination-btn">25</button>
+                <button class="pt-pagination-btn" onclick="changePage('@tableId', 'next')">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            
+            <div class="pt-page-size-select">
+                <span>Show</span>
+                <select id="@tableId-page-size" onchange="changePageSize('@tableId')">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>per page</span>
+            </div>
+        </div>
+    }
+    
+</div>
+
+@section Scripts {
+    <script>
+        // Table utility functions
+        function toggleSelectAll(tableId) {
+            const selectAll = document.getElementById(tableId + '-select-all');
+            const checkboxes = document.querySelectorAll(`#${tableId} tbody input[type="checkbox"]`);
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateBulkBar(tableId);
+        }
+        
+        function updateBulkBar(tableId) {
+            const checkboxes = document.querySelectorAll(`#${tableId} tbody input[type="checkbox"]:checked`);
+            const count = checkboxes.length;
+            const bulkBar = document.getElementById(tableId + '-bulk-bar');
+            const countSpan = document.getElementById(tableId + '-selected-count');
+            
+            if (count > 0) {
+                bulkBar.classList.add('active');
+                countSpan.textContent = count;
+            } else {
+                bulkBar.classList.remove('active');
+            }
+        }
+        
+        function clearSelection(tableId) {
+            const checkboxes = document.querySelectorAll(`#${tableId} input[type="checkbox"]`);
+            checkboxes.forEach(cb => cb.checked = false);
+            updateBulkBar(tableId);
+        }
+        
+        function bulkAction(tableId, action) {
+            const checkboxes = document.querySelectorAll(`#${tableId} tbody input[type="checkbox"]:checked`);
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+            console.log(`Bulk ${action} for IDs:`, ids);
+            // Implement your bulk action logic here
+        }
+        
+        function exportTable(tableId) {
+            console.log('Exporting table:', tableId);
+            // Implement export logic
+        }
+        
+        function changePage(tableId, direction) {
+            console.log('Change page:', direction);
+            // Implement pagination logic
+        }
+        
+        function changePageSize(tableId) {
+            const pageSize = document.getElementById(tableId + '-page-size').value;
+            console.log('Page size changed to:', pageSize);
+            // Implement page size change logic
+        }
+        
+        function clearFilters(tableId) {
+            console.log('Clearing filters for:', tableId);
+            // Implement filter clearing logic
+        }
+        
+        // Show loading skeleton
+        function showLoading(tableId) {
+            document.getElementById(tableId + '-skeleton').style.display = 'block';
+            document.querySelector(`#${tableId}`).style.display = 'none';
+        }
+        
+        // Hide loading skeleton
+        function hideLoading(tableId) {
+            document.getElementById(tableId + '-skeleton').style.display = 'none';
+            document.querySelector(`#${tableId}`).style.display = 'table';
+        }
+        
+        // Show empty state
+        function showEmptyState(tableId) {
+            document.getElementById(tableId + '-empty').style.display = 'flex';
+            document.querySelector(`#${tableId}`).style.display = 'none';
+        }
+        
+        // Hide empty state
+        function hideEmptyState(tableId) {
+            document.getElementById(tableId + '-empty').style.display = 'none';
+            document.querySelector(`#${tableId}`).style.display = 'table';
+        }
+    </script>
+}

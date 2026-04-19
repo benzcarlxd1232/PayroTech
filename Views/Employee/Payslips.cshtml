@@ -1,0 +1,114 @@
+@{
+    ViewData["Title"] = "My Payslips";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    var payrolls  = ViewBag.Payrolls  as List<PayroTech.Models.Entities.Payroll> ?? new();
+    var employee  = ViewBag.Employee  as PayroTech.Models.Entities.Employee;
+    int viewYear  = ViewBag.ViewYear  ?? DateTime.Today.Year;
+    decimal ytdGross    = ViewBag.YtdGross    ?? 0m;
+    decimal ytdNet      = ViewBag.YtdNet      ?? 0m;
+    decimal ytdTax      = ViewBag.YtdTax      ?? 0m;
+    decimal ytdBenefits = ViewBag.YtdBenefits ?? 0m;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">My Payslips</h4>
+        <p class="text-muted mb-0">View your payroll history</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="?year=@(viewYear-1)" class="btn btn-outline-secondary btn-sm">@(viewYear-1)</a>
+        <span class="btn btn-primary btn-sm disabled">@viewYear</span>
+        @if (viewYear < DateTime.Today.Year)
+        {
+            <a href="?year=@(viewYear+1)" class="btn btn-outline-secondary btn-sm">@(viewYear+1)</a>
+        }
+    </div>
+</div>
+
+<!-- YTD Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-5 fw-bold text-success">₱@ytdGross.ToString("N0")</div>
+            <div class="text-muted small">YTD Gross Pay</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-5 fw-bold text-primary">₱@ytdNet.ToString("N0")</div>
+            <div class="text-muted small">YTD Net Pay</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-5 fw-bold text-danger">₱@ytdTax.ToString("N0")</div>
+            <div class="text-muted small">YTD Tax</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-5 fw-bold text-warning">₱@ytdBenefits.ToString("N0")</div>
+            <div class="text-muted small">YTD Benefits</div>
+        </div>
+    </div>
+</div>
+
+<!-- Payslip List -->
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-receipt me-2"></i>Payslip History — @viewYear
+    </div>
+    @if (!payrolls.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-receipt fs-1 text-muted d-block mb-3"></i>
+            <h6>No payslips for @viewYear</h6>
+            <p class="text-muted small">Payslips will appear here once payroll is processed.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Period</th>
+                        <th>Pay Date</th>
+                        <th class="text-end">Gross Pay</th>
+                        <th class="text-end">Deductions</th>
+                        <th class="text-end">Net Pay</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in payrolls)
+                    {
+                        var statusBadge = p.Status switch
+                        {
+                            PayroTech.Models.Enums.PayrollStatus.Paid       => "bg-success",
+                            PayroTech.Models.Enums.PayrollStatus.Processed  => "bg-info text-dark",
+                            PayroTech.Models.Enums.PayrollStatus.Approved   => "bg-primary",
+                            _ => "bg-warning text-dark"
+                        };
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-medium">@(p.PayrollPeriod?.PeriodName ?? "—")</div>
+                                <div class="text-muted small">
+                                    @(p.PayrollPeriod?.StartDate.ToString("MMM dd") ?? "") – @(p.PayrollPeriod?.EndDate.ToString("MMM dd, yyyy") ?? "")
+                                </div>
+                            </td>
+                            <td class="text-muted small">@(p.PayrollPeriod?.PayDate.ToString("MMM dd, yyyy") ?? "—")</td>
+                            <td class="text-end">₱@p.GrossPay.ToString("N2")</td>
+                            <td class="text-end text-danger">-₱@p.TotalDeductions.ToString("N2")</td>
+                            <td class="text-end fw-bold">₱@p.NetPay.ToString("N2")</td>
+                            <td class="text-center">
+                                <span class="badge @statusBadge">@p.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

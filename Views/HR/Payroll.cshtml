@@ -1,0 +1,280 @@
+@{
+    ViewData["Title"] = "Payroll Preparation";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Payroll Preparation</h4>
+        <p class="text-muted mb-0">Prepare and review payroll for your team</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <select class="form-select" style="width: 180px;">
+            <option>March 2026 - 2nd Cutoff</option>
+            <option>March 2026 - 1st Cutoff</option>
+            <option>February 2026 - 2nd Cutoff</option>
+        </select>
+        <a href="/hr/submitpayroll" class="pt-btn pt-btn-primary">
+            <i class="bi bi-send me-2"></i>Submit Payroll
+        </a>
+    </div>
+</div>
+
+<!-- Deadline Warning -->
+<div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+    <div>
+        <strong>Payroll Deadline Alert!</strong> You have <strong>3 days</strong> remaining to submit payroll for this period.
+        <span class="text-muted">Deadline: April 1, 2026</span>
+    </div>
+</div>
+
+<!-- Budget Summary -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-cash-stack text-success me-2"></i>Budget Overview
+            </div>
+            <div class="pt-card-body">
+                <div class="row">
+                    <div class="col-md-4 border-end">
+                        <div class="text-muted small mb-1">Allocated Budget</div>
+                        <h3 class="text-primary mb-0">₱ 450,000.00</h3>
+                    </div>
+                    <div class="col-md-4 border-end">
+                        <div class="text-muted small mb-1">Current Payroll Total</div>
+                        <h3 class="text-success mb-0">₱ 385,240.00</h3>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small mb-1">Remaining Budget</div>
+                        <h3 class="text-info mb-0">₱ 64,760.00</h3>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 10px;">
+                    <div class="progress-bar bg-success" style="width: 85.6%;"></div>
+                </div>
+                <div class="text-muted small mt-2">85.6% of budget utilized • ₱64,760.00 available</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-info-circle text-info me-2"></i>Payroll Summary
+            </div>
+            <div class="pt-card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Employees</span>
+                    <strong>24</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">With Complete Attendance</span>
+                    <strong class="text-success">22</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">With Deductions</span>
+                    <strong class="text-warning">5</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">With Overtime</span>
+                    <strong class="text-info">8</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payroll Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-table me-2"></i>Payroll Breakdown</span>
+                <div class="d-flex gap-2">
+                    <input type="text" class="form-control form-control-sm" placeholder="Search employee..." style="width: 200px;">
+                    <button class="pt-btn pt-btn-ghost pt-btn-sm">
+                        <i class="bi bi-download me-1"></i>Export
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="pt-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th class="text-end">Basic Pay</th>
+                            <th class="text-end">Overtime</th>
+                            <th class="text-end">Allowances</th>
+                            <th class="text-end">Deductions</th>
+                            <th class="text-end">Net Pay</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #2563eb, #60a5fa);">JR</div>
+                                    <div>
+                                        <strong>Juan Rodriguez</strong>
+                                        <div class="small text-muted">Senior Developer</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">₱ 35,000.00</td>
+                            <td class="text-end text-success">+ ₱ 2,500.00</td>
+                            <td class="text-end text-info">+ ₱ 3,000.00</td>
+                            <td class="text-end text-danger">- ₱ 4,250.00</td>
+                            <td class="text-end"><strong>₱ 36,250.00</strong></td>
+                            <td><span class="pt-badge pt-badge-success">Complete</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #059669, #34d399);">MS</div>
+                                    <div>
+                                        <strong>Maria Santos</strong>
+                                        <div class="small text-muted">Frontend Developer</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">₱ 28,000.00</td>
+                            <td class="text-end text-muted">₱ 0.00</td>
+                            <td class="text-end text-info">+ ₱ 2,500.00</td>
+                            <td class="text-end text-danger">- ₱ 3,500.00</td>
+                            <td class="text-end"><strong>₱ 27,000.00</strong></td>
+                            <td><span class="pt-badge pt-badge-success">Complete</span></td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">AR</div>
+                                    <div>
+                                        <strong>Ana Reyes</strong>
+                                        <div class="small text-muted">QA Engineer</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">₱ 25,000.00</td>
+                            <td class="text-end text-success">+ ₱ 1,200.00</td>
+                            <td class="text-end text-info">+ ₱ 2,000.00</td>
+                            <td class="text-end text-danger">- ₱ 3,800.00</td>
+                            <td class="text-end"><strong>₱ 24,400.00</strong></td>
+                            <td>
+                                <span class="pt-badge pt-badge-warning">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Late Deduction
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #0891b2, #22d3ee);">CL</div>
+                                    <div>
+                                        <strong>Carlos Lopez</strong>
+                                        <div class="small text-muted">Backend Developer</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">₱ 30,000.00</td>
+                            <td class="text-end text-success">+ ₱ 3,800.00</td>
+                            <td class="text-end text-info">+ ₱ 2,500.00</td>
+                            <td class="text-end text-danger">- ₱ 3,900.00</td>
+                            <td class="text-end"><strong>₱ 32,400.00</strong></td>
+                            <td><span class="pt-badge pt-badge-success">Complete</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">PG</div>
+                                    <div>
+                                        <strong>Pedro Garcia</strong>
+                                        <div class="small text-muted">Backend Developer</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">₱ 28,000.00</td>
+                            <td class="text-end text-muted">₱ 0.00</td>
+                            <td class="text-end text-info">+ ₱ 2,500.00</td>
+                            <td class="text-end text-danger">- ₱ 3,500.00</td>
+                            <td class="text-end"><strong>₱ 27,000.00</strong></td>
+                            <td><span class="pt-badge pt-badge-success">Complete</span></td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: var(--pt-bg-secondary);">
+                            <td><strong>TOTAL (24 Employees)</strong></td>
+                            <td class="text-end"><strong>₱ 672,000.00</strong></td>
+                            <td class="text-end text-success"><strong>+ ₱ 45,600.00</strong></td>
+                            <td class="text-end text-info"><strong>+ ₱ 60,000.00</strong></td>
+                            <td class="text-end text-danger"><strong>- ₱ 91,560.00</strong></td>
+                            <td class="text-end"><strong>₱ 385,240.00</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="p-3 d-flex justify-content-between align-items-center">
+                <span class="text-muted">Showing 5 of 24 employees</span>
+            </div>
+            <div class="pt-pagination">
+                <small class="text-muted me-auto ps-1">Showing 5 of 24 employees</small>
+                <button class="pt-pagination-btn active">1</button>
+                <button class="pt-pagination-btn">2</button>
+                <button class="pt-pagination-btn">3</button>
+                <span class="pt-pagination-ellipsis">…</span>
+                <button class="pt-pagination-btn">5</button>
+                <button class="pt-pagination-btn">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deductions Breakdown -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-calculator me-2"></i>Government Deductions Summary
+            </div>
+            <div class="pt-card-body">
+                <div class="row">
+                    <div class="col-md-3 border-end">
+                        <div class="text-center">
+                            <div class="text-muted small mb-1">SSS Contribution</div>
+                            <h4 class="mb-0">₱ 28,800.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <div class="text-center">
+                            <div class="text-muted small mb-1">PhilHealth</div>
+                            <h4 class="mb-0">₱ 19,200.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <div class="text-center">
+                            <div class="text-muted small mb-1">Pag-IBIG</div>
+                            <h4 class="mb-0">₱ 4,800.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="text-muted small mb-1">Withholding Tax</div>
+                            <h4 class="mb-0">₱ 38,760.00</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-warning {
+        background-color: rgba(245, 158, 11, 0.1) !important;
+    }
+</style>

@@ -1,0 +1,111 @@
+## .NET / ASP.NET Core .gitignore
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# ASP.NET Core
+ScaffoldingReadMe.txt
+
+# MSBuild
+*.binlog
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Publish output
+publish/
+[Pp]ublish/
+PublishProfiles/
+
+# User-uploaded files (runtime data, not source)
+wwwroot/uploads/
+
+# Sensitive config — keep appsettings.json but exclude local overrides
+appsettings.Local.json
+appsettings.*.local.json
+
+# Zip / deploy artifacts
+*.zip
+*.tar.gz
+
+# Temp / scratch files
+*.tmp
+*.temp
+~$*
+*~
+
+# Docs that are auto-generated or deployment-specific
+BEFORE_AFTER_COMPARISON.md
+EMAIL_FIX_SUMMARY.md
+GMAIL_SMTP_SETUP_GUIDE.md
+LOCATION_DROPDOWN_FIX.md
+QUICK_EMAIL_TEST.md
+TEST_EMAIL.md
+TEST_EMAIL_NOW.md
+DELETE_INSTRUCTIONS.md
+DEPLOYMENT_GUIDE.md
+DEPLOY_FIX.md
+DOWNLOAD_WINSCP.html
+FINAL_STEP.md
+FIXES_APPLIED.md
+SESSION_SUMMARY.md
+QUICK_DEPLOY_GUIDE.md
+
+# Deployment scripts (optional — remove these lines if you want them tracked)
+delete-app-offline-NOW.bat
+delete-app-offline.bat
+delete-app-offline.ps1
+deploy-with-offline.ps1
+
+# Migration SQL exports (generated, not source)
+migration.sql
+migration_updates.sql
+docs/migration.sql
+
+# PayroTech.copy folder (old backup)
+PayroTech.copy/

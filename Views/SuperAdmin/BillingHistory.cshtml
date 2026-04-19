@@ -1,0 +1,134 @@
+@{
+    ViewData["Title"] = "Billing History";
+    Layout = "_SuperAdminLayout";
+
+    var companies = ViewBag.Companies as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var companiesList = companies.ToList();
+    var totalItems = companiesList.Count;
+
+    // Pagination
+    int pageSize = 20;
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+    var pagedItems = companiesList.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <span class="text-muted">@totalItems companies total</span>
+</div>
+
+<div class="table-card">
+    <div class="card-header">
+        <i class="bi bi-receipt me-2"></i>Subscription Billing History
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Company</th>
+                    <th>Code</th>
+                    <th>Subscription Start</th>
+                    <th>Subscription End</th>
+                    <th>Subscription</th>
+                    <th>Account</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!pagedItems.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No billing records found.</td>
+                    </tr>
+                }
+                @{
+                    int rowNum = (currentPage - 1) * pageSize + 1;
+                    foreach (var c in pagedItems)
+                    {
+                        bool isSubActive = (bool)c.IsSubscriptionActive;
+                        bool isActive = (bool)c.IsActive;
+                        DateTime? subEnd = c.SubscriptionEnd as DateTime?;
+                        bool isExpiringSoon = subEnd.HasValue && (subEnd.Value - DateTime.Today).Days <= 30 && (subEnd.Value - DateTime.Today).Days > 0 && isSubActive;
+
+                        <tr>
+                            <td class="text-muted">@rowNum</td>
+                            <td><strong>@c.CompanyName</strong></td>
+                            <td><code>@c.CompanyCode</code></td>
+                            <td>@(c.SubscriptionStart != null ? ((DateTime)c.SubscriptionStart).ToString("MMM dd, yyyy") : "—")</td>
+                            <td>
+                                @(subEnd.HasValue ? subEnd.Value.ToString("MMM dd, yyyy") : "—")
+                                @if (isExpiringSoon)
+                                {
+                                    <span class="ms-1 fw-semibold" style="color:#d97706;">Expiring Soon</span>
+                                }
+                            </td>
+                            <td>
+                                @if (isSubActive)
+                                {
+                                    <span class="fw-semibold" style="color:#16a34a;">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="fw-semibold" style="color:#dc2626;">Expired</span>
+                                }
+                            </td>
+                            <td>
+                                @if (isActive)
+                                {
+                                    <span class="fw-semibold" style="color:#16a34a;">Enabled</span>
+                                }
+                                else
+                                {
+                                    <span class="fw-semibold" style="color:#6b7280;">Disabled</span>
+                                }
+                            </td>
+                        </tr>
+                        rowNum++;
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <div class="pt-pagination">
+            <small class="text-muted me-auto ps-1">
+                Showing @((currentPage - 1) * pageSize + 1)–@Math.Min(currentPage * pageSize, totalItems) of @totalItems entries
+            </small>
+
+            <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage - 1)'">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+
+            @{
+                int startPage = Math.Max(1, currentPage - 2);
+                int endPage = Math.Min(totalPages, currentPage + 2);
+
+                if (startPage > 1)
+                {
+                    <button class="pt-pagination-btn" onclick="window.location.href='?page=1'">1</button>
+                    if (startPage > 2) { <span class="pt-pagination-ellipsis">…</span> }
+                }
+
+                for (int i = startPage; i <= endPage; i++)
+                {
+                    <button class="pt-pagination-btn @(currentPage == i ? "active" : "")"
+                            onclick="window.location.href='?page=@i'">@i</button>
+                }
+
+                if (endPage < totalPages)
+                {
+                    if (endPage < totalPages - 1) { <span class="pt-pagination-ellipsis">…</span> }
+                    <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages'">@totalPages</button>
+                }
+            }
+
+            <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage + 1)'">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    }
+</div>

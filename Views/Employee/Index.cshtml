@@ -1,0 +1,196 @@
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    var user         = ViewBag.CurrentUser   as PayroTech.Models.Entities.ApplicationUser;
+    var employee     = ViewBag.Employee      as PayroTech.Models.Entities.Employee;
+    var todayAtt     = ViewBag.TodayAtt      as PayroTech.Models.Entities.Attendance;
+    var leaveBalance = ViewBag.LeaveBalance  as PayroTech.Models.Entities.LeaveBalance;
+    var recentLeaves = ViewBag.RecentLeaves  as List<PayroTech.Models.Entities.Leave> ?? new();
+    var lastPayroll  = ViewBag.LastPayroll   as PayroTech.Models.Entities.Payroll;
+    int presentCount = ViewBag.PresentCount  ?? 0;
+    int lateCount    = ViewBag.LateCount     ?? 0;
+    int otHours      = ViewBag.OtHours       ?? 0;
+
+    var greeting = DateTime.Now.Hour < 12 ? "Good Morning" : DateTime.Now.Hour < 17 ? "Good Afternoon" : "Good Evening";
+    var shiftName = employee?.Shift?.ShiftName ?? "—";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Welcome Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;">
+            <div class="card-body py-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-1">@greeting, @(user?.FirstName ?? "Employee")! ☀️</h3>
+                        <p class="mb-2 opacity-75">Here's your work status for today.</p>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <span><i class="bi bi-calendar3 me-1"></i>@DateTime.Today.ToString("MMMM dd, yyyy")</span>
+                            @if (employee?.Shift != null)
+                            {
+                                <span><i class="bi bi-clock me-1"></i>Shift: @shiftName</span>
+                            }
+                            @if (!string.IsNullOrEmpty(employee?.EmployeeNumber))
+                            {
+                                <span><i class="bi bi-person-badge me-1"></i>@employee.EmployeeNumber</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-inline-block p-3 rounded-circle" style="background:rgba(255,255,255,.2);">
+                            <i class="bi bi-person-workspace" style="font-size:3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-success">@presentCount</div>
+            <div class="text-muted small">Days Present</div>
+            <div class="text-muted" style="font-size:.75rem;">This Month</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-primary">@((leaveBalance?.VacationLeaveBalance ?? 0).ToString("0"))</div>
+            <div class="text-muted small">Vacation Leave</div>
+            <div class="text-muted" style="font-size:.75rem;">Days Available</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-warning">@otHours</div>
+            <div class="text-muted small">OT Hours</div>
+            <div class="text-muted" style="font-size:.75rem;">This Month</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-info">
+                @(lastPayroll != null ? $"₱{lastPayroll.NetPay:N0}" : "—")
+            </div>
+            <div class="text-muted small">Last Net Pay</div>
+            <div class="text-muted" style="font-size:.75rem;">
+                @(lastPayroll?.PayrollPeriod?.PayDate.ToString("MMM dd") ?? "No payroll yet")
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Status + Leave -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-clock me-2"></i>Today's Attendance
+            </div>
+            <div class="card-body text-center">
+                @if (todayAtt?.TimeIn != null)
+                {
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
+                    </div>
+                    <h5 class="text-success">Clocked In</h5>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <div class="p-2 rounded bg-light">
+                                <div class="text-muted small">Time In</div>
+                                <div class="fw-bold text-primary">@todayAtt.TimeIn.Value.ToString("hh:mm tt")</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 rounded bg-light">
+                                <div class="text-muted small">Time Out</div>
+                                <div class="fw-bold text-secondary">
+                                    @(todayAtt.TimeOut.HasValue ? todayAtt.TimeOut.Value.ToString("hh:mm tt") : "—")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (todayAtt.LateMinutes > 0)
+                    {
+                        <div class="alert alert-warning mt-3 py-2 small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Late by @todayAtt.LateMinutes minutes
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <i class="bi bi-clock text-muted" style="font-size:3rem;"></i>
+                    </div>
+                    <h5 class="text-muted">Not Yet Clocked In</h5>
+                    <p class="text-muted small">Use the kiosk to clock in with your QR code.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold"><i class="bi bi-calendar-x me-2"></i>Leave Balance</span>
+                <a href="/MyPortal/RequestLeave" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Request
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background:#dbeafe;">
+                            <div class="fs-4 fw-bold text-primary">@((leaveBalance?.VacationLeaveBalance ?? 0).ToString("0"))</div>
+                            <div class="text-muted small">Vacation</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background:#d1fae5;">
+                            <div class="fs-4 fw-bold text-success">@((leaveBalance?.SickLeaveBalance ?? 0).ToString("0"))</div>
+                            <div class="text-muted small">Sick Leave</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="mb-2">Recent Requests</h6>
+                @if (!recentLeaves.Any())
+                {
+                    <p class="text-muted small">No leave requests yet.</p>
+                }
+                else
+                {
+                    @foreach (var l in recentLeaves)
+                    {
+                        var badgeClass = l.Status switch
+                        {
+                            PayroTech.Models.Enums.LeaveStatus.Approved => "bg-success",
+                            PayroTech.Models.Enums.LeaveStatus.Rejected => "bg-danger",
+                            _ => "bg-warning text-dark"
+                        };
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <div>
+                                <div class="fw-medium small">@l.LeaveType</div>
+                                <div class="text-muted" style="font-size:.75rem;">@l.StartDate.ToString("MMM dd") – @l.EndDate.ToString("MMM dd, yyyy")</div>
+                            </div>
+                            <span class="badge @badgeClass">@l.Status</span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

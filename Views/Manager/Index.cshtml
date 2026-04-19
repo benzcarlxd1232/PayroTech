@@ -1,0 +1,375 @@
+@model PayroTech.Models.ViewModels.ManagerDashboardViewModel
+@{
+    ViewData["Title"] = "Manager Dashboard";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+    var noHR = Model.HRCount == 0;
+    var noAccountant = Model.AccountantCount == 0;
+}
+
+<!-- Alerts for Missing Staff -->
+@if (noHR || noAccountant)
+{
+    <div class="alert-section mb-4">
+        @if (noHR)
+        {
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem;"></i>
+                <div class="flex-grow-1">
+                    <strong>No HR Assigned</strong>
+                    <p class="mb-0 small">You need to add an HR staff to manage employee attendance, leave requests, and payroll preparation.</p>
+                </div>
+                <a href="/Manager/CreateStaff" class="btn btn-warning btn-sm ms-3">
+                    <i class="bi bi-plus-circle me-1"></i>Add HR
+                </a>
+            </div>
+        }
+        @if (noAccountant)
+        {
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
+                <div class="flex-grow-1">
+                    <strong>No Accountant Assigned</strong>
+                    <p class="mb-0 small">You need to add an Accountant to handle payroll distribution and salary disbursement.</p>
+                </div>
+                <a href="/Manager/CreateStaff" class="btn btn-info btn-sm ms-3">
+                    <i class="bi bi-plus-circle me-1"></i>Add Accountant
+                </a>
+            </div>
+        }
+    </div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Quick Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card pt-stagger-1">
+            <div class="pt-stats-value">@Model. Teams</div>
+            <div class="pt-stats-label">Total Teams</div>
+            <i class="bi bi-people pt-stats-icon"></i>
+            <div class="pt-trend up mt-2">
+                <i class="bi bi-arrow-up"></i> @(Model.TotalTeams > 0 ? "Active" : "No teams yet")
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card success pt-stagger-2">
+            <div class="pt-stats-value">@Model.TotalStaff</div>
+            <div class="pt-stats-label">Total Staff</div>
+            <i class="bi bi-person-badge pt-stats-icon"></i>
+            <div class="pt-trend mt-2">
+                <i class="bi bi-people"></i> All Roles
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card warning pt-stagger-3">
+            <div class="pt-stats-value">₱@Model.TotalBudget.ToString("N0")</div>
+            <div class="pt-stats-label">Total Budget</div>
+            <i class="bi bi-piggy-bank pt-stats-icon"></i>
+            <div class="pt-trend mt-2">
+                <i class="bi bi-graph-up"></i> This Period
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card pt-stagger-4">
+            <div class="pt-stats-value">@Model.PendingApprovals</div>
+            <div class="pt-stats-label">Pending Approvals</div>
+            <i class="bi bi-clock-history pt-stats-icon"></i>
+            <div class="pt-trend warning mt-2">
+                <i class="bi bi-exclamation-circle"></i> @(Model.PendingApprovals > 0 ? "Needs Attention" : "All Clear")
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="pt-card h-100">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-workspace me-2"></i>HR Staff</span>
+                <span class="pt-badge @(noHR ? "pt-badge-danger" : "pt-badge-success")">@Model.HRCount @(Model.HRCount == 1 ? "Person" : "People")</span>
+            </div>
+            <div class="pt-card-body text-center py-4">
+                @if (noHR)
+                {
+                    <i class="bi bi-person-plus text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2 mb-3">No HR staff assigned yet</p>
+                    <a href="/Manager/CreateStaff" class="pt-btn pt-btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Add HR Staff
+                    </a>
+                }
+                else
+                {
+                    <i class="bi bi-person-check text-success" style="font-size: 3rem;"></i>
+                    <p class="text-success mt-2 mb-0">@Model.HRCount HR Staff Active</p>
+                    <a href="/Manager/HRManagement" class="pt-btn pt-btn-ghost pt-btn-sm mt-2">View All</a>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="pt-card h-100">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calculator me-2"></i>Accountant Staff</span>
+                <span class="pt-badge @(noAccountant ? "pt-badge-danger" : "pt-badge-success")">@Model.AccountantCount @(Model.AccountantCount == 1 ? "Person" : "People")</span>
+            </div>
+            <div class="pt-card-body text-center py-4">
+                @if (noAccountant)
+                {
+                    <i class="bi bi-person-plus text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2 mb-3">No accountant assigned yet</p>
+                    <a href="/Manager/CreateStaff" class="pt-btn pt-btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Add Accountant
+                    </a>
+                }
+                else
+                {
+                    <i class="bi bi-person-check text-success" style="font-size: 3rem;"></i>
+                    <p class="text-success mt-2 mb-0">@Model.AccountantCount Accountant Active</p>
+                    <a href="/Manager/HRManagement" class="pt-btn pt-btn-ghost pt-btn-sm mt-2">View All</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Overview & Team Performance -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="pt-card">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-piggy-bank me-2"></i>Budget Allocation by Team</span>
+                <a href="/Manager/BudgetAllocation" class="pt-btn pt-btn-ghost pt-btn-sm">Manage Budget</a>
+            </div>
+            <div class="pt-card-body">
+                @if (Model.TeamBudgets.Any())
+                {
+                    @foreach (var team in Model.TeamBudgets)
+                    {
+                        var percentage = team.AllocatedBudget > 0 ? (team.UsedBudget / team.AllocatedBudget * 100) : 0;
+                        var remaining = team.AllocatedBudget - team.UsedBudget;
+                        var barClass = percentage >= 95 ? "danger" : (percentage >= 85 ? "warning" : "safe");
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>@team.TeamName</strong>
+                                    <span class="pt-badge pt-badge-neutral ms-2">@team.EmployeeCount employees</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="pt-text-secondary">₱@team.UsedBudget.ToString("N0")</span>
+                                    <span class="pt-text-muted"> / ₱@team.AllocatedBudget.ToString("N0")</span>
+                                </div>
+                            </div>
+                            <div class="budget-progress">
+                                <div class="budget-progress-bar @barClass" style="width: @percentage%;"></div>
+                            </div>
+                            <small class="pt-text-muted">@percentage.ToString("F0")% utilized • ₱@remaining.ToString("N0") remaining</small>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No teams/departments created yet</p>
+                        <a href="/Manager/Teams" class="pt-btn pt-btn-primary pt-btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>Create Team
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Pending Payroll Approvals -->
+        <div class="pt-card mb-4">
+            <div class="pt-card-header">
+                <i class="bi bi-clipboard-check me-2"></i>Pending Payroll Approvals
+            </div>
+            <div class="pt-card-body p-0">
+                @if (Model.PendingPayrolls.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var payroll in Model.PendingPayrolls)
+                        {
+                            <a href="/Manager/PayrollApproval" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@payroll.TeamName</strong>
+                                    <div class="small text-muted">Submitted by @payroll.SubmittedBy</div>
+                                </div>
+                                <span class="pt-badge @(payroll.IsLate ? "pt-badge-danger" : "pt-badge-warning")">
+                                    @(payroll.IsLate ? "Late" : "Pending")
+                                </span>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No pending approvals</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Incident Alerts -->
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-exclamation-triangle text-warning me-2"></i>Incident Reports
+            </div>
+            <div class="pt-card-body">
+                @if (Model.ActiveIncidents.Any())
+                {
+                    @foreach (var incident in Model.ActiveIncidents)
+                    {
+                        <div class="d-flex align-items-start mb-3 p-3 rounded" style="background: @(incident.Severity == "High" ? "#fef3c7" : "#dbeafe");">
+                            <i class="bi @(incident.Severity == "High" ? "bi-clock text-warning" : "bi-info-circle text-primary") me-3" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <strong class="d-block">@incident.Title</strong>
+                                <small class="text-muted">@incident.Description</small>
+                                <div class="mt-2">
+                                    <a href="/Manager/IncidentReports" class="pt-btn pt-btn-sm @(incident.Severity == "High" ? "pt-btn-warning" : "pt-btn-primary")">View Report</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-shield-check text-success" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No active incidents</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teams Overview -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-2"></i>Team Overview</span>
+                <a href="/Manager/Teams" class="pt-btn pt-btn-primary pt-btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Manage Teams
+                </a>
+            </div>
+            @if (Model.TeamBudgets.Any())
+            {
+                <table class="pt-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Employees</th>
+                            <th>Budget Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var colors = new[] { "#0891b2", "#059669", "#7c3aed", "#f59e0b", "#ef4444", "#6366f1" };
+                            var i = 0;
+                        }
+                        @foreach (var team in Model.TeamBudgets)
+                        {
+                            var percentage = team.AllocatedBudget > 0 ? (team.UsedBudget / team.AllocatedBudget * 100) : 0;
+                            var barClass = percentage >= 95 ? "danger" : (percentage >= 85 ? "warning" : "safe");
+                            var color = colors[i % colors.Length];
+                            i++;
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, @color, @color);">@team.TeamName.Substring(0, 1)</div>
+                                        <strong>@team.TeamName</strong>
+                                    </div>
+                                </td>
+                                <td><span class="pt-badge pt-badge-neutral">@team.EmployeeCount</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="budget-progress" style="width: 100px;">
+                                            <div class="budget-progress-bar @barClass" style="width: @percentage%;"></div>
+                                        </div>
+                                        <span class="small">@percentage.ToString("F0")%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="pt-btn pt-btn-ghost pt-btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No teams created yet</p>
+                    <a href="/Manager/Teams" class="pt-btn pt-btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Create First Team
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .budget-progress {
+        height: 8px;
+        background: var(--pt-gray-200);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .budget-progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    .budget-progress-bar.safe {
+        background: linear-gradient(90deg, #10b981, #34d399);
+    }
+
+    .budget-progress-bar.warning {
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+
+    .budget-progress-bar.danger {
+        background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid var(--pt-border-primary);
+        padding: 1rem;
+    }
+
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    .list-group-item:hover {
+        background: var(--pt-bg-secondary);
+    }
+</style>

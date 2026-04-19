@@ -1,0 +1,160 @@
+@{
+    ViewData["Title"] = "Incident Report";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">File Incident Report</h4>
+        <p class="text-muted mb-0">Report issues or delays to the company manager</p>
+    </div>
+    <a href="/hr" class="pt-btn pt-btn-ghost">
+        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Incident Form -->
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-exclamation-triangle text-warning me-2"></i>New Incident Report
+            </div>
+            <div class="pt-card-body">
+                <form>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Incident Type <span class="text-danger">*</span></label>
+                            <select class="form-select" required>
+                                <option value="">Select incident type...</option>
+                                <option value="late_payroll">Late Payroll Submission</option>
+                                <option value="budget_exceeded">Budget Exceeded</option>
+                                <option value="attendance_issue">Attendance System Issue</option>
+                                <option value="employee_dispute">Employee Dispute</option>
+                                <option value="data_error">Data/Calculation Error</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Priority Level <span class="text-danger">*</span></label>
+                            <select class="form-select" required>
+                                <option value="">Select priority...</option>
+                                <option value="low">Low - Can wait</option>
+                                <option value="medium">Medium - Needs attention</option>
+                                <option value="high">High - Urgent</option>
+                                <option value="critical">Critical - Immediate action required</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Incident Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" value="2026-03-29" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Subject <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" placeholder="Brief description of the incident" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Detailed Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="5" placeholder="Provide a detailed description of the incident, including what happened, when, and who was involved..." required></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Affected Employees</label>
+                        <select class="form-select" multiple size="4">
+                            <option>Juan Rodriguez - Senior Developer</option>
+                            <option>Maria Santos - Frontend Developer</option>
+                            <option>Ana Reyes - QA Engineer</option>
+                            <option>Carlos Lopez - Backend Developer</option>
+                            <option>Pedro Garcia - Backend Developer</option>
+                        </select>
+                        <div class="form-text">Hold Ctrl/Cmd to select multiple employees</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Root Cause Analysis</label>
+                        <textarea class="form-control" rows="3" placeholder="What do you believe caused this incident?"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Proposed Resolution</label>
+                        <textarea class="form-control" rows="3" placeholder="What actions have been taken or need to be taken to resolve this issue?"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Supporting Documents</label>
+                        <input type="file" class="form-control" multiple>
+                        <div class="form-text">Upload any relevant documents, screenshots, or evidence (max 10MB each)</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="pt-btn pt-btn-primary">
+                            <i class="bi bi-send me-2"></i>Submit Report
+                        </button>
+                        <button type="button" class="pt-btn pt-btn-ghost">
+                            <i class="bi bi-save me-2"></i>Save as Draft
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Guidelines -->
+        <div class="pt-card mb-4">
+            <div class="pt-card-header">
+                <i class="bi bi-info-circle text-info me-2"></i>Reporting Guidelines
+            </div>
+            <div class="pt-card-body">
+                <ul class="mb-0">
+                    <li class="mb-2">Be specific and factual in your description</li>
+                    <li class="mb-2">Include dates, times, and names when applicable</li>
+                    <li class="mb-2">Attach supporting documents if available</li>
+                    <li class="mb-2">Propose a resolution if possible</li>
+                    <li>Manager will be notified immediately upon submission</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Recent Reports -->
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-clock-history me-2"></i>Your Recent Reports
+            </div>
+            <div class="pt-card-body p-0">
+                <div class="p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>Late Payroll Submission</strong>
+                            <div class="small text-muted">Feb 28, 2026</div>
+                        </div>
+                        <span class="pt-badge pt-badge-success">Resolved</span>
+                    </div>
+                </div>
+                <div class="p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>Attendance System Downtime</strong>
+                            <div class="small text-muted">Feb 15, 2026</div>
+                        </div>
+                        <span class="pt-badge pt-badge-success">Resolved</span>
+                    </div>
+                </div>
+                <div class="p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>Employee Overtime Dispute</strong>
+                            <div class="small text-muted">Jan 20, 2026</div>
+                        </div>
+                        <span class="pt-badge pt-badge-success">Resolved</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

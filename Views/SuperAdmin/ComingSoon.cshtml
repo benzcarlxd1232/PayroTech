@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "Feature Coming Soon";
+    Layout = "_SuperAdminLayout";
+}
+
+<style>
+    /* Dark mode fixes */
+    body.dark-mode .card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode h3 {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .text-muted {
+        color: var(--text-muted) !important;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card text-center p-5">
+            <div class="mb-4">
+                <i class="bi bi-hourglass-split" style="font-size: 4rem; color: #7c3aed;"></i>
+            </div>
+            <h3 class="mb-2">@ViewData["Title"]</h3>
+            <p class="text-muted mb-0">
+                This feature is currently under development. Check back soon for updates!
+            </p>
+        </div>
+    </div>
+</div>

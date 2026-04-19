@@ -1,0 +1,227 @@
+@{
+    ViewData["Title"] = "Incident Reports";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Incident Reports</h4>
+        <p class="text-muted mb-0">Review and manage incident reports from HR personnel</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card warning">
+            <div class="pt-stats-value">3</div>
+            <div class="pt-stats-label">Open Incidents</div>
+            <i class="bi bi-exclamation-triangle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card danger">
+            <div class="pt-stats-value">2</div>
+            <div class="pt-stats-label">Late Submissions</div>
+            <i class="bi bi-clock pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">1</div>
+            <div class="pt-stats-label">Budget Requests</div>
+            <i class="bi bi-piggy-bank pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card success">
+            <div class="pt-stats-value">12</div>
+            <div class="pt-stats-label">Resolved This Month</div>
+            <i class="bi bi-check-circle pt-stats-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Active Incidents -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-card mb-4">
+            <div class="pt-card-header">
+                <i class="bi bi-exclamation-triangle text-warning me-2"></i>Active Incidents
+            </div>
+            <div class="pt-card-body p-0">
+                <!-- Incident 1 - Late Submission -->
+                <div class="p-4 border-bottom" style="background: rgba(239, 68, 68, 0.05);">
+                    <div class="row align-items-start">
+                        <div class="col-md-8">
+                            <div class="d-flex gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #ef4444, #f87171); width: 50px; height: 50px;">
+                                    <i class="bi bi-clock"></i>
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h5 class="mb-0">Late Payroll Submission</h5>
+                                        <span class="pt-badge pt-badge-danger">HIGH PRIORITY</span>
+                                    </div>
+                                    <p class="text-muted mb-2">Operations Team submitted payroll 2 days after the deadline.</p>
+                                    <div class="d-flex gap-4 text-muted small">
+                                        <span><i class="bi bi-person me-1"></i>Reported by: Ana Reyes</span>
+                                        <span><i class="bi bi-calendar me-1"></i>Mar 29, 2026</span>
+                                        <span><i class="bi bi-people me-1"></i>Operations Team</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <span class="pt-badge pt-badge-warning">Pending Review</span>
+                            </div>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm">
+                                    <i class="bi bi-eye me-1"></i>View Details
+                                </button>
+                                <button class="pt-btn pt-btn-primary pt-btn-sm">
+                                    <i class="bi bi-check-lg me-1"></i>Acknowledge
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 rounded" style="background: rgba(239, 68, 68, 0.1);">
+                        <strong class="text-danger"><i class="bi bi-info-circle me-1"></i>HR Explanation:</strong>
+                        <p class="mb-0 mt-1">Due to system maintenance on March 27-28, the HR team was unable to access the payroll system. The submission was completed as soon as the system was restored.</p>
+                    </div>
+                </div>
+
+                <!-- Incident 2 - Budget Request -->
+                <div class="p-4 border-bottom" style="background: rgba(37, 99, 235, 0.05);">
+                    <div class="row align-items-start">
+                        <div class="col-md-8">
+                            <div class="d-flex gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #2563eb, #60a5fa); width: 50px; height: 50px;">
+                                    <i class="bi bi-piggy-bank"></i>
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h5 class="mb-0">Budget Increase Request</h5>
+                                        <span class="pt-badge pt-badge-primary">REQUEST</span>
+                                    </div>
+                                    <p class="text-muted mb-2">HR & Admin Team requests additional ₱15,000 budget allocation.</p>
+                                    <div class="d-flex gap-4 text-muted small">
+                                        <span><i class="bi bi-person me-1"></i>Requested by: Pedro Garcia</span>
+                                        <span><i class="bi bi-calendar me-1"></i>Mar 28, 2026</span>
+                                        <span><i class="bi bi-cash me-1"></i>₱15,000</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <span class="pt-badge pt-badge-warning">Awaiting Decision</span>
+                            </div>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button class="pt-btn pt-btn-success pt-btn-sm">
+                                    <i class="bi bi-check-lg me-1"></i>Approve
+                                </button>
+                                <button class="pt-btn pt-btn-danger pt-btn-sm">
+                                    <i class="bi bi-x-lg me-1"></i>Deny
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 rounded" style="background: rgba(37, 99, 235, 0.1);">
+                        <strong class="text-primary"><i class="bi bi-info-circle me-1"></i>Justification:</strong>
+                        <p class="mb-0 mt-1">Two new employees were hired mid-month which exceeded our projected payroll. The additional budget will cover their prorated salaries for March.</p>
+                    </div>
+                </div>
+
+                <!-- Incident 3 - Attendance Issue -->
+                <div class="p-4">
+                    <div class="row align-items-start">
+                        <div class="col-md-8">
+                            <div class="d-flex gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); width: 50px; height: 50px;">
+                                    <i class="bi bi-calendar-x"></i>
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h5 class="mb-0">Excessive Absences Report</h5>
+                                        <span class="pt-badge pt-badge-warning">MODERATE</span>
+                                    </div>
+                                    <p class="text-muted mb-2">3 employees in Sales Team exceeded the allowable absence limit.</p>
+                                    <div class="d-flex gap-4 text-muted small">
+                                        <span><i class="bi bi-person me-1"></i>Reported by: Juan Dela Cruz</span>
+                                        <span><i class="bi bi-calendar me-1"></i>Mar 25, 2026</span>
+                                        <span><i class="bi bi-people me-1"></i>Sales Team</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <span class="pt-badge pt-badge-warning">Under Review</span>
+                            </div>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm">
+                                    <i class="bi bi-eye me-1"></i>View Details
+                                </button>
+                                <button class="pt-btn pt-btn-primary pt-btn-sm">
+                                    <i class="bi bi-chat-dots me-1"></i>Respond
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resolved Incidents -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header">
+                <i class="bi bi-check-circle text-success me-2"></i>Recently Resolved
+            </div>
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Incident</th>
+                        <th>Team</th>
+                        <th>Reported By</th>
+                        <th>Date</th>
+                        <th>Resolution</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Late Time-in Pattern</td>
+                        <td>Engineering</td>
+                        <td>Maria Santos</td>
+                        <td>Mar 20, 2026</td>
+                        <td>Warning issued to employees</td>
+                        <td><span class="pt-badge pt-badge-success">Resolved</span></td>
+                    </tr>
+                    <tr>
+                        <td>System Downtime</td>
+                        <td>All Teams</td>
+                        <td>IT Support</td>
+                        <td>Mar 18, 2026</td>
+                        <td>IT maintenance completed</td>
+                        <td><span class="pt-badge pt-badge-success">Resolved</span></td>
+                    </tr>
+                    <tr>
+                        <td>Overtime Approval Delay</td>
+                        <td>Operations</td>
+                        <td>Ana Reyes</td>
+                        <td>Mar 15, 2026</td>
+                        <td>Process streamlined</td>
+                        <td><span class="pt-badge pt-badge-success">Resolved</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

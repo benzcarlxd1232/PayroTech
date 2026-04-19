@@ -1,0 +1,151 @@
+@model PayroTech.Models.ViewModels.EditCompanyViewModel
+@using PayroTech.Models.Enums
+@{
+    ViewData["Title"] = "Edit Company";
+    Layout = "_SuperAdminLayout";
+}
+
+<style>
+    /* Dark mode fixes for Edit Company */
+    body.dark-mode .table-card,
+    body.dark-mode .card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .card-header {
+        background: rgba(0,0,0,0.2) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode h6.text-muted {
+        color: var(--text-muted) !important;
+    }
+    
+    body.dark-mode .form-label {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .form-check-label {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode hr {
+        border-color: var(--border-color) !important;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-building me-2"></i>Edit Company: @Model.CompanyCode</span>
+                <a href="/SuperAdmin/CompanyDetails/@Model.Id" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye me-1"></i>View Details
+                </a>
+            </div>
+            <div class="p-4">
+                <form asp-action="EditCompany" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CompanyCode" />
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3"><i class="bi bi-info-circle me-2"></i>Basic Information</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Company Code</label>
+                                <input type="text" class="form-control" value="@Model.CompanyCode" disabled />
+                                <small class="text-muted">Company code cannot be changed</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" asp-for="CompanyName" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Address</label>
+                                <textarea class="form-control" asp-for="Address" rows="2"></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="text" class="form-control" asp-for="ContactNumber" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" asp-for="Email" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3"><i class="bi bi-calendar-check me-2"></i>Subscription & Status</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" asp-for="SubscriptionStart" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">End Date</label>
+                                    <input type="date" class="form-control" asp-for="SubscriptionEnd" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" asp-for="IsActive" id="isActiveSwitch">
+                                        <label class="form-check-label" for="isActiveSwitch">Company Active</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" asp-for="IsSubscriptionActive" id="isSubActiveSwitch">
+                                        <label class="form-check-label" for="isSubActiveSwitch">Subscription Active</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-shield-lock me-2"></i>
+                                <strong>Privacy Notice:</strong> Employee data, departments, and government ID details are managed by the company administrator. SuperAdmin does not have access to this sensitive information.
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3"><i class="bi bi-grid-3x3-gap me-2"></i>Enabled Modules</h6>
+                            <p class="text-muted small mb-3">Select the modules this company has access to based on their subscription plan.</p>
+                            <div class="row">
+                                @foreach (ModuleType moduleType in Enum.GetValues(typeof(ModuleType)))
+                                {
+                                    var isChecked = Model.EnabledModules?.Contains(moduleType) ?? false;
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="EnabledModules"
+                                                   value="@((int)moduleType)" id="module_@moduleType"
+                                                   @(isChecked ? "checked" : "")>
+                                            <label class="form-check-label" for="module_@moduleType">
+                                                @moduleType
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="/SuperAdmin/Companies" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

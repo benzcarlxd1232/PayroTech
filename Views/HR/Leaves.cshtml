@@ -1,0 +1,273 @@
+@{
+    ViewData["Title"] = "Leave Requests";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+    var pendingLeaves = ViewBag.PendingLeaves as List<PayroTech.Models.Entities.Leave> ?? new List<PayroTech.Models.Entities.Leave>();
+    var approvedThisMonth = ViewBag.ApprovedThisMonth ?? 0;
+    var rejectedLeaves = ViewBag.RejectedLeaves ?? 0;
+    var onLeaveToday = ViewBag.OnLeaveToday ?? 0;
+    var recentDecisions = ViewBag.RecentDecisions as List<PayroTech.Models.Entities.Leave> ?? new List<PayroTech.Models.Entities.Leave>();
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Leave Requests</h4>
+        <p class="text-muted mb-0">Review and manage leave requests from your team</p>
+    </div>
+    <div class="d-flex gap-2">
+        <select class="form-select" style="width: 150px;">
+            <option>All Status</option>
+            <option>Pending</option>
+            <option>Approved</option>
+            <option>Rejected</option>
+        </select>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card @(pendingLeaves.Count > 0 ? "warning" : "")">
+            <div class="pt-stats-value">@pendingLeaves.Count</div>
+            <div class="pt-stats-label">Pending</div>
+            <i class="bi bi-hourglass-split pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card success">
+            <div class="pt-stats-value">@approvedThisMonth</div>
+            <div class="pt-stats-label">Approved This Month</div>
+            <i class="bi bi-check-circle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card @(rejectedLeaves > 0 ? "danger" : "")">
+            <div class="pt-stats-value">@rejectedLeaves</div>
+            <div class="pt-stats-label">Rejected</div>
+            <i class="bi bi-x-circle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">@onLeaveToday</div>
+            <div class="pt-stats-label">On Leave Today</div>
+            <i class="bi bi-calendar-x pt-stats-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Leave Requests -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-hourglass-split text-warning me-2"></i>Pending Leave Requests
+                @if (pendingLeaves.Count > 0)
+                {
+                    <span class="pt-badge pt-badge-warning ms-2">@pendingLeaves.Count pending</span>
+                }
+            </div>
+            <div class="pt-card-body p-0">
+                @if (pendingLeaves.Any())
+                {
+                    @foreach (var leave in pendingLeaves)
+                    {
+                        var initials = $"{leave.Employee.User?.FirstName?.Substring(0, 1) ?? ""}{leave.Employee.User?.LastName?.Substring(0, 1) ?? ""}";
+                        var leaveTypeClass = leave.LeaveType == PayroTech.Models.Enums.LeaveType.Sick ? "danger" : 
+                                           leave.LeaveType == PayroTech.Models.Enums.LeaveType.Vacation ? "primary" : "warning";
+                        var colors = new[] { 
+                            "linear-gradient(135deg, #2563eb, #60a5fa)", 
+                            "linear-gradient(135deg, #059669, #34d399)", 
+                            "linear-gradient(135deg, #7c3aed, #a855f7)", 
+                            "linear-gradient(135deg, #f59e0b, #fbbf24)", 
+                            "linear-gradient(135deg, #0891b2, #22d3ee)",
+                            "linear-gradient(135deg, #ef4444, #f87171)"
+                        };
+                        var colorIndex = Math.Abs(leave.EmployeeId.GetHashCode()) % colors.Length;
+                        var daysDiff = (leave.EndDate - leave.StartDate).Days + 1;
+                        
+                        <div class="p-4 border-bottom">
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="pt-avatar" style="background: @colors[colorIndex];">@initials</div>
+                                        <div>
+                                            <strong>@leave.Employee.User?.FirstName @leave.Employee.User?.LastName</strong>
+                                            <div class="text-muted small">@(leave.Employee.Department?.DepartmentName ?? "N/A") • @leave.Employee.EmployeeNumber</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex gap-4">
+                                        <div>
+                                            <div class="text-muted small">Leave Type</div>
+                                            <span class="pt-badge pt-badge-@leaveTypeClass">@leave.LeaveType</span>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Duration</div>
+                                            <strong>@leave.StartDate.ToString("MMM dd") - @leave.EndDate.ToString("MMM dd, yyyy")</strong>
+                                            <span class="text-muted small">(@daysDiff day@(daysDiff > 1 ? "s" : ""))</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button class="pt-btn pt-btn-ghost pt-btn-sm" onclick="viewLeaveDetails(@leave.Id)">
+                                            <i class="bi bi-eye me-1"></i>View
+                                        </button>
+                                        <button class="pt-btn pt-btn-success pt-btn-sm" onclick="approveLeave(@leave.Id)">
+                                            <i class="bi bi-check-lg me-1"></i>Approve
+                                        </button>
+                                        <button class="pt-btn pt-btn-danger pt-btn-sm" onclick="rejectLeave(@leave.Id)">
+                                            <i class="bi bi-x-lg me-1"></i>Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(leave.Reason))
+                            {
+                                <div class="mt-3 p-3 rounded" style="background: var(--pt-bg-secondary);">
+                                    <strong>Reason:</strong> @leave.Reason
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <p class="mt-2 mb-0">No pending leave requests</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Decisions -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header">
+                <i class="bi bi-clock-history me-2"></i>Recent Leave Decisions
+            </div>
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Leave Type</th>
+                        <th>Duration</th>
+                        <th>Days</th>
+                        <th>Decision</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (recentDecisions.Any())
+                    {
+                        @foreach (var decision in recentDecisions)
+                        {
+                            var initials = $"{decision.Employee.User?.FirstName?.Substring(0, 1) ?? ""}{decision.Employee.User?.LastName?.Substring(0, 1) ?? ""}";
+                            var colors = new[] { 
+                                "linear-gradient(135deg, #2563eb, #60a5fa)", 
+                                "linear-gradient(135deg, #059669, #34d399)", 
+                                "linear-gradient(135deg, #7c3aed, #a855f7)", 
+                                "linear-gradient(135deg, #f59e0b, #fbbf24)", 
+                                "linear-gradient(135deg, #0891b2, #22d3ee)",
+                                "linear-gradient(135deg, #ef4444, #f87171)"
+                            };
+                            var colorIndex = Math.Abs(decision.EmployeeId.GetHashCode()) % colors.Length;
+                            var leaveTypeClass = decision.LeaveType == PayroTech.Models.Enums.LeaveType.Sick ? "danger" : 
+                                               decision.LeaveType == PayroTech.Models.Enums.LeaveType.Vacation ? "primary" : "warning";
+                            var statusClass = decision.Status == PayroTech.Models.Enums.LeaveStatus.Approved ? "success" : "danger";
+                            var daysDiff = (decision.EndDate - decision.StartDate).Days + 1;
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="pt-avatar pt-avatar-sm" style="background: @colors[colorIndex];">@initials</div>
+                                        @decision.Employee.User?.FirstName @decision.Employee.User?.LastName
+                                    </div>
+                                </td>
+                                <td><span class="pt-badge pt-badge-@leaveTypeClass">@decision.LeaveType</span></td>
+                                <td>@decision.StartDate.ToString("MMM dd")@(daysDiff > 1 ? $" - {decision.EndDate:MMM dd}" : "")</td>
+                                <td>@daysDiff</td>
+                                <td><span class="pt-badge pt-badge-@statusClass">@decision.Status</span></td>
+                                <td>@(decision.UpdatedAt?.ToString("MMM dd, yyyy") ?? decision.CreatedAt.ToString("MMM dd, yyyy"))</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="bi bi-clock-history" style="font-size: 3rem; color: var(--text-muted);"></i>
+                                <p class="text-muted mt-2">No recent decisions</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function viewLeaveDetails(leaveId) {
+        // Redirect to a details page or show modal with real data
+        window.location.href = '/HR/LeaveDetails/' + leaveId;
+    }
+
+    function approveLeave(leaveId) {
+        if (confirm('Are you sure you want to approve this leave request?')) {
+            fetch('/HR/ApproveLeave/' + leaveId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Leave request approved successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while approving the leave request');
+            });
+        }
+    }
+
+    function rejectLeave(leaveId) {
+        const reason = prompt('Please provide a reason for rejection:');
+        if (reason) {
+            fetch('/HR/RejectLeave/' + leaveId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({ reason: reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Leave request rejected');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while rejecting the leave request');
+            });
+        }
+    }
+</script>

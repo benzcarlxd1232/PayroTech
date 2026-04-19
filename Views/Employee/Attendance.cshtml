@@ -1,0 +1,137 @@
+@{
+    ViewData["Title"] = "My Attendance";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    var employee     = ViewBag.Employee        as PayroTech.Models.Entities.Employee;
+    var monthAtt     = ViewBag.MonthAttendance as List<PayroTech.Models.Entities.Attendance> ?? new();
+    int viewMonth    = ViewBag.ViewMonth       ?? DateTime.Today.Month;
+    int viewYear     = ViewBag.ViewYear        ?? DateTime.Today.Year;
+    string monthName = ViewBag.MonthName       as string ?? "";
+    int presentCount = ViewBag.PresentCount    ?? 0;
+    int lateCount    = ViewBag.LateCount       ?? 0;
+    int otMinutes    = ViewBag.OtMinutes       ?? 0;
+
+    var prevMonth = new DateTime(viewYear, viewMonth, 1).AddMonths(-1);
+    var nextMonth = new DateTime(viewYear, viewMonth, 1).AddMonths(1);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">My Attendance</h4>
+        <p class="text-muted mb-0">@monthName</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="?month=@prevMonth.Month&year=@prevMonth.Year" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        <a href="?month=@nextMonth.Month&year=@nextMonth.Year" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-success">@presentCount</div>
+            <div class="text-muted small">Present</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-warning">@lateCount</div>
+            <div class="text-muted small">Late Arrivals</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-info">@(otMinutes / 60)h @(otMinutes % 60)m</div>
+            <div class="text-muted small">Overtime</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-primary">@monthAtt.Count</div>
+            <div class="text-muted small">Total Records</div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Table -->
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-list-ul me-2"></i>Attendance Log — @monthName
+    </div>
+    @if (!monthAtt.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
+            <h6>No attendance records for this month</h6>
+            <p class="text-muted small">Use the kiosk to clock in with your QR code.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Day</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Hours Worked</th>
+                        <th>Late</th>
+                        <th>Overtime</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in monthAtt)
+                    {
+                        var statusBadge = a.Status switch
+                        {
+                            PayroTech.Models.Enums.AttendanceStatus.Present => "bg-success-subtle text-success",
+                            PayroTech.Models.Enums.AttendanceStatus.Late    => "bg-warning-subtle text-warning",
+                            PayroTech.Models.Enums.AttendanceStatus.Absent  => "bg-danger-subtle text-danger",
+                            PayroTech.Models.Enums.AttendanceStatus.OnLeave => "bg-info-subtle text-info",
+                            _ => "bg-secondary-subtle text-secondary"
+                        };
+                        var isToday = a.Date == DateTime.Today;
+                        <tr @(isToday ? "class=table-primary" : "")>
+                            <td class="ps-4 fw-medium">@a.Date.ToString("MMM dd, yyyy")</td>
+                            <td class="text-muted small">@a.Date.ToString("dddd")</td>
+                            <td>@(a.TimeIn.HasValue ? a.TimeIn.Value.ToString("hh:mm tt") : "—")</td>
+                            <td>@(a.TimeOut.HasValue ? a.TimeOut.Value.ToString("hh:mm tt") : "—")</td>
+                            <td>
+                                @if (a.WorkedMinutes > 0)
+                                {
+                                    <span>@(a.WorkedMinutes / 60)h @(a.WorkedMinutes % 60)m</span>
+                                }
+                                else { <span class="text-muted">—</span> }
+                            </td>
+                            <td>
+                                @if (a.LateMinutes > 0)
+                                {
+                                    <span class="text-danger small">@a.LateMinutes min</span>
+                                }
+                                else { <span class="text-muted">—</span> }
+                            </td>
+                            <td>
+                                @if (a.OvertimeMinutes > 0)
+                                {
+                                    <span class="text-info small">@(a.OvertimeMinutes / 60)h @(a.OvertimeMinutes % 60)m</span>
+                                }
+                                else { <span class="text-muted">—</span> }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @statusBadge">@a.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,286 @@
+@{
+    ViewData["Title"] = "All Employees";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">All Employees</h4>
+        <p class="text-muted mb-0">Company-wide employee directory</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="pt-btn pt-btn-ghost">
+            <i class="bi bi-download me-2"></i>Export
+        </button>
+        <button class="pt-btn pt-btn-primary">
+            <i class="bi bi-person-plus me-2"></i>Add Employee
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">148</div>
+            <div class="pt-stats-label">Total Employees</div>
+            <i class="bi bi-people pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card success">
+            <div class="pt-stats-value">142</div>
+            <div class="pt-stats-label">Active</div>
+            <i class="bi bi-check-circle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card warning">
+            <div class="pt-stats-value">4</div>
+            <div class="pt-stats-label">On Leave</div>
+            <i class="bi bi-calendar-x pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card danger">
+            <div class="pt-stats-value">2</div>
+            <div class="pt-stats-label">Inactive</div>
+            <i class="bi bi-person-x pt-stats-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Search</label>
+                        <input type="text" class="form-control" placeholder="Search by name, ID, or email...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Department</label>
+                        <select class="form-select">
+                            <option>All Departments</option>
+                            <option>Engineering</option>
+                            <option>Design</option>
+                            <option>Marketing</option>
+                            <option>Sales</option>
+                            <option>Operations</option>
+                            <option>Finance</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Status</label>
+                        <select class="form-select">
+                            <option>All Status</option>
+                            <option>Active</option>
+                            <option>On Leave</option>
+                            <option>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Employment Type</label>
+                        <select class="form-select">
+                            <option>All Types</option>
+                            <option>Full-time</option>
+                            <option>Part-time</option>
+                            <option>Contract</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="pt-btn pt-btn-primary me-2">
+                            <i class="bi bi-search me-1"></i>Search
+                        </button>
+                        <button class="pt-btn pt-btn-ghost">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header">
+                <i class="bi bi-table me-2"></i>Employee Directory
+            </div>
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Position</th>
+                        <th>Employment Type</th>
+                        <th>Hire Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #2563eb, #60a5fa);">JR</div>
+                                <div>
+                                    <strong>Juan Rodriguez</strong>
+                                    <div class="small text-muted">EMP-001 • juan.rodriguez@@company.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-primary pt-badge-sm">Engineering</span></td>
+                        <td>Senior Developer</td>
+                        <td>Full-time</td>
+                        <td>Jan 15, 2023</td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #059669, #34d399);">MS</div>
+                                <div>
+                                    <strong>Maria Santos</strong>
+                                    <div class="small text-muted">EMP-002 • maria.santos@@company.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-primary pt-badge-sm">Engineering</span></td>
+                        <td>Frontend Developer</td>
+                        <td>Full-time</td>
+                        <td>Mar 20, 2023</td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                    <tr class="table-warning">
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">PG</div>
+                                <div>
+                                    <strong>Pedro Garcia</strong>
+                                    <div class="small text-muted">EMP-003 • pedro.garcia@@company.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-primary pt-badge-sm">Engineering</span></td>
+                        <td>Backend Developer</td>
+                        <td>Full-time</td>
+                        <td>Jun 10, 2023</td>
+                        <td><span class="pt-badge pt-badge-warning">On Leave</span></td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">AL</div>
+                                <div>
+                                    <strong>Angela Lopez</strong>
+                                    <div class="small text-muted">EMP-004 • angela.lopez@@company.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-info pt-badge-sm">Design</span></td>
+                        <td>UI/UX Designer</td>
+                        <td>Full-time</td>
+                        <td>Feb 1, 2024</td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #0891b2, #22d3ee);">RC</div>
+                                <div>
+                                    <strong>Roberto Cruz</strong>
+                                    <div class="small text-muted">EMP-005 • roberto.cruz@@company.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-warning pt-badge-sm">Marketing</span></td>
+                        <td>Marketing Manager</td>
+                        <td>Full-time</td>
+                        <td>Aug 15, 2022</td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #ec4899, #f472b6);">CM</div>
+                                <div>
+                                    <strong>Carmen Mendoza</strong>
+                                    <div class="small text-muted">EMP-006 • carmen.mendoza@@company.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-success pt-badge-sm">Sales</span></td>
+                        <td>Sales Representative</td>
+                        <td>Contract</td>
+                        <td>Nov 1, 2025</td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                    <tr class="table-danger">
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #6b7280, #9ca3af);">DT</div>
+                                <div>
+                                    <strong>David Torres</strong>
+                                    <div class="small text-muted">EMP-007 • david.torres@@company.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-primary pt-badge-sm">Engineering</span></td>
+                        <td>DevOps Engineer</td>
+                        <td>Full-time</td>
+                        <td>Sep 5, 2022</td>
+                        <td><span class="pt-badge pt-badge-danger">Inactive</span></td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="pt-pagination">
+                <small class="text-muted me-auto ps-1">Showing 7 of 148 employees</small>
+                <button class="pt-pagination-btn" disabled>
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="pt-pagination-btn active">1</button>
+                <button class="pt-pagination-btn">2</button>
+                <button class="pt-pagination-btn">3</button>
+                <span class="pt-pagination-ellipsis">…</span>
+                <button class="pt-pagination-btn">22</button>
+                <button class="pt-pagination-btn">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-warning {
+        background-color: rgba(245, 158, 11, 0.1) !important;
+    }
+    .table-danger {
+        background-color: rgba(239, 68, 68, 0.1) !important;
+    }
+</style>

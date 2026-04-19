@@ -1,0 +1,258 @@
+@{
+    ViewData["Title"] = "HR Management";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">HR Management</h4>
+        <p class="text-muted mb-0">Manage HR assignments and permissions</p>
+    </div>
+    <button class="pt-btn pt-btn-primary" data-bs-toggle="modal" data-bs-target="#addHRModal">
+        <i class="bi bi-person-plus me-2"></i>Add New HR
+    </button>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">5</div>
+            <div class="pt-stats-label">Total HR Personnel</div>
+            <i class="bi bi-people pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card success">
+            <div class="pt-stats-value">4</div>
+            <div class="pt-stats-label">Active</div>
+            <i class="bi bi-check-circle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card warning">
+            <div class="pt-stats-value">1</div>
+            <div class="pt-stats-label">On Leave</div>
+            <i class="bi bi-calendar-x pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">6</div>
+            <div class="pt-stats-label">Teams Covered</div>
+            <i class="bi bi-diagram-3 pt-stats-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- HR List -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-2"></i>HR Personnel</span>
+                <input type="text" class="form-control form-control-sm" placeholder="Search HR..." style="width: 200px;">
+            </div>
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>HR Personnel</th>
+                        <th>Email</th>
+                        <th>Assigned Teams</th>
+                        <th>Employees</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #059669, #34d399);">MG</div>
+                                <div>
+                                    <strong>Maria Garcia</strong>
+                                    <div class="small text-muted">HR-001</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>maria.garcia@@company.com</td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <span class="pt-badge pt-badge-primary pt-badge-sm">Engineering</span>
+                                <span class="pt-badge pt-badge-primary pt-badge-sm">Design</span>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-neutral">45 employees</span></td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-pencil"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #2563eb, #60a5fa);">JR</div>
+                                <div>
+                                    <strong>Jose Reyes</strong>
+                                    <div class="small text-muted">HR-002</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>jose.reyes@@company.com</td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <span class="pt-badge pt-badge-primary pt-badge-sm">Marketing</span>
+                                <span class="pt-badge pt-badge-primary pt-badge-sm">Sales</span>
+                            </div>
+                        </td>
+                        <td><span class="pt-badge pt-badge-neutral">38 employees</span></td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-pencil"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="table-warning">
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">AS</div>
+                                <div>
+                                    <strong>Ana Santos</strong>
+                                    <div class="small text-muted">HR-003</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>ana.santos@@company.com</td>
+                        <td>
+                            <span class="pt-badge pt-badge-primary pt-badge-sm">Operations</span>
+                        </td>
+                        <td><span class="pt-badge pt-badge-neutral">28 employees</span></td>
+                        <td><span class="pt-badge pt-badge-warning">On Leave</span></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-pencil"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">PC</div>
+                                <div>
+                                    <strong>Pedro Cruz</strong>
+                                    <div class="small text-muted">HR-004</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>pedro.cruz@@company.com</td>
+                        <td>
+                            <span class="pt-badge pt-badge-primary pt-badge-sm">Finance</span>
+                        </td>
+                        <td><span class="pt-badge pt-badge-neutral">15 employees</span></td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-pencil"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pt-avatar" style="background: linear-gradient(135deg, #0891b2, #22d3ee);">RL</div>
+                                <div>
+                                    <strong>Rosa Lopez</strong>
+                                    <div class="small text-muted">HR-005</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>rosa.lopez@@company.com</td>
+                        <td>
+                            <span class="pt-badge pt-badge-primary pt-badge-sm">Customer Support</span>
+                        </td>
+                        <td><span class="pt-badge pt-badge-neutral">22 employees</span></td>
+                        <td><span class="pt-badge pt-badge-success">Active</span></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-pencil"></i></button>
+                                <button class="pt-btn pt-btn-ghost pt-btn-sm text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add HR Modal -->
+<div class="modal fade" id="addHRModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Add New HR Personnel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" placeholder="First name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" placeholder="Last name">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" placeholder="email@@company.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" placeholder="+63 9XX XXX XXXX">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assign to Teams</label>
+                        <select class="form-select" multiple size="4">
+                            <option>Engineering</option>
+                            <option>Design</option>
+                            <option>Marketing</option>
+                            <option>Sales</option>
+                            <option>Operations</option>
+                            <option>Finance</option>
+                            <option>Customer Support</option>
+                        </select>
+                        <div class="form-text">Hold Ctrl/Cmd to select multiple teams</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="pt-btn pt-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="pt-btn pt-btn-primary">
+                    <i class="bi bi-check-lg me-2"></i>Add HR Personnel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-warning {
+        background-color: rgba(245, 158, 11, 0.1) !important;
+    }
+</style>

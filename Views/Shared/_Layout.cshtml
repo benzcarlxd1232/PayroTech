@@ -1,0 +1,747 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<PayroTech.Models.Entities.ApplicationUser> UserManager
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var userRole = user?.Role.ToString() ?? "User";
+    var userName = user != null ? $"{user.FirstName} {user.LastName}" : "User";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PayroTech ERP</title>
+    <!-- Design System & Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- PayroTech Design System -->
+    <link href="~/css/design-system.css" rel="stylesheet" asp-append-version="true">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --sidebar-bg: #1e293b;
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 70px;
+            --text-light: #333;
+            --text-muted: #64748b;
+            --bg-light: #f1f5f9;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --text-light: #e0e7ff;
+            --text-muted: #a1a5b4;
+            --bg-light: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+        }
+
+        body.dark-mode {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+        }
+
+        body.dark-mode .sidebar {
+            background: #0f172a;
+        }
+
+        body.dark-mode .top-navbar {
+            background: #1e293b;
+            border-bottom-color: var(--border-color);
+        }
+
+        body.dark-mode .main-content {
+            background-color: var(--bg-light);
+        }
+
+        body.dark-mode .stats-card,
+        body.dark-mode .table-card,
+        body.dark-mode .alert {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-light);
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            padding: 20px 0;
+            z-index: 1000;
+            transition: width 0.3s ease;
+            overflow-x: hidden;
+        }
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar.collapsed .sidebar-header {
+            padding: 0 10px 20px;
+            justify-content: center;
+        }
+        .sidebar-brand {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+        .sidebar-brand i {
+            color: var(--primary-color);
+            margin-right: 8px;
+            font-size: 1.5rem;
+        }
+        .sidebar.collapsed .sidebar-brand span {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-brand i {
+            margin-right: 0;
+        }
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.2s;
+        }
+        .sidebar-toggle:hover {
+            color: white;
+        }
+        .sidebar.collapsed .sidebar-toggle {
+            position: absolute;
+            right: 10px;
+        }
+        .sidebar-nav {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+        }
+        .sidebar-nav li a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .sidebar.collapsed .sidebar-nav li a {
+            padding: 12px;
+            justify-content: center;
+        }
+        .sidebar-nav li a:hover, .sidebar-nav li a.active {
+            background: rgba(37, 99, 235, 0.2);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        .sidebar.collapsed .sidebar-nav li a:hover,
+        .sidebar.collapsed .sidebar-nav li a.active {
+            border-left: none;
+            border-radius: 8px;
+            margin: 0 8px;
+        }
+        .sidebar-nav li a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .sidebar.collapsed .sidebar-nav li a i {
+            margin-right: 0;
+            font-size: 1.3rem;
+        }
+        .sidebar-nav li a span {
+            transition: opacity 0.2s ease;
+        }
+        .sidebar.collapsed .sidebar-nav li a span {
+            display: none;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px 30px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+        .top-navbar {
+            background: white;
+            padding: 15px 25px;
+            margin: -20px -30px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .stats-card h3 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .stats-card p {
+            color: #64748b;
+            margin: 0;
+        }
+        .stats-card .icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            opacity: 0.3;
+        }
+        .table-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .table-card .card-header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        .nav-section {
+            padding: 10px 20px 5px;
+            color: #64748b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .sidebar.collapsed .nav-section {
+            font-size: 0;
+            padding: 10px 0 5px;
+            text-align: center;
+        }
+        .sidebar.collapsed .nav-section::after {
+            content: '';
+            display: block;
+            width: 30px;
+            height: 1px;
+            background: #64748b;
+            margin: 0 auto;
+        }
+        .role-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        body.dark-mode .skeleton {
+            background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+            background-size: 200% 100%;
+        }
+
+        @@keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 1rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .skeleton-card {
+            height: 100px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-table-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Notification Center */
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.3rem;
+            color: #64748b;
+            transition: color 0.2s;
+        }
+
+        .notification-bell:hover {
+            color: #2563eb;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 350px;
+            max-height: 400px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1001;
+            overflow-y: auto;
+            display: none;
+        }
+
+        body.dark-mode .notification-dropdown {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+        }
+
+        .notification-item {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        body.dark-mode .notification-item {
+            border-bottom-color: #334155;
+        }
+
+        .notification-item:hover {
+            background: #f8fafc;
+        }
+
+        body.dark-mode .notification-item:hover {
+            background: #0f172a;
+        }
+
+        .notification-item.unread {
+            background: #eff6ff;
+        }
+
+        body.dark-mode .notification-item.unread {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.2s;
+            border-radius: 6px;
+        }
+
+        .theme-toggle:hover {
+            background: #e2e8f0;
+            color: #2563eb;
+        }
+
+        body.dark-mode .theme-toggle:hover {
+            background: #334155;
+        }
+
+        /* Data Export Button */
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background: #e2e8f0;
+            color: #2563eb;
+        }
+
+        body.dark-mode .export-btn {
+            background: #334155;
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+
+        body.dark-mode .export-btn:hover {
+            background: #475569;
+            color: #60a5fa;
+        }
+
+        .export-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: none;
+            min-width: 150px;
+        }
+
+        body.dark-mode .export-dropdown {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        .export-dropdown.show {
+            display: block;
+        }
+
+        .export-option {
+            padding: 10px 15px;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            color: #64748b;
+            transition: background 0.2s;
+        }
+
+        body.dark-mode .export-option {
+            color: #cbd5e1;
+        }
+
+        .export-option:hover {
+            background: #f8fafc;
+            color: #2563eb;
+        }
+
+        body.dark-mode .export-option:hover {
+            background: #334155;
+            color: #60a5fa;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item {
+            color: #64748b;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb-item:hover {
+            color: #2563eb;
+        }
+
+        .breadcrumb-item.active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .breadcrumb-separator {
+            color: #cbd5e1;
+        }
+
+        /* Smooth Transitions */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="sidebar-brand">
+                <i class="bi bi-box-seam"></i><span>PayroTech</span>
+            </a>
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="/" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")" title="Dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+
+            <div class="nav-section">Employee Management</div>
+            <li><a href="/Employee" title="Employees"><i class="bi bi-people"></i><span>Employees</span></a></li>
+            <li><a href="/Department" title="Departments"><i class="bi bi-diagram-3"></i><span>Departments</span></a></li>
+
+            <div class="nav-section">Time & Attendance</div>
+            <li><a href="/Attendance" title="Attendance"><i class="bi bi-clock"></i><span>Attendance</span></a></li>
+            <li><a href="/Overtime" title="Overtime"><i class="bi bi-clock-history"></i><span>Overtime</span></a></li>
+            <li><a href="/Leave" title="Leave"><i class="bi bi-calendar-check"></i><span>Leave</span></a></li>
+
+            <div class="nav-section">Payroll</div>
+            <li><a href="/Payroll" title="Payroll"><i class="bi bi-cash-stack"></i><span>Payroll</span></a></li>
+            <li><a href="/Payroll/Periods" title="Pay Periods"><i class="bi bi-calendar3"></i><span>Pay Periods</span></a></li>
+
+            @if (user?.Role == PayroTech.Models.Enums.UserRole.CompanyAdmin)
+            {
+                <div class="nav-section">Settings</div>
+                <li><a href="/Setup/Shifts" title="Shifts"><i class="bi bi-calendar-week"></i><span>Shifts</span></a></li>
+                <li><a href="/Setup/Holidays" title="Holidays"><i class="bi bi-calendar-event"></i><span>Holidays</span></a></li>
+            }
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="top-navbar">
+            <div>
+                <h4 class="mb-0">@ViewData["Title"]</h4>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notification Center -->
+                <div style="position: relative;">
+                    <div class="notification-bell" onclick="toggleNotifications()" title="Notifications">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 0.9rem;">
+                            Notifications
+                        </div>
+                        <div class="notification-item unread">
+                            <strong style="color: #2563eb;">Leave Request Approved</strong>
+                            <p style="margin: 5px 0 0; font-size: 0.85rem; color: #64748b;">Your leave request for next week has been approved.</p>
+                            <small style="color: #94a3b8;">2 minutes ago</small>
+                        </div>
+                        <div class="notification-item unread">
+                            <strong style="color: #2563eb;">Payroll Processed</strong>
+                            <p style="margin: 5px 0 0; font-size: 0.85rem; color: #64748b;">Your monthly payroll has been processed and is ready for download.</p>
+                            <small style="color: #94a3b8;">1 hour ago</small>
+                        </div>
+                        <div class="notification-item">
+                            <strong>Attendance Alert</strong>
+                            <p style="margin: 5px 0 0; font-size: 0.85rem; color: #64748b;">You were marked absent on 2026-03-28.</p>
+                            <small style="color: #94a3b8;">Yesterday</small>
+                        </div>
+                        <div style="padding: 12px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <a href="#" style="color: #2563eb; font-size: 0.9rem; text-decoration: none;">View all notifications</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+
+                <!-- User Info -->
+                <span class="text-muted">
+                    @userName
+                    @if (user?.Role == PayroTech.Models.Enums.UserRole.CompanyAdmin)
+                    {
+                        <span class="badge bg-primary role-badge ms-1">Admin</span>
+                    }
+                    else if (user?.Role == PayroTech.Models.Enums.UserRole.HR)
+                    {
+                        <span class="badge bg-info role-badge ms-1">HR</span>
+                    }
+                    else if (user?.Role == PayroTech.Models.Enums.UserRole.Supervisor)
+                    {
+                        <span class="badge bg-warning role-badge ms-1">Supervisor</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary role-badge ms-1">Employee</span>
+                    }
+                </span>
+                <a href="/Auth/Logout" class="btn btn-outline-danger btn-sm" onclick="document.getElementById('logoutForm').submit(); return false;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+                <form id="logoutForm" method="post" action="/Auth/Logout" style="display: none;"></form>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-x-circle me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <main>
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- PayroTech Design System JS -->
+    <script src="~/js/design-system.js" asp-append-version="true"></script>
+    <script>
+        // Legacy Theme Toggle (now delegates to PT.Theme)
+        function toggleTheme() {
+            PT.Theme.toggle();
+        }
+
+        // Notification Toggle
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close notifications when clicking outside
+        document.addEventListener('click', function(event) {
+            const notificationBell = document.querySelector('.notification-bell');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+
+            if (notificationBell && notificationDropdown && 
+                !notificationBell.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+
+        // Sidebar Toggle with smooth animation
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+
+            // Save state to localStorage
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+
+        // Restore sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
+            }
+
+            // Add page transition animation
+            document.body.classList.add('pt-animate-fadeIn');
+
+            // Initialize breadcrumb if container exists
+            const breadcrumbContainer = document.querySelector('.breadcrumb-nav, #breadcrumb');
+            if (breadcrumbContainer) {
+                PT.Breadcrumb.init(breadcrumbContainer);
+            }
+        });
+
+        // Export functionality using Design System
+        function showExportOptions(buttonElement) {
+            const dropdown = buttonElement.nextElementSibling;
+            dropdown.classList.toggle('show');
+        }
+
+        function exportData(format, tableId) {
+            const table = document.querySelector(tableId || 'table');
+            if (!table) {
+                PT.Toast.error('No data table found to export');
+                return;
+            }
+
+            // Extract table data
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            const rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+                const cells = Array.from(row.querySelectorAll('td'));
+                const rowData = {};
+                headers.forEach((header, index) => {
+                    rowData[header] = cells[index]?.textContent.trim() || '';
+                });
+                return rowData;
+            });
+
+            if (format === 'csv') {
+                PT.Export.toCSV(rows, 'payrotech-export.csv');
+                PT.Toast.success('Data exported as CSV');
+            } else if (format === 'json') {
+                PT.Export.toJSON(rows, 'payrotech-export.json');
+                PT.Toast.success('Data exported as JSON');
+            }
+
+            // Close dropdown
+            document.querySelectorAll('.export-dropdown').forEach(d => d.classList.remove('show'));
+        }
+
+        // Close export dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const exportBtns = document.querySelectorAll('.export-btn');
+            exportBtns.forEach(btn => {
+                const dropdown = btn.nextElementSibling;
+                if (dropdown && !btn.contains(event.target) && !dropdown.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+
+        // Show a toast notification (helper for server-side integration)
+        function showToast(type, message, title) {
+            PT.Toast[type](message, title);
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

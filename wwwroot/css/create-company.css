@@ -1,0 +1,419 @@
+/* ============================================================
+   PayroTech — Create Company Multi-Step Form
+   Themed to match SuperAdmin "Midnight Ocean" (purple).
+   Uses variables from superadmin.css:
+     --primary-color, --primary-light, --primary-dark,
+     --bg-page, --bg-card, --border-color,
+     --text-color, --text-muted-color
+   Dark mode: inherits via body.dark-mode (no extra setup needed).
+   ============================================================ */
+
+/* ---------- Local helper tokens (scoped) ---------- */
+.registration-container {
+  /* derived tints (work in light + dark because they're computed
+     from the live --primary-color / --bg-card values) */
+  --cc-primary-50:   color-mix(in srgb, var(--primary-color) 8%,  var(--bg-card));
+  --cc-primary-100:  color-mix(in srgb, var(--primary-color) 18%, var(--bg-card));
+  --cc-primary-soft: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  --cc-success:      #10b981;
+  --cc-success-soft: color-mix(in srgb, #10b981 12%, var(--bg-card));
+  --cc-bg-soft:      color-mix(in srgb, var(--primary-color) 4%, var(--bg-page));
+
+  --cc-ease: cubic-bezier(.4, 0, .2, 1);
+  --cc-transition-fast: 150ms var(--cc-ease);
+  --cc-transition: 220ms var(--cc-ease);
+  --cc-ring: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent);
+  --cc-lift: 0 10px 24px -10px color-mix(in srgb, var(--primary-dark) 40%, transparent);
+
+  --cc-radius-md: 8px;
+  --cc-radius-lg: 12px;
+  --cc-radius-xl: 16px;
+  --cc-radius-full: 999px;
+
+  --cc-space-1: 4px;
+  --cc-space-3: 12px;
+  --cc-space-4: 16px;
+  --cc-space-5: 20px;
+  --cc-space-6: 24px;
+
+  --cc-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, Consolas, monospace;
+
+  max-width: 900px;
+  margin-inline: auto;
+  padding-inline: 15px;
+  color: var(--text-color);
+}
+
+/* ---------- Stepper ---------- */
+#formStepper {
+  overflow-x: auto;
+  padding-block-end: 10px;
+  margin-inline: -15px;
+  padding-inline: 15px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-light) var(--bg-page);
+  scroll-behavior: smooth;
+}
+#formStepper > div { min-width: fit-content; }
+#formStepper > div > * { scroll-snap-align: start; }
+#formStepper::-webkit-scrollbar { height: 4px; }
+#formStepper::-webkit-scrollbar-track { background: var(--bg-page); border-radius: 4px; }
+#formStepper::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 4px; }
+#formStepper::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
+
+/* ---------- Step transitions ---------- */
+@keyframes pt-fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.step-content { display: none; }
+.step-content.active {
+  display: block;
+  animation: pt-fadeInUp 320ms var(--cc-ease) both;
+}
+
+/* ---------- Form section card ---------- */
+.form-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--cc-radius-xl);
+  padding: var(--cc-space-6);
+  margin-block-end: var(--cc-space-6);
+  color: var(--text-color);
+  transition:
+    border-color var(--cc-transition),
+    box-shadow var(--cc-transition),
+    background-color var(--cc-transition);
+}
+.form-section:focus-within {
+  border-color: var(--primary-light);
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--primary-dark) 30%, transparent);
+}
+
+.form-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-3);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-block-end: var(--cc-space-5);
+  padding-block-end: var(--cc-space-3);
+  border-bottom: 2px solid var(--cc-primary-100);
+  letter-spacing: -0.01em;
+}
+.form-section-title i {
+  inline-size: 40px;
+  block-size: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: #fff;
+  border-radius: var(--cc-radius-lg);
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--primary-dark) 50%, transparent);
+}
+
+/* ---------- Module cards ---------- */
+.module-card {
+  background: var(--cc-bg-soft);
+  border: 2px solid var(--border-color);
+  border-radius: var(--cc-radius-lg);
+  padding: var(--cc-space-4);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  color: var(--text-color);
+  transition:
+    transform var(--cc-transition),
+    border-color var(--cc-transition),
+    background-color var(--cc-transition),
+    box-shadow var(--cc-transition);
+}
+.module-card:hover {
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--cc-lift);
+}
+.module-card:active { transform: translateY(0); }
+.module-card:focus-visible {
+  outline: none;
+  box-shadow: var(--cc-ring);
+  border-color: var(--primary-color);
+}
+.module-card.selected {
+  border-color: var(--primary-color);
+  background: var(--cc-primary-50);
+}
+.module-card.disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.module-card .module-icon {
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--cc-radius-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+  margin-block-end: var(--cc-space-3);
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+}
+.module-card .module-check {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-end: 10px;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: var(--cc-radius-full);
+  background: var(--cc-success);
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  transform: scale(.6);
+  transition: transform var(--cc-transition);
+}
+.module-card.selected .module-check {
+  display: inline-flex;
+  transform: scale(1);
+}
+.module-card.default::before {
+  content: 'DEFAULT';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  background: var(--cc-success);
+  color: #fff;
+  font-size: .6rem;
+  padding: 2px 8px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+
+/* ---------- Plan cards ---------- */
+.plan-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--cc-radius-xl);
+  padding: var(--cc-space-5);
+  cursor: pointer;
+  position: relative;
+  color: var(--text-color);
+  transition:
+    transform var(--cc-transition),
+    border-color var(--cc-transition),
+    box-shadow var(--cc-transition);
+}
+.plan-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--primary-dark) 35%, transparent);
+  transform: translateY(-3px);
+}
+.plan-card:active { transform: translateY(-1px); }
+.plan-card:focus-visible {
+  outline: none;
+  box-shadow: var(--cc-ring);
+  border-color: var(--primary-color);
+}
+.plan-card.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--cc-primary-100);
+}
+.plan-card .plan-badge {
+  position: absolute;
+  inset-block-start: -10px;
+  inset-inline-end: 20px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: var(--cc-radius-full);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  box-shadow: 0 4px 10px -4px color-mix(in srgb, var(--primary-dark) 50%, transparent);
+}
+.plan-price {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.plan-price span {
+  font-size: .875rem;
+  font-weight: 400;
+  color: var(--text-muted-color);
+}
+
+/* ---------- Branch inputs ---------- */
+.branch-input-group {
+  background: var(--cc-bg-soft);
+  border-radius: var(--cc-radius-lg);
+  padding: var(--cc-space-4);
+  margin-block-end: var(--cc-space-3);
+  border: 1px solid var(--border-color);
+  transition: border-color var(--cc-transition), background-color var(--cc-transition);
+}
+.branch-input-group:focus-within {
+  border-color: var(--primary-light);
+  background: var(--bg-card);
+}
+.branch-input-group .branch-number {
+  inline-size: 30px;
+  block-size: 30px;
+  background: var(--primary-color);
+  color: #fff;
+  border-radius: var(--cc-radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Government compliance ---------- */
+.govt-compliance-card {
+  background: var(--cc-bg-soft);
+  border: 1px solid var(--border-color);
+  border-radius: var(--cc-radius-lg);
+  padding: var(--cc-space-4);
+  color: var(--text-color);
+  transition:
+    background-color var(--cc-transition),
+    border-color var(--cc-transition),
+    box-shadow var(--cc-transition);
+}
+.govt-compliance-card:hover { background: var(--bg-card); }
+.govt-compliance-card:focus-within {
+  border-color: var(--primary-light);
+  box-shadow: var(--cc-ring);
+}
+.govt-compliance-card.checked {
+  border-color: var(--cc-success);
+  background: var(--cc-success-soft);
+}
+
+/* ---------- Navigation buttons ---------- */
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cc-space-3);
+  margin-block-start: var(--cc-space-6);
+  padding-block-start: var(--cc-space-4);
+  border-top: 1px solid var(--border-color);
+}
+.navigation-buttons .btn { transition: transform var(--cc-transition-fast); }
+.navigation-buttons .btn:active { transform: translateY(1px); }
+
+/* ---------- Password display ---------- */
+.password-display {
+  font-family: var(--cc-font-mono);
+  background: var(--cc-bg-soft);
+  color: var(--text-color);
+  padding: var(--cc-space-3) var(--cc-space-4);
+  border-radius: var(--cc-radius-md);
+  border: 1px dashed var(--border-color);
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  user-select: all;
+  word-break: break-all;
+}
+
+/* ---------- Summary ---------- */
+.summary-item {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 2fr;
+  gap: var(--cc-space-4);
+  padding-block: var(--cc-space-3);
+  border-bottom: 1px solid var(--border-color);
+}
+.summary-item:last-child { border-bottom: none; }
+.summary-label { color: var(--text-muted-color); }
+.summary-value {
+  font-weight: 500;
+  color: var(--text-color);
+  text-align: end;
+  word-break: break-word;
+}
+
+/* ============================================================
+   Dark mode overrides — kicks in automatically with body.dark-mode
+   (Most surfaces inherit from --bg-card which already flips.
+    These fix tints that need a darker base.)
+   ============================================================ */
+body.dark-mode .registration-container {
+  --cc-primary-50:   color-mix(in srgb, var(--primary-color) 14%, var(--bg-card));
+  --cc-primary-100:  color-mix(in srgb, var(--primary-color) 28%, var(--bg-card));
+  --cc-bg-soft:      color-mix(in srgb, var(--primary-color) 8%,  var(--bg-card));
+  --cc-success-soft: color-mix(in srgb, #10b981 18%, var(--bg-card));
+}
+
+/* ============================================================
+   Container queries — cards adapt to their grid wrapper
+   ============================================================ */
+.module-card, .plan-card { container-type: inline-size; }
+@container (max-width: 220px) {
+  .module-card .module-icon,
+  .plan-card .plan-badge { transform: scale(.9); }
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 768px) {
+  .registration-container { padding-inline: 10px; }
+  .form-section { padding: var(--cc-space-4); }
+  .form-section-title { font-size: 1rem !important; }
+  .form-section-title i {
+    inline-size: 32px !important;
+    block-size: 32px !important;
+    font-size: .9rem !important;
+  }
+  .plan-card { padding: var(--cc-space-3) !important; }
+  .plan-price { font-size: 1.3rem !important; }
+  .module-card { padding: var(--cc-space-3) !important; }
+  .navigation-buttons {
+    flex-direction: column-reverse;
+    gap: var(--cc-space-3);
+  }
+  .navigation-buttons .btn { width: 100%; }
+}
+
+@media (max-width: 576px) {
+  .form-section {
+    padding: var(--cc-space-3);
+    margin-block-end: var(--cc-space-4);
+  }
+  .summary-item {
+    grid-template-columns: 1fr;
+    gap: var(--cc-space-1);
+  }
+  .summary-value { text-align: start; }
+}
+
+/* ============================================================
+   Accessibility — reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .registration-container,
+  .registration-container *,
+  .registration-container *::before,
+  .registration-container *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .module-card:hover,
+  .plan-card:hover { transform: none; }
+}

@@ -1,0 +1,118 @@
+@{
+    ViewData["Title"] = "Module Usage";
+    Layout = "_SuperAdminLayout";
+
+    var totalCompanies = (int)(ViewBag.TotalCompanies ?? 0);
+    var moduleStats = ViewBag.ModuleStats as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<!-- Module Usage Chart + Table -->
+<div class="row mb-4">
+    <div class="col-md-5 mb-4">
+        <div class="table-card h-100">
+            <div class="card-header">
+                <i class="bi bi-pie-chart me-2"></i>Module Adoption
+            </div>
+            <div class="p-4 d-flex align-items-center justify-content-center">
+                <canvas id="moduleDonut" style="max-height:320px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7 mb-4">
+        <div class="table-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-grid-3x3-gap me-2"></i>Module Statistics</span>
+                <small class="text-muted">@totalCompanies total companies</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Module</th>
+                            <th class="text-end">Companies Using</th>
+                            <th class="text-end">Adoption %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!moduleStats.Any())
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">No module data available.</td>
+                            </tr>
+                        }
+                        @foreach (var stat in moduleStats)
+                        {
+                            var count = (int)stat.Count;
+                            var pct = totalCompanies > 0 ? (double)count / totalCompanies * 100 : 0;
+                            var moduleType = stat.ModuleType?.ToString() ?? "Unknown";
+                            <tr>
+                                <td>
+                                    <i class="bi bi-grid me-2 text-primary"></i>
+                                    @moduleType
+                                </td>
+                                <td class="text-end fw-semibold">@count</td>
+                                <td class="text-end">
+                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                        <div class="progress flex-grow-1" style="height:6px;max-width:80px;">
+                                            <div class="progress-bar bg-primary" style="width:@pct.ToString("F0")%"></div>
+                                        </div>
+                                        <span class="text-muted small">@pct.ToString("F1")%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const moduleStats = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        (ViewBag.ModuleStats as IEnumerable<object>) ?? new List<object>()
+    ));
+
+    const labels = moduleStats.map(s => s.ModuleType ?? s.moduleType ?? 'Unknown');
+    const counts = moduleStats.map(s => s.Count ?? s.count ?? 0);
+
+    const colors = [
+        '#7c3aed','#3b82f6','#10b981','#f59e0b','#ec4899',
+        '#06b6d4','#84cc16','#f97316','#a855f7','#64748b'
+    ];
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#f1f5f9' : '#374151';
+
+    if (labels.length > 0) {
+        new Chart(document.getElementById('moduleDonut').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderColor: isDark ? '#1e293b' : '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: textColor, padding: 12, font: { size: 12 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.parsed} companies`
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+}

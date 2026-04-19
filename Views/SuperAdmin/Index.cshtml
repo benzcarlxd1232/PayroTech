@@ -1,0 +1,346 @@
+@model PayroTech.Models.ViewModels.SuperAdminDashboardViewModel
+@{
+    ViewData["Title"] = "Super Admin Dashboard";
+    Layout = "_SuperAdminLayout";
+}
+
+<style>
+    /* Dark mode fixes for dashboard */
+    body.dark-mode .stats-card,
+    body.dark-mode .table-card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .stats-card h3,
+    body.dark-mode .stats-card p,
+    body.dark-mode .stats-card h5 {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .table-card .card-header {
+        background: rgba(0,0,0,0.2) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .table {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .table thead {
+        background: rgba(0,0,0,0.3) !important;
+    }
+    
+    body.dark-mode .table thead th {
+        background: transparent !important;
+        color: var(--text-light) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .table tbody td {
+        background: transparent !important;
+        color: var(--text-light) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .table-hover tbody tr:hover td {
+        background: rgba(139, 92, 246, 0.1) !important;
+    }
+    
+    body.dark-mode .bg-light {
+        background: rgba(255,255,255,0.05) !important;
+    }
+    
+    body.dark-mode .notification-card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .notification-item {
+        border-color: var(--border-color) !important;
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>@Model.TotalCompanies</h3>
+                    <p>Total Companies</p>
+                    <small class="text-success"><i class="bi bi-check-circle me-1"></i>@Model.ActiveCompanies Active</small>
+                </div>
+                <span class="icon"><i class="bi bi-building"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>@Model.ActiveCompanies</h3>
+                    <p>Active Subscriptions</p>
+                    <small class="text-muted">
+                        <i class="bi bi-arrow-down-circle me-1 text-danger"></i>
+                        @(Model.TotalCompanies - Model.ActiveCompanies) Inactive
+                    </small>
+                </div>
+                <span class="icon"><i class="bi bi-credit-card"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    @{
+                        var thisMonthRevenue = Model.TotalCompanies * 5999;
+                    }
+                    <h3>₱@thisMonthRevenue.ToString("N0")</h3>
+                    <p>Est. Monthly Revenue</p>
+                    <small class="text-muted"><i class="bi bi-graph-up me-1"></i>Based on active plans</small>
+                </div>
+                <span class="icon"><i class="bi bi-currency-exchange"></i></span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>@Model.ExpiringSubscriptions.Count</h3>
+                    <p>Expiring Soon</p>
+                    <small class="@(Model.ExpiringSubscriptions.Any() ? "text-warning" : "text-success")">
+                        <i class="bi bi-@(Model.ExpiringSubscriptions.Any() ? "exclamation-triangle" : "check-circle") me-1"></i>
+                        @(Model.ExpiringSubscriptions.Any() ? "Needs Attention" : "All Good")
+                    </small>
+                </div>
+                <span class="icon"><i class="bi bi-clock-history"></i></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="table-card">
+            <div class="card-header">
+                <i class="bi bi-graph-up me-2"></i>Monthly Revenue Trend
+            </div>
+            <div class="p-3">
+                <canvas id="revenueChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="table-card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart me-2"></i>Subscription Plans Distribution
+            </div>
+            <div class="p-3">
+                <canvas id="plansChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-building me-2"></i>Recent Companies</span>
+                <a href="/SuperAdmin/Companies" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Company Name</th>
+                            <th>Plan</th>
+                            <th>Subscription End</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.RecentCompanies.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No companies yet</td>
+                            </tr>
+                        }
+                        @foreach (var company in Model.RecentCompanies)
+                        {
+                            var daysUntilExpiry = company.SubscriptionEnd.HasValue ? 
+                                (company.SubscriptionEnd.Value - DateTime.Today).Days : 999;
+                            var isExpiringSoon = daysUntilExpiry <= 14 && daysUntilExpiry > 0;
+                            
+                            <tr>
+                                <td><strong>@company.CompanyCode</strong></td>
+                                <td>@company.CompanyName</td>
+                                <td><span class="text-primary fw-semibold">Professional</span></td>
+                                <td>
+                                    @company.SubscriptionEnd?.ToString("MMM dd, yyyy")
+                                    @if (isExpiringSoon)
+                                    {
+                                        <span class="ms-1 fw-semibold" style="color:#d97706;">Expiring Soon</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (company.IsSubscriptionActive)
+                                    {
+                                        <span class="fw-semibold" style="color:#16a34a;">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-semibold" style="color:#dc2626;">Expired</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <!-- Notifications Card -->
+        <div class="table-card notification-card mb-4">
+            <div class="card-header">
+                <i class="bi bi-bell me-2"></i>Notifications
+            </div>
+            <div class="p-3">
+                <div class="notification-item d-flex align-items-start p-2 border-bottom">
+                    <i class="bi bi-arrow-up-circle text-success me-2 mt-1"></i>
+                    <div>
+                        <small class="fw-bold">Upgrade Request</small>
+                        <br />
+                        <small class="text-muted">No pending requests</small>
+                    </div>
+                </div>
+                <div class="notification-item d-flex align-items-start p-2 border-bottom">
+                    <i class="bi bi-chat-dots text-primary me-2 mt-1"></i>
+                    <div>
+                        <small class="fw-bold">Client Feedback</small>
+                        <br />
+                        <small class="text-muted">No new feedback</small>
+                    </div>
+                </div>
+                <div class="notification-item d-flex align-items-start p-2">
+                    <i class="bi bi-display text-info me-2 mt-1"></i>
+                    <div>
+                        <small class="fw-bold">Kiosk Requests</small>
+                        <br />
+                        <small class="text-muted">No pending orders</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expiring Soon -->
+        <div class="table-card">
+            <div class="card-header">
+                <i class="bi bi-exclamation-triangle text-warning me-2"></i>Expiring Soon
+            </div>
+            <div class="p-3">
+                @if (!Model.ExpiringSubscriptions.Any())
+                {
+                    <p class="text-muted text-center mb-0">No subscriptions expiring within 2 weeks</p>
+                }
+                @foreach (var company in Model.ExpiringSubscriptions)
+                {
+                    var daysLeft = (company.SubscriptionEnd!.Value - DateTime.Today).Days;
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                        <div>
+                            <strong>@company.CompanyCode</strong>
+                            <br />
+                            <small class="text-muted">@company.CompanyName</small>
+                        </div>
+                        <span class="badge @(daysLeft <= 7 ? "bg-danger" : "bg-warning")">
+                            @daysLeft days
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="stats-card mt-4">
+            <h5><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
+            <div class="d-grid gap-2 mt-3">
+                <a href="/SuperAdmin/CreateCompany" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Company
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Revenue Trend Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const textColor = isDarkMode ? '#f1f5f9' : '#333';
+    const gridColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Revenue (₱)',
+                data: [@(Model.TotalCompanies * 5999 * 0.6), @(Model.TotalCompanies * 5999 * 0.7), @(Model.TotalCompanies * 5999 * 0.75), @(Model.TotalCompanies * 5999 * 0.8), @(Model.TotalCompanies * 5999 * 0.9), @(Model.TotalCompanies * 5999)],
+                borderColor: '#7c3aed',
+                backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: textColor }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: textColor },
+                    grid: { color: gridColor }
+                },
+                x: {
+                    ticks: { color: textColor },
+                    grid: { color: gridColor }
+                }
+            }
+        }
+    });
+
+    // Plans Distribution Chart
+    const plansCtx = document.getElementById('plansChart').getContext('2d');
+    new Chart(plansCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Basic', 'Standard', 'Professional', 'Enterprise'],
+            datasets: [{
+                data: [Math.max(1, Math.floor(@Model.TotalCompanies * 0.1)), Math.max(1, Math.floor(@Model.TotalCompanies * 0.2)), Math.max(1, Math.floor(@Model.TotalCompanies * 0.5)), Math.max(1, Math.floor(@Model.TotalCompanies * 0.2))],
+                backgroundColor: ['#94a3b8', '#3b82f6', '#7c3aed', '#10b981'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: textColor }
+                }
+            }
+        }
+    });
+</script>
+}

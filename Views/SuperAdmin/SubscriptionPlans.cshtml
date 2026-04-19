@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Subscription Plans";
+    Layout = "_SuperAdminLayout";
+}
+
+<style>
+    /* Dark mode fixes */
+    body.dark-mode .table-card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .card-header {
+        background: rgba(0,0,0,0.2) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .text-muted {
+        color: var(--text-muted) !important;
+    }
+    
+    body.dark-mode .alert-info {
+        background: rgba(59, 130, 246, 0.15) !important;
+        border-color: rgba(59, 130, 246, 0.3) !important;
+        color: var(--text-light) !important;
+    }
+</style>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Subscription Plans</strong> - Manage subscription tiers and pricing levels.
+</div>
+
+<div class="table-card">
+    <div class="card-header">
+        <i class="bi bi-card-list me-2"></i>Subscription Plans
+    </div>
+    <div class="p-4 text-center text-muted">
+        <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+        <p class="mt-3">Feature coming soon...</p>
+    </div>
+</div>

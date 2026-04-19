@@ -1,0 +1,111 @@
+@model List<PayroTech.Models.ViewModels.ModuleInfo>
+@{
+    ViewData["Title"] = "System Modules";
+    Layout = "_SuperAdminLayout";
+}
+
+<style>
+    /* Dark mode fixes */
+    body.dark-mode .stats-card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .stats-card h5 {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .table-card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .card-header {
+        background: rgba(0,0,0,0.2) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .text-muted {
+        color: var(--text-muted) !important;
+    }
+    
+    body.dark-mode p,
+    body.dark-mode ol,
+    body.dark-mode li {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .alert-info {
+        background: rgba(59, 130, 246, 0.15) !important;
+        border-color: rgba(59, 130, 246, 0.3) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode a {
+        color: #a78bfa !important;
+    }
+</style>
+
+<div class="mb-4">
+    <p class="text-muted">Manage the modules available in the PayroTech ERP system. Each module can be enabled/disabled per company.</p>
+</div>
+
+<div class="row">
+    @foreach (var module in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="stats-card h-100">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">
+                            @switch (module.ModuleType)
+                            {
+                                case PayroTech.Models.Enums.ModuleType.Attendance:
+                                    <i class="bi bi-clock text-primary me-2"></i>
+                                    break;
+                                case PayroTech.Models.Enums.ModuleType.Payroll:
+                                    <i class="bi bi-cash-stack text-success me-2"></i>
+                                    break;
+                                case PayroTech.Models.Enums.ModuleType.Leave:
+                                    <i class="bi bi-calendar-check text-info me-2"></i>
+                                    break;
+                                case PayroTech.Models.Enums.ModuleType.Overtime:
+                                    <i class="bi bi-clock-history text-warning me-2"></i>
+                                    break;
+                                case PayroTech.Models.Enums.ModuleType.GovernmentCompliance:
+                                    <i class="bi bi-shield-check text-danger me-2"></i>
+                                    break;
+                                case PayroTech.Models.Enums.ModuleType.Reports:
+                                    <i class="bi bi-file-bar-graph text-secondary me-2"></i>
+                                    break;
+                            }
+                            @module.Name
+                        </h5>
+                        <span class="badge bg-secondary">@module.CompaniesUsingCount companies</span>
+                    </div>
+                </div>
+                <p class="text-muted small mb-0">@module.Description</p>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="table-card mt-4">
+    <div class="card-header">
+        <i class="bi bi-info-circle me-2"></i>Module Assignment Guide
+    </div>
+    <div class="p-4">
+        <p>To enable or disable modules for a specific company:</p>
+        <ol>
+            <li>Go to <a href="/SuperAdmin/Companies">Company Management</a></li>
+            <li>Click the <strong>Edit</strong> button for the desired company</li>
+            <li>Check or uncheck the modules you want to enable/disable</li>
+            <li>Save the changes</li>
+        </ol>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-lightbulb me-2"></i>
+            <strong>Tip:</strong> When creating a new company, you can select which modules to enable during the company creation process.
+        </div>
+    </div>
+</div>

@@ -1,0 +1,275 @@
+@model PayroTech.Models.Entities.Company
+@{
+    ViewData["Title"] = "Company Details";
+    Layout = "_SuperAdminLayout";
+    var admins = ViewBag.CompanyAdmins as List<PayroTech.Models.Entities.ApplicationUser>;
+}
+
+<style>
+    /* Dark mode fixes */
+    body.dark-mode .stats-card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .stats-card h5,
+    body.dark-mode .stats-card h6,
+    body.dark-mode .stats-card strong {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .table-card {
+        background: var(--bg-card) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .card-header {
+        background: rgba(0,0,0,0.2) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .text-muted {
+        color: var(--text-muted) !important;
+    }
+    
+    body.dark-mode .table {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .table td {
+        color: var(--text-light) !important;
+        border-color: var(--border-color) !important;
+    }
+    
+    body.dark-mode .bg-light,
+    body.dark-mode .list-item-card {
+        background: rgba(255,255,255,0.05) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode p,
+    body.dark-mode li,
+    body.dark-mode small {
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .btn-outline-secondary {
+        border-color: var(--border-color) !important;
+        color: var(--text-light) !important;
+    }
+    
+    body.dark-mode .btn-outline-secondary:hover {
+        background: rgba(255,255,255,0.1) !important;
+    }
+    
+    .list-item-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h5 class="mb-1">@Model.CompanyName</h5>
+        <span class="badge bg-secondary">@Model.CompanyCode</span>
+        @if (Model.IsActive && Model.IsSubscriptionActive)
+        {
+            <span class="badge bg-success ms-2">Active</span>
+        }
+        else
+        {
+            <span class="badge bg-danger ms-2">Inactive</span>
+        }
+    </div>
+    <div>
+        <a href="/SuperAdmin/EditCompany/@Model.Id" class="btn btn-primary">
+            <i class="bi bi-pencil me-2"></i>Edit Company
+        </a>
+        <a href="/SuperAdmin/Companies" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="stats-card">
+            <h6 class="text-muted mb-3"><i class="bi bi-info-circle me-2"></i>Company Information</h6>
+            <table class="table table-sm">
+                <tr>
+                    <td class="text-muted" style="width: 40%">Address</td>
+                    <td>@(Model.Address ?? "Not specified")</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">Contact</td>
+                    <td>@(Model.ContactNumber ?? "Not specified")</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">Email</td>
+                    <td>@(Model.Email ?? "Not specified")</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="stats-card">
+            <h6 class="text-muted mb-3"><i class="bi bi-credit-card me-2"></i>Government IDs</h6>
+            <table class="table table-sm">
+                <tr>
+                    <td class="text-muted" style="width: 40%">TIN</td>
+                    <td>@(Model.TIN ?? "Not specified")</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">SSS</td>
+                    <td>@(Model.SSSEmployerNumber ?? "Not specified")</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">PhilHealth</td>
+                    <td>@(Model.PhilHealthEmployerNumber ?? "Not specified")</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">Pag-IBIG</td>
+                    <td>@(Model.PagIbigEmployerNumber ?? "Not specified")</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stats-card">
+            <h6 class="text-muted mb-3"><i class="bi bi-calendar me-2"></i>Subscription</h6>
+            <table class="table table-sm">
+                <tr>
+                    <td class="text-muted" style="width: 40%">Start Date</td>
+                    <td>@Model.SubscriptionStart?.ToString("MMMM dd, yyyy")</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">End Date</td>
+                    <td>
+                        @Model.SubscriptionEnd?.ToString("MMMM dd, yyyy")
+                        @if (Model.SubscriptionEnd.HasValue && Model.SubscriptionEnd.Value <= DateTime.Today.AddDays(30))
+                        {
+                            <span class="badge bg-warning ms-2">Expiring Soon</span>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-muted">Status</td>
+                    <td>
+                        @if (Model.IsSubscriptionActive)
+                        {
+                            <span class="text-success"><i class="bi bi-check-circle me-1"></i>Active</span>
+                        }
+                        else
+                        {
+                            <span class="text-danger"><i class="bi bi-x-circle me-1"></i>Expired</span>
+                        }
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="stats-card">
+            <h6 class="text-muted mb-3"><i class="bi bi-grid me-2"></i>Enabled Modules</h6>
+            <div class="d-flex flex-wrap gap-2">
+                @if (Model.CompanyModules != null && Model.CompanyModules.Any(m => m.IsEnabled))
+                {
+                    @foreach (var module in Model.CompanyModules.Where(m => m.IsEnabled))
+                    {
+                        <span class="badge bg-primary">@module.ModuleType</span>
+                    }
+                }
+                else
+                {
+                    <span class="text-muted">No modules enabled</span>
+                }
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <h6 class="text-muted mb-3"><i class="bi bi-person-badge me-2"></i>Company Administrators</h6>
+            @if (admins != null && admins.Any())
+            {
+                <ul class="list-unstyled mb-0">
+                    @foreach (var admin in admins)
+                    {
+                        <li class="mb-2">
+                            <i class="bi bi-person me-2"></i>
+                            <strong>@admin.FirstName @admin.LastName</strong>
+                            <br />
+                            <small class="text-muted">@admin.Email</small>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <span class="text-muted">No administrators assigned</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="table-card">
+            <div class="card-header">
+                <i class="bi bi-diagram-3 me-2"></i>Departments (@(Model.Departments?.Count ?? 0))
+            </div>
+            <div class="p-3">
+                @if (Model.Departments != null && Model.Departments.Any())
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var dept in Model.Departments)
+                        {
+                            <li class="list-item-card">
+                                <strong>@dept.DepartmentName</strong>
+                                <span class="badge bg-secondary ms-2">@dept.DepartmentCode</span>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted text-center mb-0">No departments</p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="table-card">
+            <div class="card-header">
+                <i class="bi bi-people me-2"></i>Employees (@(Model.Employees?.Count ?? 0))
+            </div>
+            <div class="p-3">
+                @if (Model.Employees != null && Model.Employees.Any())
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var emp in Model.Employees.Take(5))
+                        {
+                            <li class="list-item-card d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@emp.FirstName @emp.LastName</strong>
+                                    <br />
+                                    <small class="text-muted">@emp.EmployeeNumber</small>
+                                </div>
+                                <span class="badge bg-info">@emp.BasicSalary.ToString("C", new System.Globalization.CultureInfo("en-PH"))</span>
+                            </li>
+                        }
+                        @if (Model.Employees.Count > 5)
+                        {
+                            <li class="text-center text-muted">
+                                <small>...and @(Model.Employees.Count - 5) more employees</small>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted text-center mb-0">No employees</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

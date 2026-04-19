@@ -1,0 +1,179 @@
+@model PayroTech.Models.ViewModels.FaceEnrollmentViewModel
+@{
+    ViewData["Title"] = "Profile Photo";
+    Layout = null; // Standalone — no sidebar
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Photo — PayroTech</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --green:#059669; --green-dark:#047857; }
+        body { font-family:'Inter',sans-serif; background:#f1f5f9; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+        .card { width:100%; max-width:480px; border-radius:16px; padding:2rem; box-shadow:0 4px 24px rgba(0,0,0,.09); border:none; }
+        .icon-wrap { width:56px;height:56px;background:linear-gradient(135deg,var(--green),#34d399);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;color:#fff; }
+        .progress { height:6px;border-radius:3px; }
+        .camera-wrap { position:relative;display:inline-block;border-radius:12px;overflow:hidden;border:2px solid #e2e8f0; }
+        #video,#canvas { display:block;border-radius:10px;max-width:100%;height:auto; }
+        #canvas { display:none; }
+        .face-guide { position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center; }
+        .face-oval { width:140px;height:190px;border:3px dashed var(--green);border-radius:50%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:.6rem; }
+        .guide-label { background:rgba(255,255,255,.92);padding:3px 10px;border-radius:6px;font-size:.75rem;color:var(--green-dark);font-weight:600; }
+        .status { text-align:center;font-size:.875rem;margin:.75rem 0; }
+        .status .title { font-weight:600; }
+        .status.ok .title { color:var(--green); }
+        .status.err .title { color:#dc2626; }
+        .btn-capture { width:100%;padding:.65rem;background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:.5rem; }
+        .btn-capture:hover { filter:brightness(1.08);transform:translateY(-1px); }
+        .btn-retake { width:100%;padding:.6rem;background:#f8fafc;color:#374151;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:.5rem; }
+        .btn-skip { width:100%;background:transparent;border:none;color:#9ca3af;font-size:.82rem;cursor:pointer;text-decoration:underline;padding:.4rem; }
+        .spinner-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999; }
+        .spinner-overlay.show { display:flex; }
+        .spinner-box { background:#fff;border-radius:12px;padding:2rem;text-align:center; }
+        .spinner { width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem; }
+        @@keyframes spin { to{transform:rotate(360deg)} }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="icon-wrap"><i class="bi bi-person-circle"></i></div>
+    <h5 class="text-center fw-bold mb-1">Profile Photo</h5>
+    <p class="text-center text-muted small mb-3">Hi <strong>@Model.UserName</strong> — capture your profile photo for your ID card.</p>
+
+    <!-- Progress -->
+    <div class="mb-3">
+        <div class="d-flex justify-content-between small text-muted mb-1"><span>Account Setup</span><span>Step 2 of 2</span></div>
+        <div class="progress"><div class="progress-bar bg-success" style="width:100%"></div></div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="alert alert-success py-2 small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Look straight at the camera, good lighting, no glasses if possible.
+    </div>
+
+    <!-- Camera -->
+    <div class="text-center mb-2">
+        <div class="camera-wrap">
+            <video id="video" width="320" height="240" autoplay playsinline></video>
+            <canvas id="canvas" width="320" height="240"></canvas>
+            <div class="face-guide" id="guide">
+                <div class="face-oval"><span class="guide-label">Align face here</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="status" class="status ok">
+        <div class="title">Initialising camera…</div>
+        <div class="desc text-muted">Please allow camera access</div>
+    </div>
+
+    <!-- Buttons -->
+    <button id="btnCapture" class="btn-capture" onclick="capture()">
+        <i class="bi bi-camera me-2"></i>Capture Photo
+    </button>
+    <button id="btnSubmit" class="btn-capture" style="display:none" onclick="submit()">
+        <i class="bi bi-check-circle me-2"></i>Use This Photo &amp; Continue
+    </button>
+    <button id="btnRetake" class="btn-retake" style="display:none" onclick="retake()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Retake
+    </button>
+    @if (!Model.IsRequired)
+    {
+        <button class="btn-skip" onclick="skip()">Skip for now (enroll later from profile)</button>
+    }
+</div>
+
+<!-- Loading overlay -->
+<div id="overlay" class="spinner-overlay">
+    <div class="spinner-box">
+        <div class="spinner"></div>
+        <p class="mb-0 text-muted small">Saving your photo…</p>
+    </div>
+</div>
+
+<script>
+let video, canvas, ctx, captured;
+
+document.addEventListener('DOMContentLoaded', () => {
+    video  = document.getElementById('video');
+    canvas = document.getElementById('canvas');
+    ctx    = canvas.getContext('2d');
+    startCamera();
+});
+
+async function startCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video:{ width:320, height:240, facingMode:'user' } });
+        video.srcObject = stream;
+        setStatus('ok', 'Camera ready', 'Click "Capture Photo" when positioned correctly');
+    } catch {
+        setStatus('err', 'Camera access denied', 'Please allow camera access and refresh');
+        document.getElementById('btnCapture').disabled = true;
+    }
+}
+
+function capture() {
+    ctx.drawImage(video, 0, 0, 320, 240);
+    captured = canvas.toDataURL('image/jpeg', 0.85);
+    video.style.display = 'none';
+    canvas.style.display = 'block';
+    document.getElementById('guide').style.display = 'none';
+    document.getElementById('btnCapture').style.display = 'none';
+    document.getElementById('btnSubmit').style.display = 'block';
+    document.getElementById('btnRetake').style.display = 'block';
+    setStatus('ok', 'Photo captured!', 'Review and click "Use This Photo" to continue');
+}
+
+function retake() {
+    video.style.display = 'block';
+    canvas.style.display = 'none';
+    document.getElementById('guide').style.display = 'flex';
+    document.getElementById('btnCapture').style.display = 'block';
+    document.getElementById('btnSubmit').style.display = 'none';
+    document.getElementById('btnRetake').style.display = 'none';
+    setStatus('ok', 'Camera ready', 'Click "Capture Photo" when positioned correctly');
+}
+
+async function submit() {
+    if (!captured) return;
+    document.getElementById('overlay').classList.add('show');
+    try {
+        const res = await fetch('@Url.Action("EnrollFace","Auth")', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ FaceData: captured })
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.href = data.redirectUrl || '/';
+        } else {
+            alert('Error: ' + data.message);
+            document.getElementById('overlay').classList.remove('show');
+        }
+    } catch {
+        alert('Network error. Please try again.');
+        document.getElementById('overlay').classList.remove('show');
+    }
+}
+
+async function skip() {
+    if (!confirm('Skip face enrollment? You can do it later from your profile.')) return;
+    await fetch('@Url.Action("SkipFaceEnrollment","Auth")', { method:'POST' });
+    window.location.href = '/';
+}
+
+function setStatus(type, title, desc) {
+    const el = document.getElementById('status');
+    el.className = 'status ' + type;
+    el.innerHTML = `<div class="title">${title}</div><div class="desc text-muted">${desc}</div>`;
+}
+</script>
+@Html.AntiForgeryToken()
+</body>
+</html>

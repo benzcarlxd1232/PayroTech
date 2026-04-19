@@ -1,0 +1,287 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<PayroTech.Models.Entities.ApplicationUser> UserManager
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PayroTech HR Portal</title>
+    <!-- Design System & Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- PayroTech Design System -->
+    <!-- PayroTech Design System -->
+    <link href="~/css/design-system.css" rel="stylesheet" asp-append-version="true">
+    <!-- Role Theme -->
+    <link href="~/css/themes/hr.css" rel="stylesheet" asp-append-version="true">
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/HR" class="sidebar-brand">
+                <i class="bi bi-people-fill"></i>PayroTech<span class="role-badge">HR</span>
+            </a>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+
+        <ul class="sidebar-nav">
+            <!-- Main Navigation -->
+            <li class="nav-header"><span>Main</span></li>
+            <li class="nav-item">
+                <a href="/HR" class="nav-link @(currentAction == "Index" ? "active" : "")">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            <!-- Team Management -->
+            <li class="nav-header"><span>My Team</span></li>
+            <li class="nav-item">
+                <a href="/HR/MyTeam" class="nav-link @(currentAction == "MyTeam" ? "active" : "")">
+                    <i class="bi bi-people"></i>
+                    <span>Team Members</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/HR/CreateEmployee" class="nav-link @(currentAction == "CreateEmployee" ? "active" : "")">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Create Employee</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/HR/Attendance" class="nav-link @(currentAction == "Attendance" ? "active" : "")">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Attendance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/HR/Leaves" class="nav-link @(currentAction == "Leaves" ? "active" : "")">
+                    <i class="bi bi-calendar-x"></i>
+                    <span>Leave Requests</span>
+                    <span class="nav-badge">5</span>
+                </a>
+            </li>
+
+            <!-- Payroll -->
+            <li class="nav-header"><span>Payroll</span></li>
+            <li class="nav-item">
+                <a href="/HR/Payroll" class="nav-link @(currentAction == "Payroll" ? "active" : "")">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Prepare Payroll</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/HR/BudgetTracker" class="nav-link @(currentAction == "BudgetTracker" ? "active" : "")">
+                    <i class="bi bi-piggy-bank"></i>
+                    <span>Budget Tracker</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/HR/SubmitPayroll" class="nav-link @(currentAction == "SubmitPayroll" ? "active" : "")">
+                    <i class="bi bi-send"></i>
+                    <span>Submit Payroll</span>
+                </a>
+            </li>
+
+            <!-- Reports -->
+            <li class="nav-header"><span>Reports</span></li>
+            <li class="nav-item">
+                <a href="/IncidentReport/Create" class="nav-link @(currentAction == "Create" ? "active" : "")">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Submit Incident Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/IncidentReport/MyReports" class="nav-link @(currentAction == "MyReports" ? "active" : "")">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>My Submitted Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/ChangePin" class="nav-link">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Change Kiosk PIN</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <div>
+                <h1 class="page-title">@ViewData["Title"]</h1>
+                @if (ViewData["Breadcrumb"] != null)
+                {
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/HR">Dashboard</a></li>
+                            <li class="breadcrumb-item active">@ViewData["Breadcrumb"]</li>
+                        </ol>
+                    </nav>
+                }
+            </div>
+
+            <div class="navbar-actions">
+                <!-- Budget Widget -->
+                <div class="budget-widget">
+                    <div class="budget-icon">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <div class="budget-info">
+                        <div class="budget-label">Remaining Budget</div>
+                        <div class="budget-amount">₱125,000.00</div>
+                    </div>
+                </div>
+
+                <!-- Deadline Alert -->
+                <div class="deadline-alert on-time">
+                    <i class="bi bi-clock"></i>
+                    <span>5 days left</span>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="bi bi-sun-fill" id="themeIcon"></i>
+                </button>
+
+                <!-- Notifications -->
+                <button class="notification-btn">
+                    <i class="bi bi-bell"></i>
+                    <span class="notification-badge">5</span>
+                </button>
+
+                <!-- User Dropdown -->
+                <div class="user-dropdown">
+                    <button class="user-btn" onclick="toggleDropdown()">
+                        <div class="user-avatar">
+                            @(user?.FirstName?.Substring(0, 1) ?? "H")
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">@(user != null ? $"{user.FirstName} {user.LastName}" : "HR Officer")</div>
+                            <div class="user-role">HR Personnel</div>
+                        </div>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="/HR/Profile" class="dropdown-item">
+                            <i class="bi bi-person"></i> My Profile
+                        </a>
+                        <a href="/HR/Settings" class="dropdown-item">
+                            <i class="bi bi-gear"></i> Settings
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0" id="logoutForm">
+                            <button type="button" class="dropdown-item w-100 text-start border-0 bg-transparent text-danger" onclick="confirmLogout()">
+                                <i class="bi bi-box-arrow-right"></i> Sign Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Logout Confirmation Modal -->
+        <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoutModalLabel">
+                            <i class="bi bi-box-arrow-right me-2"></i>Confirm Logout
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to logout from PayroTech?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="document.getElementById('logoutForm').submit();">
+                            <i class="bi bi-box-arrow-right me-1"></i>Yes, Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        @RenderBody()
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Logout Confirmation
+        function confirmLogout() {
+            var logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
+            logoutModal.show();
+        }
+        
+        // Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const icon = document.getElementById('themeIcon');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('bi-sun-fill');
+                icon.classList.add('bi-moon-fill');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                icon.classList.remove('bi-moon-fill');
+                icon.classList.add('bi-sun-fill');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // User Dropdown
+        function toggleDropdown() {
+            document.getElementById('userDropdown').classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('userDropdown')?.classList.remove('show');
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Restore sidebar state
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
+            }
+
+            // Restore theme
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('themeIcon').classList.remove('bi-sun-fill');
+                document.getElementById('themeIcon').classList.add('bi-moon-fill');
+            }
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

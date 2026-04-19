@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Financial Reports";
+    Layout = "~/Views/Shared/_AccountantLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Financial Reports</h4>
+        <p class="text-muted mb-0">Payroll and financial summaries</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-cash-stack fs-1 text-success d-block mb-3"></i>
+                <h6>Payroll Summary</h6>
+                <p class="text-muted small">Monthly and annual payroll totals by department</p>
+                <a href="/Accountant/PayrollHistory" class="btn btn-outline-success btn-sm">View Report</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-people fs-1 text-primary d-block mb-3"></i>
+                <h6>Employee Payslips</h6>
+                <p class="text-muted small">Individual payslip records for all employees</p>
+                <a href="/Accountant/Payslips" class="btn btn-outline-primary btn-sm">View Payslips</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-hourglass-split fs-1 text-warning d-block mb-3"></i>
+                <h6>Pending Distribution</h6>
+                <p class="text-muted small">Approved payrolls awaiting salary distribution</p>
+                <a href="/Accountant/PendingPayrolls" class="btn btn-outline-warning btn-sm">View Pending</a>
+            </div>
+        </div>
+    </div>
+</div>

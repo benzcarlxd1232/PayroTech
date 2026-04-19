@@ -1,0 +1,203 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<PayroTech.Models.Entities.ApplicationUser> UserManager
+@model List<PayroTech.Models.Entities.IDRequest>
+@{
+    ViewData["Title"] = "My ID Requests";
+    var user = await UserManager.GetUserAsync(User);
+    var activeTab = ViewBag.ActiveTab ?? "active";
+    
+    if (user?.Role == PayroTech.Models.Enums.UserRole.HR)
+    {
+        Layout = "~/Views/Shared/_HRLayout.cshtml";
+    }
+    else if (user?.Role == PayroTech.Models.Enums.UserRole.Accountant)
+    {
+        Layout = "~/Views/Shared/_AccountantLayout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+    }
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="bi bi-card-list me-2"></i>My ID Requests</h4>
+        @if (activeTab == "active")
+        {
+            <a href="@Url.Action("Request")" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>New Request
+            </a>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="pt-card">
+        <!-- Tabs -->
+        <div class="pt-card-header border-bottom-0">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link @(activeTab == "active" ? "active" : "")" href="?tab=active">
+                        <i class="bi bi-clock-history me-1"></i> Active Requests
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(activeTab == "archive" ? "active" : "")" href="?tab=archive">
+                        <i class="bi bi-archive me-1"></i> Archive
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="pt-card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-muted);"></i>
+                    <p class="text-muted mt-3">
+                        @if (activeTab == "active")
+                        {
+                            <text>No active requests. Request a new ID card to get started.</text>
+                        }
+                        else
+                        {
+                            <text>No archived requests yet.</text>
+                        }
+                    </p>
+                    @if (activeTab == "active")
+                    {
+                        <a href="@Url.Action("Request")" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle me-2"></i>Submit Your First Request
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="pt-table">
+                        <thead>
+                            <tr>
+                                <th>Date Requested</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Approved By</th>
+                                <th>Approved Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var request in Model)
+                            {
+                                <tr>
+                                    <td>@request.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            @request.Reason
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Pending)
+                                        {
+                                            <span class="pt-badge pt-badge-warning">
+                                                <i class="bi bi-clock me-1"></i>Pending
+                                            </span>
+                                        }
+                                        else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Approved)
+                                        {
+                                            <span class="pt-badge pt-badge-success">
+                                                <i class="bi bi-check-circle me-1"></i>Approved
+                                            </span>
+                                        }
+                                        else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Rejected)
+                                        {
+                                            <span class="pt-badge pt-badge-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Rejected
+                                            </span>
+                                        }
+                                        else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Printed)
+                                        {
+                                            <span class="pt-badge pt-badge-neutral">
+                                                <i class="bi bi-printer me-1"></i>Printed
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (request.ApprovedBy != null)
+                                        {
+                                            @request.ApprovedBy.FullName
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (request.ApprovedAt.HasValue)
+                                        {
+                                            @request.ApprovedAt.Value.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Approved && !request.IsPrinted)
+                                        {
+                                            <a href="@Url.Action("Print", new { id = request.Id })" class="btn btn-sm btn-success">
+                                                <i class="bi bi-printer me-1"></i>Print ID
+                                            </a>
+                                        }
+                                        else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Printed)
+                                        {
+                                            <span class="text-muted">
+                                                <i class="bi bi-check-circle me-1"></i>Printed on @request.PrintedAt?.ToString("MMM dd")
+                                            </span>
+                                        }
+                                        else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Rejected && !string.IsNullOrEmpty(request.ApprovalNotes))
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                    data-bs-toggle="tooltip" title="@request.ApprovalNotes">
+                                                <i class="bi bi-info-circle"></i> View Notes
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+}

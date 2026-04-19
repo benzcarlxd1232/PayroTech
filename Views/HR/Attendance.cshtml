@@ -1,0 +1,344 @@
+@{
+    ViewData["Title"] = "Attendance";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+    var attendanceRecords = ViewBag.AttendanceRecords as List<PayroTech.Models.Entities.Attendance> ?? new List<PayroTech.Models.Entities.Attendance>();
+    var allEmployees = ViewBag.AllEmployees as List<PayroTech.Models.Entities.Employee> ?? new List<PayroTech.Models.Entities.Employee>();
+    var presentCount = ViewBag.PresentCount ?? 0;
+    var lateCount = ViewBag.LateCount ?? 0;
+    var absentCount = ViewBag.AbsentCount ?? 0;
+    var onLeaveCount = ViewBag.OnLeaveCount ?? 0;
+    var onLeaveToday = ViewBag.OnLeaveToday as List<PayroTech.Models.Entities.Leave> ?? new List<PayroTech.Models.Entities.Leave>();
+    var selectedDate = ViewBag.SelectedDate as DateTime? ?? DateTime.Today;
+    
+    var lateArrivals = attendanceRecords.Where(a => a.LateMinutes > 0).ToList();
+    var presentEmployeeIds = attendanceRecords.Select(a => a.EmployeeId).ToList();
+    var absentEmployees = allEmployees.Where(e => !presentEmployeeIds.Contains(e.Id)).ToList();
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Attendance Monitoring</h4>
+        <p class="text-muted mb-0">Track your team's attendance in real-time</p>
+    </div>
+    <div class="d-flex gap-2">
+        <input type="date" class="form-control" value="@selectedDate.ToString("yyyy-MM-dd")" style="width: 180px;" onchange="window.location.href='/HR/Attendance?date=' + this.value">
+        <button class="pt-btn pt-btn-ghost" onclick="exportData('csv', '#attendanceTable')">
+            <i class="bi bi-download me-2"></i>Export
+        </button>
+    </div>
+</div>
+
+<!-- Today's Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card success">
+            <div class="pt-stats-value">@presentCount</div>
+            <div class="pt-stats-label">Present</div>
+            <i class="bi bi-check-circle pt-stats-icon"></i>
+            @if (allEmployees.Count > 0)
+            {
+                var rate = (int)((presentCount / (double)allEmployees.Count) * 100);
+                <div class="pt-trend up mt-2">
+                    <i class="bi bi-arrow-up"></i> @rate%
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card warning">
+            <div class="pt-stats-value">@lateCount</div>
+            <div class="pt-stats-label">Late</div>
+            <i class="bi bi-clock pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card danger">
+            <div class="pt-stats-value">@absentCount</div>
+            <div class="pt-stats-label">Absent</div>
+            <i class="bi bi-x-circle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">@onLeaveCount</div>
+            <div class="pt-stats-label">On Leave</div>
+            <i class="bi bi-calendar-x pt-stats-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Status -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-clock text-warning me-2"></i>Late Arrivals Today
+            </div>
+            <div class="pt-card-body">
+                @if (lateArrivals.Any())
+                {
+                    @foreach (var late in lateArrivals.Take(3))
+                    {
+                        var initials = $"{late.Employee.User?.FirstName?.Substring(0, 1) ?? ""}{late.Employee.User?.LastName?.Substring(0, 1) ?? ""}";
+                        var lateMinutes = late.LateMinutes;
+                        <div class="d-flex align-items-center gap-3 p-3 rounded mb-2" style="background: #fef3c7;">
+                            <div class="pt-avatar" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">@initials</div>
+                            <div>
+                                <strong>@late.Employee.User?.FirstName @late.Employee.User?.LastName</strong>
+                                <div class="small text-muted">@(late.Employee.Department?.DepartmentName ?? "N/A")</div>
+                                <div class="text-warning small">
+                                    <i class="bi bi-clock me-1"></i>Arrived at @late.TimeIn?.ToString("h:mm tt") (@lateMinutes mins late)
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                        <p class="mt-2 mb-0">No late arrivals today</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-x-circle text-danger me-2"></i>Absent Today
+            </div>
+            <div class="pt-card-body">
+                @if (absentEmployees.Any())
+                {
+                    @foreach (var absent in absentEmployees.Take(3))
+                    {
+                        var initials = $"{absent.User?.FirstName?.Substring(0, 1) ?? ""}{absent.User?.LastName?.Substring(0, 1) ?? ""}";
+                        <div class="d-flex align-items-center gap-3 p-3 rounded mb-2" style="background: #fee2e2;">
+                            <div class="pt-avatar" style="background: linear-gradient(135deg, #ef4444, #f87171);">@initials</div>
+                            <div>
+                                <strong>@absent.User?.FirstName @absent.User?.LastName</strong>
+                                <div class="small text-muted">@(absent.Department?.DepartmentName ?? "N/A")</div>
+                                <div class="text-danger small">
+                                    <i class="bi bi-x-circle me-1"></i>No time-in recorded
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                        <p class="mt-2 mb-0">Perfect attendance!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-calendar-x text-primary me-2"></i>On Leave Today
+            </div>
+            <div class="pt-card-body">
+                @if (onLeaveToday.Any())
+                {
+                    @foreach (var leave in onLeaveToday.Take(3))
+                    {
+                        var initials = $"{leave.Employee.User?.FirstName?.Substring(0, 1) ?? ""}{leave.Employee.User?.LastName?.Substring(0, 1) ?? ""}";
+                        var badgeClass = leave.LeaveType == PayroTech.Models.Enums.LeaveType.Sick ? "danger" : 
+                                       leave.LeaveType == PayroTech.Models.Enums.LeaveType.Vacation ? "primary" : "warning";
+                        <div class="d-flex align-items-center gap-3 p-3 rounded mb-2" style="background: #dbeafe;">
+                            <div class="pt-avatar" style="background: linear-gradient(135deg, #2563eb, #60a5fa);">@initials</div>
+                            <div>
+                                <strong>@leave.Employee.User?.FirstName @leave.Employee.User?.LastName</strong>
+                                <div class="small">
+                                    <span class="pt-badge pt-badge-@badgeClass pt-badge-sm">@leave.LeaveType</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                        <p class="mt-2 mb-0">No one on leave today</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-table me-2"></i>Attendance Log - @selectedDate.ToString("MMMM dd, yyyy")</span>
+                <input type="text" class="form-control form-control-sm" placeholder="Search employee..." style="width: 200px;" id="attendanceSearch">
+            </div>
+            <table class="pt-table" id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Hours Worked</th>
+                        <th>OT Hours</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (allEmployees.Any())
+                    {
+                        @foreach (var employee in allEmployees)
+                        {
+                            var attendance = attendanceRecords.FirstOrDefault(a => a.EmployeeId == employee.Id);
+                            var initials = $"{employee.User?.FirstName?.Substring(0, 1) ?? ""}{employee.User?.LastName?.Substring(0, 1) ?? ""}";
+                            var colors = new[] { 
+                                "linear-gradient(135deg, #2563eb, #60a5fa)", 
+                                "linear-gradient(135deg, #059669, #34d399)", 
+                                "linear-gradient(135deg, #7c3aed, #a855f7)", 
+                                "linear-gradient(135deg, #f59e0b, #fbbf24)", 
+                                "linear-gradient(135deg, #0891b2, #22d3ee)",
+                                "linear-gradient(135deg, #ef4444, #f87171)"
+                            };
+                            var colorIndex = Math.Abs(employee.Id.GetHashCode()) % colors.Length;
+                            var isOnLeave = onLeaveToday.Any(l => l.EmployeeId == employee.Id);
+                            var isLate = attendance != null && attendance.LateMinutes > 0;
+                            var rowClass = isLate ? "table-warning" : 
+                                          (attendance == null && !isOnLeave ? "table-danger" : "");
+                            
+                            <tr class="@rowClass">
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="pt-avatar pt-avatar-sm" style="background: @colors[colorIndex];">@initials</div>
+                                        <div>
+                                            <strong>@employee.User?.FirstName @employee.User?.LastName</strong>
+                                            <div class="small text-muted">@(employee.Department?.DepartmentName ?? "N/A")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (attendance?.TimeIn != null)
+                                    {
+                                        var timeInClass = isLate ? "text-warning" : "text-success";
+                                        var icon = isLate ? "bi-clock" : "bi-check-circle";
+                                        <span class="@timeInClass"><i class="bi @icon me-1"></i>@attendance.TimeIn.Value.ToString("h:mm tt")</span>
+                                    }
+                                    else if (isOnLeave)
+                                    {
+                                        <span class="text-primary"><i class="bi bi-calendar-x me-1"></i>On Leave</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger"><i class="bi bi-x-circle me-1"></i>-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (attendance?.TimeOut != null)
+                                    {
+                                        <span class="text-success">@attendance.TimeOut.Value.ToString("h:mm tt")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (attendance?.WorkedMinutes != null && attendance.WorkedMinutes > 0)
+                                    {
+                                        var hours = attendance.WorkedMinutes / 60;
+                                        var minutes = attendance.WorkedMinutes % 60;
+                                        <text>@hours</text><text>h </text>@minutes<text>m</text>
+                                    }
+                                    else
+                                    {
+                                        <text>-</text>
+                                    }
+                                </td>
+                                <td>
+                                    @if (attendance?.OvertimeMinutes != null && attendance.OvertimeMinutes > 0)
+                                    {
+                                        var hours = attendance.OvertimeMinutes / 60;
+                                        var minutes = attendance.OvertimeMinutes % 60;
+                                        <text>@hours</text><text>h </text>@minutes<text>m</text>
+                                    }
+                                    else
+                                    {
+                                        <text>-</text>
+                                    }
+                                </td>
+                                <td>
+                                    @if (isOnLeave)
+                                    {
+                                        <span class="pt-badge pt-badge-primary">On Leave</span>
+                                    }
+                                    else if (attendance != null)
+                                    {
+                                        if (isLate)
+                                        {
+                                            var lateMinutes = attendance.LateMinutes;
+                                            <span class="pt-badge pt-badge-warning">Late (@lateMinutes m)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pt-badge pt-badge-success">Present</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="pt-badge pt-badge-danger">Absent</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="bi bi-people" style="font-size: 3rem; color: var(--text-muted);"></i>
+                                <p class="text-muted mt-2">No employees found</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (allEmployees.Any())
+            {
+                <div class="p-3 d-flex justify-content-between align-items-center">
+                    <span class="text-muted">Showing @allEmployees.Count employee(s)</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    // Search functionality
+    document.getElementById('attendanceSearch')?.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#attendanceTable tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+</script>
+
+<style>
+    .table-warning {
+        background-color: rgba(245, 158, 11, 0.1) !important;
+    }
+    .table-danger {
+        background-color: rgba(239, 68, 68, 0.1) !important;
+    }
+</style>

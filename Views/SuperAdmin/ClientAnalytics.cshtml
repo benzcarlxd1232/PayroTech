@@ -1,0 +1,155 @@
+@{
+    ViewData["Title"] = "Client Analytics";
+    Layout = "_SuperAdminLayout";
+
+    var totalCompanies = (int)(ViewBag.TotalCompanies ?? 0);
+    var activeCompanies = (int)(ViewBag.ActiveCompanies ?? 0);
+    var totalEmployees = (int)(ViewBag.TotalEmployees ?? 0);
+    var avgEmployees = totalCompanies > 0 ? (double)totalEmployees / totalCompanies : 0;
+}
+
+<style>
+    .stat-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,.08);
+        border: 1px solid #e2e8f0;
+    }
+    .stat-card .stat-icon {
+        width: 48px; height: 48px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+    }
+    .stat-card h3 { font-size: 1.8rem; font-weight: 700; margin: 0; }
+    .stat-card p { color: #64748b; margin: 0; font-size: .875rem; }
+    body.dark-mode .stat-card { background: var(--bg-card); border-color: var(--border-color); }
+    body.dark-mode .stat-card h3, body.dark-mode .stat-card p { color: var(--text-light); }
+</style>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">Total Companies</p>
+                    <h3>@totalCompanies</h3>
+                    <small class="text-muted">All registered</small>
+                </div>
+                <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;">
+                    <i class="bi bi-building"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">Active Companies</p>
+                    <h3 class="text-success">@activeCompanies</h3>
+                    <small class="text-muted">With active subscription</small>
+                </div>
+                <div class="stat-icon" style="background:#dcfce7;color:#16a34a;">
+                    <i class="bi bi-building-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">Total Employees</p>
+                    <h3>@totalEmployees</h3>
+                    <small class="text-muted">Active employees</small>
+                </div>
+                <div class="stat-icon" style="background:#dbeafe;color:#2563eb;">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="mb-1">Avg Employees/Company</p>
+                    <h3>@avgEmployees.ToString("F1")</h3>
+                    <small class="text-muted">Per active company</small>
+                </div>
+                <div class="stat-icon" style="background:#fef3c7;color:#d97706;">
+                    <i class="bi bi-person-lines-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Companies Table -->
+<div class="table-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up me-2"></i>Company Analytics</span>
+        <small class="text-muted">Showing top 20 companies</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Company Name</th>
+                    <th class="text-end">Employees</th>
+                    <th class="text-end">Modules</th>
+                    <th>Subscription Start</th>
+                    <th>Subscription End</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var companies = ViewBag.Companies as IEnumerable<dynamic>;
+                    if (companies != null)
+                    {
+                        int rowNum = 1;
+                        foreach (var c in companies)
+                        {
+                            bool isActive = (bool)c.IsActive;
+                            bool isSubActive = (bool)c.IsSubscriptionActive;
+                            <tr>
+                                <td class="text-muted">@rowNum</td>
+                                <td><strong>@c.CompanyName</strong></td>
+                                <td class="text-end">@c.EmployeeCount</td>
+                                <td class="text-end">@c.ModuleCount</td>
+                                <td>@(c.SubscriptionStart != null ? ((DateTime)c.SubscriptionStart).ToString("MMM dd, yyyy") : "—")</td>
+                                <td>@(c.SubscriptionEnd != null ? ((DateTime)c.SubscriptionEnd).ToString("MMM dd, yyyy") : "—")</td>
+                                <td>
+                                    @if (isActive && isSubActive)
+                                    {
+                                        <span class="fw-semibold" style="color:#16a34a;">Active</span>
+                                    }
+                                    else if (!isSubActive)
+                                    {
+                                        <span class="fw-semibold" style="color:#dc2626;">Expired</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-semibold" style="color:#6b7280;">Inactive</span>
+                                    }
+                                </td>
+                            </tr>
+                            rowNum++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No company data available.</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

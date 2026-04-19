@@ -1,0 +1,231 @@
+@{
+    ViewData["Title"] = "Submit Payroll";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Submit Payroll</h4>
+        <p class="text-muted mb-0">Review and submit payroll for manager approval</p>
+    </div>
+    <a href="/hr/payroll" class="pt-btn pt-btn-ghost">
+        <i class="bi bi-arrow-left me-2"></i>Back to Payroll
+    </a>
+</div>
+
+<!-- Submission Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card" style="background: linear-gradient(135deg, #059669, #34d399); color: white;">
+            <div class="pt-card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="text-white mb-1">Payroll Period: March 16 - 31, 2026</h5>
+                        <p class="mb-0 opacity-75">Team: Engineering Division</p>
+                    </div>
+                    <div class="col-md-3 text-center border-start border-white border-opacity-25">
+                        <div class="opacity-75 small">Deadline</div>
+                        <h4 class="text-white mb-0">April 1, 2026</h4>
+                    </div>
+                    <div class="col-md-3 text-center border-start border-white border-opacity-25">
+                        <div class="opacity-75 small">Time Remaining</div>
+                        <h4 class="text-white mb-0">3 Days</h4>
+                        <span class="pt-badge pt-badge-success">On Time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payroll Summary Card -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-receipt me-2"></i>Payroll Summary
+            </div>
+            <div class="pt-card-body">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted">Total Employees</td>
+                            <td class="text-end"><strong>24</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Total Basic Pay</td>
+                            <td class="text-end">₱ 672,000.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Total Overtime</td>
+                            <td class="text-end text-success">+ ₱ 45,600.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Total Allowances</td>
+                            <td class="text-end text-info">+ ₱ 60,000.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">SSS Contributions</td>
+                            <td class="text-end text-danger">- ₱ 28,800.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">PhilHealth</td>
+                            <td class="text-end text-danger">- ₱ 19,200.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Pag-IBIG</td>
+                            <td class="text-end text-danger">- ₱ 4,800.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Withholding Tax</td>
+                            <td class="text-end text-danger">- ₱ 38,760.00</td>
+                        </tr>
+                        <tr class="border-top">
+                            <td class="pt-3"><strong>Total Net Payroll</strong></td>
+                            <td class="text-end pt-3"><h4 class="text-primary mb-0">₱ 385,240.00</h4></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-wallet2 me-2"></i>Budget Status
+            </div>
+            <div class="pt-card-body">
+                <div class="text-center mb-4">
+                    <div style="position: relative; width: 150px; height: 150px; margin: 0 auto;">
+                        <svg viewBox="0 0 36 36" style="width: 150px; height: 150px;">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  fill="none" stroke="#e5e7eb" stroke-width="3"/>
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  fill="none" stroke="#059669" stroke-width="3"
+                                  stroke-dasharray="85.6, 100" stroke-linecap="round"/>
+                        </svg>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                            <div class="fs-4 fw-bold text-success">85.6%</div>
+                            <div class="text-muted small">Used</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Budget Allocated</span>
+                    <strong>₱ 450,000.00</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Payroll Total</span>
+                    <strong class="text-success">₱ 385,240.00</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Remaining</span>
+                    <strong class="text-info">₱ 64,760.00</strong>
+                </div>
+                <div class="alert alert-success mt-3 mb-0">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <strong>Within Budget!</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pre-submission Checklist -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-check2-square me-2"></i>Pre-submission Checklist
+            </div>
+            <div class="pt-card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <div>
+                                <strong>All employee attendance verified</strong>
+                                <div class="text-muted small">24 of 24 employees checked</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <div>
+                                <strong>Leave deductions applied</strong>
+                                <div class="text-muted small">3 employees with leave</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <div>
+                                <strong>Overtime hours calculated</strong>
+                                <div class="text-muted small">8 employees with OT</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <div>
+                                <strong>Government contributions calculated</strong>
+                                <div class="text-muted small">SSS, PhilHealth, Pag-IBIG</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <div>
+                                <strong>Withholding tax computed</strong>
+                                <div class="text-muted small">Based on BIR tax table</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                            <div>
+                                <strong>Within allocated budget</strong>
+                                <div class="text-muted small">₱64,760.00 remaining</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes & Submit -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-send me-2"></i>Submit for Approval
+            </div>
+            <div class="pt-card-body">
+                <div class="mb-4">
+                    <label class="form-label">Notes for Manager (Optional)</label>
+                    <textarea class="form-control" rows="3" placeholder="Add any notes or comments regarding this payroll submission..."></textarea>
+                </div>
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="confirmCheck">
+                    <label class="form-check-label" for="confirmCheck">
+                        I confirm that all information in this payroll submission is accurate and complete.
+                    </label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="pt-btn pt-btn-primary" disabled id="submitBtn">
+                        <i class="bi bi-send me-2"></i>Submit Payroll for Approval
+                    </button>
+                    <button class="pt-btn pt-btn-ghost">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>Download PDF Preview
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('confirmCheck').addEventListener('change', function() {
+        document.getElementById('submitBtn').disabled = !this.checked;
+    });
+</script>

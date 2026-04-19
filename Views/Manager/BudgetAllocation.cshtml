@@ -1,0 +1,326 @@
+@{
+    ViewData["Title"] = "Budget Allocation";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Budget Allocation</h4>
+        <p class="text-muted mb-0">Manage and distribute payroll budget across teams</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="pt-btn pt-btn-ghost">
+            <i class="bi bi-download me-2"></i>Export Report
+        </button>
+        <button class="pt-btn pt-btn-primary" data-bs-toggle="modal" data-bs-target="#allocateBudgetModal">
+            <i class="bi bi-piggy-bank me-2"></i>Allocate Budget
+        </button>
+    </div>
+</div>
+
+<!-- Budget Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">₱2.5M</div>
+            <div class="pt-stats-label">Total Budget</div>
+            <i class="bi bi-piggy-bank pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card success">
+            <div class="pt-stats-value">₱1.7M</div>
+            <div class="pt-stats-label">Allocated</div>
+            <i class="bi bi-check-circle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card warning">
+            <div class="pt-stats-value">₱1.5M</div>
+            <div class="pt-stats-label">Used</div>
+            <i class="bi bi-wallet2 pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">₱800K</div>
+            <div class="pt-stats-label">Remaining</div>
+            <i class="bi bi-cash-stack pt-stats-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Overall Budget Progress -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-bar-chart me-2"></i>Company Budget Overview - March 2026
+            </div>
+            <div class="pt-card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-semibold">Total Budget Utilization</span>
+                                <span class="fw-bold">68% Used</span>
+                            </div>
+                            <div class="progress" style="height: 30px; border-radius: 15px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 60%;">
+                                    Allocated (₱1.5M)
+                                </div>
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 8%;">
+                                    Pending
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-4 text-muted small">
+                            <span><i class="bi bi-circle-fill text-success me-1"></i>Used: ₱1,545,000</span>
+                            <span><i class="bi bi-circle-fill text-warning me-1"></i>Pending: ₱200,000</span>
+                            <span><i class="bi bi-circle-fill text-secondary me-1"></i>Remaining: ₱755,000</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="d-inline-block p-4 rounded-circle" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5);">
+                            <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <div class="mt-2 fw-semibold text-success">Budget Healthy</div>
+                        <small class="text-muted">32% buffer remaining</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Budget Allocation -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-2"></i>Team Budget Allocation</span>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" class="form-control form-control-sm" placeholder="Search teams..." style="width: 200px;">
+                </div>
+            </div>
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>HR Assigned</th>
+                        <th>Employees</th>
+                        <th>Allocated Budget</th>
+                        <th>Used Budget</th>
+                        <th>Remaining</th>
+                        <th>Usage</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #0891b2, #22d3ee);">E</div>
+                                <strong>Engineering</strong>
+                            </div>
+                        </td>
+                        <td>Maria Santos</td>
+                        <td><span class="pt-badge pt-badge-neutral">24</span></td>
+                        <td class="fw-semibold">₱500,000</td>
+                        <td>₱450,000</td>
+                        <td class="text-success">₱50,000</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 8px; width: 100px;">
+                                    <div class="progress-bar bg-success" style="width: 90%"></div>
+                                </div>
+                                <span class="small fw-semibold">90%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm" title="Adjust Budget">
+                                <i class="bi bi-sliders"></i>
+                            </button>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #059669, #34d399);">S</div>
+                                <strong>Sales</strong>
+                            </div>
+                        </td>
+                        <td>Juan Dela Cruz</td>
+                        <td><span class="pt-badge pt-badge-neutral">18</span></td>
+                        <td class="fw-semibold">₱400,000</td>
+                        <td>₱380,000</td>
+                        <td class="text-warning">₱20,000</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 8px; width: 100px;">
+                                    <div class="progress-bar bg-warning" style="width: 95%"></div>
+                                </div>
+                                <span class="small fw-semibold text-warning">95%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm" title="Adjust Budget">
+                                <i class="bi bi-sliders"></i>
+                            </button>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">O</div>
+                                <strong>Operations</strong>
+                            </div>
+                        </td>
+                        <td>Ana Reyes</td>
+                        <td><span class="pt-badge pt-badge-neutral">32</span></td>
+                        <td class="fw-semibold">₱600,000</td>
+                        <td>₱520,000</td>
+                        <td class="text-success">₱80,000</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 8px; width: 100px;">
+                                    <div class="progress-bar bg-success" style="width: 87%"></div>
+                                </div>
+                                <span class="small fw-semibold">87%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm" title="Adjust Budget">
+                                <i class="bi bi-sliders"></i>
+                            </button>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="table-danger">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">H</div>
+                                <strong>HR & Admin</strong>
+                            </div>
+                        </td>
+                        <td>Pedro Garcia</td>
+                        <td><span class="pt-badge pt-badge-neutral">12</span></td>
+                        <td class="fw-semibold">₱200,000</td>
+                        <td class="text-danger">₱195,000</td>
+                        <td class="text-danger fw-bold">₱5,000</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 8px; width: 100px;">
+                                    <div class="progress-bar bg-danger" style="width: 98%"></div>
+                                </div>
+                                <span class="small fw-semibold text-danger">98%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="pt-btn pt-btn-warning pt-btn-sm" title="Needs Attention!">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </button>
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold" style="background: var(--pt-bg-secondary);">
+                        <td colspan="3">TOTAL</td>
+                        <td>₱1,700,000</td>
+                        <td>₱1,545,000</td>
+                        <td class="text-success">₱155,000</td>
+                        <td>
+                            <span class="pt-badge pt-badge-success">91% avg</span>
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Allocate Budget Modal -->
+<div class="modal fade" id="allocateBudgetModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-piggy-bank me-2"></i>Allocate Budget</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Available for Allocation:</strong> ₱800,000 remaining from total budget
+                </div>
+
+                <form>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Select Team</label>
+                            <select class="form-select">
+                                <option>Select a team...</option>
+                                <option>Engineering Team (Current: ₱500,000)</option>
+                                <option>Sales Team (Current: ₱400,000)</option>
+                                <option>Operations Team (Current: ₱600,000)</option>
+                                <option>HR & Admin Team (Current: ₱200,000)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Allocation Type</label>
+                            <select class="form-select">
+                                <option>Add to existing budget</option>
+                                <option>Set new budget amount</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₱</span>
+                            <input type="number" class="form-control" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Reason / Notes</label>
+                        <textarea class="form-control" rows="2" placeholder="Reason for budget adjustment..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Effective Date</label>
+                        <input type="date" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="pt-btn pt-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="pt-btn pt-btn-primary">Allocate Budget</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress {
+        background-color: var(--pt-gray-200);
+        border-radius: 4px;
+    }
+
+    .table-danger {
+        background-color: rgba(239, 68, 68, 0.1) !important;
+    }
+</style>

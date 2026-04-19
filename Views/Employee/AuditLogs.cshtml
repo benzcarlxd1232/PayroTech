@@ -1,0 +1,167 @@
+@model List<PayroTech.Models.Entities.AuditLog>
+@{
+    ViewData["Title"] = "Activity Logs";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages  = ViewBag.TotalPages  ?? 1;
+    int startP      = Math.Max(1, currentPage - 2);
+    int endP        = Math.Min(totalPages, currentPage + 2);
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filter Activity Logs</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <select name="days" class="form-select">
+                                <option value="7" selected>Last 7 days</option>
+                                <option value="30">Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="365">This Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Action Type</label>
+                            <select name="action" class="form-select">
+                                <option value="">All Actions</option>
+                                <option>Login</option>
+                                <option>Logout</option>
+                                <option>Clock In</option>
+                                <option>Clock Out</option>
+                                <option>Leave Request</option>
+                                <option>Viewed Payslip</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Search</label>
+                            <input type="text" name="search" class="form-control" placeholder="Search by action or details...">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Your Activity Logs</h5>
+            <button class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-download me-2"></i>Export
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var log in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@log.Timestamp.ToString("MMM dd, yyyy")</strong>
+                                        <div class="text-muted small">@log.Timestamp.ToString("hh:mm tt")</div>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var badgeClass = log.Action switch
+                                            {
+                                                "Login" => "bg-primary",
+                                                "Logout" => "bg-secondary",
+                                                "Clock In" => "bg-success",
+                                                "Clock Out" => "bg-warning text-dark",
+                                                "Leave Request" => "bg-info",
+                                                "Viewed Payslip" => "bg-purple",
+                                                _ => "bg-info"
+                                            };
+                                        }
+                                        <span class="badge @badgeClass">@log.Action</span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(log.NewValues))
+                                        {
+                                            <span>@log.NewValues.Substring(0, Math.Min(50, log.NewValues.Length))...</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No details</span>
+                                        }
+                                    </td>
+                                    <td><code>@(log.IpAddress ?? "N/A")</code></td>
+                                    <td><span class="text-success"><i class="bi bi-check-circle"></i> Success</span></td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                                    No activity logs found
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (totalPages > 1)
+        {
+            <div class="pt-pagination">
+                <small class="text-muted me-auto ps-1">
+                    Showing @(Model?.Count ?? 0) of @(totalPages * 20) activities
+                </small>
+                <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "")
+                        onclick="window.location.href='?page=@(currentPage - 1)'">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                @if (startP > 1) {
+                    <button class="pt-pagination-btn" onclick="window.location.href='?page=1'">1</button>
+                    if (startP > 2) { <span class="pt-pagination-ellipsis">…</span> }
+                }
+                @for (int i = startP; i <= endP; i++) {
+                    <button class="pt-pagination-btn @(currentPage == i ? "active" : "")"
+                            onclick="window.location.href='?page=@i'">@i</button>
+                }
+                @if (endP < totalPages) {
+                    if (endP < totalPages - 1) { <span class="pt-pagination-ellipsis">…</span> }
+                    <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages'">@totalPages</button>
+                }
+                <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "")
+                        onclick="window.location.href='?page=@(currentPage + 1)'">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="p-3 text-center text-muted">
+                <small>Showing all @(Model?.Count ?? 0) activities</small>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .bg-purple { background-color: #8b5cf6; color: white; }
+</style>

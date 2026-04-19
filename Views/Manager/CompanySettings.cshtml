@@ -1,0 +1,165 @@
+@model PayroTech.Models.ViewModels.CompanySettingsViewModel
+@{
+    ViewData["Title"] = "Company Settings";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Company Settings</h4>
+        <p class="text-muted mb-0">Configure work schedule, salary defaults, and payroll rules</p>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form asp-action="CompanySettings" method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <!-- Work Schedule -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-calendar-week me-2 text-primary"></i>Work Schedule
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="WorkDaysPerWeek" class="form-label">Work Days per Week</label>
+                    <select asp-for="WorkDaysPerWeek" class="form-select" onchange="calcWorkingDays()">
+                        <option value="5">Monday – Friday (5 days)</option>
+                        <option value="6">Monday – Saturday (6 days)</option>
+                    </select>
+                    <span asp-validation-for="WorkDaysPerWeek" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="WorkingDaysPerMonth" class="form-label">Working Days per Month</label>
+                    <input asp-for="WorkingDaysPerMonth" type="number" class="form-control" min="1" max="31" />
+                    <div class="form-text">Auto-calculated, but you can override.</div>
+                    <span asp-validation-for="WorkingDaysPerMonth" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holiday & Overtime -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-clock-history me-2 text-warning"></i>Holiday & Overtime Rules
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="WorkOnHolidays" class="form-label">Work on Philippine Holidays?</label>
+                    <select asp-for="WorkOnHolidays" class="form-select" id="workOnHolidays" onchange="toggleHolidayRate()">
+                        <option value="false">No — Holidays are rest days</option>
+                        <option value="true">Yes — Employees work on holidays</option>
+                    </select>
+                </div>
+                <div class="col-md-4" id="holidayRateSection">
+                    <label asp-for="HolidayPayRate" class="form-label">Holiday Pay Rate (%)</label>
+                    <input asp-for="HolidayPayRate" type="number" class="form-control" min="100" max="400" />
+                    <div class="form-text">e.g. 200 = double pay (200%)</div>
+                    <span asp-validation-for="HolidayPayRate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="OvertimeRatePerHour" class="form-label">Overtime Rate Multiplier</label>
+                    <input asp-for="OvertimeRatePerHour" type="number" step="0.01" class="form-control" min="1.00" max="5.00" />
+                    <div class="form-text">e.g. 1.25 = 125% of hourly rate</div>
+                    <span asp-validation-for="OvertimeRatePerHour" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Salary Rates -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-cash-coin me-2 text-success"></i>Default Daily Rates by Role
+            <span class="badge bg-warning text-dark ms-2 small">Only manager can set these</span>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info py-2 small mb-3">
+                <i class="bi bi-info-circle me-1"></i>
+                These rates are automatically applied when HR creates a new employee. HR cannot override them.
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="DefaultDailyRate" class="form-label">Employee Daily Rate (₱) <span class="text-danger">*</span></label>
+                    <input asp-for="DefaultDailyRate" type="number" step="0.01" class="form-control" oninput="updatePreview()" />
+                    <span asp-validation-for="DefaultDailyRate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="HRDailyRate" class="form-label">HR Daily Rate (₱)</label>
+                    <input asp-for="HRDailyRate" type="number" step="0.01" class="form-control" oninput="updatePreview()" />
+                    <span asp-validation-for="HRDailyRate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="AccountantDailyRate" class="form-label">Accountant Daily Rate (₱)</label>
+                    <input asp-for="AccountantDailyRate" type="number" step="0.01" class="form-control" oninput="updatePreview()" />
+                    <span asp-validation-for="AccountantDailyRate" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Monthly salary preview -->
+            <div class="mt-3 p-3 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+                <div class="fw-semibold text-success small mb-2"><i class="bi bi-calculator me-1"></i>Estimated Monthly Salaries</div>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="small text-muted">Employee</div>
+                        <div class="fw-bold" id="empMonthly">₱0.00</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">HR</div>
+                        <div class="fw-bold" id="hrMonthly">₱0.00</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">Accountant</div>
+                        <div class="fw-bold" id="accMonthly">₱0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-floppy me-1"></i>Save Settings
+        </button>
+        <a href="/Manager" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+function calcWorkingDays() {
+    const days = parseInt(document.querySelector('[name="WorkDaysPerWeek"]').value) || 5;
+    document.querySelector('[name="WorkingDaysPerMonth"]').value = Math.round(days * 4.33);
+    updatePreview();
+}
+
+function toggleHolidayRate() {
+    const works = document.getElementById('workOnHolidays').value === 'true';
+    document.getElementById('holidayRateSection').style.display = works ? '' : 'none';
+}
+
+function updatePreview() {
+    const days = parseInt(document.querySelector('[name="WorkingDaysPerMonth"]').value) || 22;
+    const fmt  = v => '₱' + (parseFloat(v)||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('empMonthly').textContent = fmt((parseFloat(document.querySelector('[name="DefaultDailyRate"]').value)||0) * days);
+    document.getElementById('hrMonthly').textContent  = fmt((parseFloat(document.querySelector('[name="HRDailyRate"]').value)||0) * days);
+    document.getElementById('accMonthly').textContent = fmt((parseFloat(document.querySelector('[name="AccountantDailyRate"]').value)||0) * days);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    toggleHolidayRate();
+    updatePreview();
+});
+</script>
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

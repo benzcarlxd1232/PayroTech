@@ -1,0 +1,287 @@
+@{
+    ViewData["Title"] = "Team Members";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+
+    var employees    = ViewBag.Employees    as List<PayroTech.Models.Entities.Employee>        ?? new();
+    var staffUsers   = ViewBag.StaffUsers   as List<PayroTech.Models.Entities.ApplicationUser> ?? new();
+    var shifts       = ViewBag.Shifts       as List<PayroTech.Models.Entities.Shift>           ?? new();
+    int totalMembers = ViewBag.TotalMembers ?? 0;
+    int newThisMonth = ViewBag.NewThisMonth ?? 0;
+    string teamName  = ViewBag.TeamName     as string ?? "My Team";
+
+    var avatarColors = new[] {
+        "linear-gradient(135deg,#0891b2,#22d3ee)",
+        "linear-gradient(135deg,#059669,#34d399)",
+        "linear-gradient(135deg,#7c3aed,#a855f7)",
+        "linear-gradient(135deg,#f59e0b,#fbbf24)",
+        "linear-gradient(135deg,#2563eb,#60a5fa)"
+    };
+    int colorIdx = 0;
+}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">@teamName — Team Members</h4>
+        <p class="text-muted mb-0">Staff assigned to your team</p>
+    </div>
+    <a href="/HR/CreateEmployee" class="btn btn-primary">
+        <i class="bi bi-person-plus me-2"></i>Add Employee
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-primary">@totalMembers</div>
+            <div class="text-muted small">Total Members</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-success">@employees.Count</div>
+            <div class="text-muted small">Employees</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-info">@staffUsers.Count</div>
+            <div class="text-muted small">HR / Accountant</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-warning">@newThisMonth</div>
+            <div class="text-muted small">New This Month</div>
+        </div>
+    </div>
+</div>
+
+<!-- HR/Accountant Staff (read-only shift) -->
+@if (staffUsers.Any())
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-person-badge me-2"></i>HR & Accountant Staff
+            <span class="badge bg-secondary ms-2 small">Shift editable by Manager only</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Name</th>
+                        <th>Role</th>
+                        <th>Staff Code</th>
+                        <th>Team</th>
+                        <th>Shift</th>
+                        <th>Start Date</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in staffUsers)
+                    {
+                        var color    = avatarColors[colorIdx++ % avatarColors.Length];
+                        var initials = $"{s.FirstName?.FirstOrDefault()}{s.LastName?.FirstOrDefault()}".ToUpper();
+                        var roleBadge = s.Role == PayroTech.Models.Enums.UserRole.HR ? "bg-success" : "bg-warning text-dark";
+                        var shiftName = shifts.FirstOrDefault(sh => sh.Id == s.ShiftId)?.ShiftName ?? "—";
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                         style="width:34px;height:34px;font-size:.8rem;background:@color;flex-shrink:0;">@initials</div>
+                                    <div>
+                                        <div class="fw-medium">@s.FullName</div>
+                                        <div class="text-muted small">@s.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge @roleBadge">@s.Role</span></td>
+                            <td><code class="text-muted small">@(string.IsNullOrEmpty(s.StaffCode) ? "—" : s.StaffCode)</code></td>
+                            <td><span class="text-muted small">@(s.Department?.DepartmentName ?? "—")</span></td>
+                            <td>
+                                <span class="badge bg-light text-dark border" title="Only manager can change this">
+                                    <i class="bi bi-lock me-1 text-muted"></i>@shiftName
+                                </span>
+                            </td>
+                            <td><span class="text-muted small">@(s.StartDate?.ToString("MMM dd, yyyy") ?? "—")</span></td>
+                            <td class="text-center">
+                                <span class="badge @(s.IsActive ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                    @(s.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Employees (editable shift) -->
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-people me-2"></i>Employees (@employees.Count)</span>
+        <input type="text" id="searchInput" class="form-control form-control-sm"
+               placeholder="Search by name or email…" style="width:240px" oninput="filterTable()" />
+    </div>
+
+    @if (!employees.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-people fs-1 text-muted d-block mb-3"></i>
+            <h6>No employees yet</h6>
+            <p class="text-muted small mb-3">Start by adding employees to your team.</p>
+            <a href="/HR/CreateEmployee" class="btn btn-primary btn-sm">
+                <i class="bi bi-person-plus me-1"></i>Add First Employee
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle" id="empTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Employee</th>
+                        <th>Staff Code</th>
+                        <th>Team</th>
+                        <th>Shift</th>
+                        <th>Hire Date</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in employees)
+                    {
+                        var color    = avatarColors[colorIdx++ % avatarColors.Length];
+                        var initials = $"{e.FirstName?.FirstOrDefault()}{e.LastName?.FirstOrDefault()}".ToUpper();
+                        var shiftName = e.Shift?.ShiftName ?? shifts.FirstOrDefault(sh => sh.Id == e.User?.ShiftId)?.ShiftName ?? "—";
+                        var userId   = e.UserId ?? "";
+                        var curShift = e.ShiftId ?? e.User?.ShiftId ?? 0;
+                        <tr data-name="@e.FullName.ToLower()">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                         style="width:34px;height:34px;font-size:.8rem;background:@color;flex-shrink:0;">@initials</div>
+                                    <div>
+                                        <div class="fw-medium">@e.FullName</div>
+                                        <div class="text-muted small">@e.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code class="text-muted small">@e.EmployeeNumber</code></td>
+                            <td><span class="text-muted small">@(e.Department?.DepartmentName ?? "—")</span></td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary shift-label-@userId">@shiftName</span>
+                            </td>
+                            <td><span class="text-muted small">@e.HireDate.ToString("MMM dd, yyyy")</span></td>
+                            <td class="text-center">
+                                <span class="badge @(e.IsActive ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                    @(e.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        onclick="openShiftModal('@userId', '@e.FullName', @curShift)"
+                                        title="Change Shift">
+                                    <i class="bi bi-clock-history me-1"></i>Shift
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="px-4 py-2 text-muted small border-top">
+            <span id="visibleCount">@employees.Count</span> of @employees.Count employees
+        </div>
+    }
+</div>
+
+<!-- Shift Edit Modal -->
+<div class="modal fade" id="shiftModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Change Shift</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Changing shift for: <strong id="modalStaffName"></strong></p>
+                <label class="form-label fw-semibold">Select Shift</label>
+                <select id="modalShiftSelect" class="form-select">
+                    @foreach (var s in shifts)
+                    {
+                        <option value="@s.Id">@s.ShiftName (@s.StartTime.ToString(@"hh\:mm") – @s.EndTime.ToString(@"hh\:mm"))</option>
+                    }
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveShift()">
+                    <i class="bi bi-floppy me-1"></i>Save Shift
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+@Html.AntiForgeryToken()
+<script>
+let _userId = null;
+
+function openShiftModal(userId, name, currentShiftId) {
+    _userId = userId;
+    document.getElementById('modalStaffName').textContent = name;
+    const sel = document.getElementById('modalShiftSelect');
+    if (currentShiftId) sel.value = currentShiftId;
+    new bootstrap.Modal(document.getElementById('shiftModal')).show();
+}
+
+async function saveShift() {
+    const shiftId = document.getElementById('modalShiftSelect').value;
+    const token   = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+    const res  = await fetch('/HR/UpdateShift', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `userId=${encodeURIComponent(_userId)}&shiftId=${shiftId}&__RequestVerificationToken=${encodeURIComponent(token)}`
+    });
+    const data = await res.json();
+
+    if (data.success) {
+        // Update badge in table
+        const badge = document.querySelector(`.shift-label-${_userId}`);
+        if (badge) badge.textContent = data.shiftName;
+        bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
+    } else {
+        alert(data.message);
+    }
+}
+
+function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const rows   = document.querySelectorAll('#empTable tbody tr');
+    let visible  = 0;
+    rows.forEach(r => {
+        const show = (r.dataset.name || '').includes(search);
+        r.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    const vc = document.getElementById('visibleCount');
+    if (vc) vc.textContent = visible;
+}
+</script>
+}

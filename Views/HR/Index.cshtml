@@ -1,0 +1,257 @@
+@*
+    HR Dashboard View
+    This file should be moved to: Views/HR/Index.cshtml
+    After creating the HR folder
+*@
+@{
+    ViewData["Title"] = "HR Dashboard";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+}
+
+@{
+    var totalMembers = ViewBag.TotalMembers ?? 0;
+    var presentCount = ViewBag.PresentCount ?? 0;
+    var lateCount = ViewBag.LateCount ?? 0;
+    var absentCount = ViewBag.AbsentCount ?? 0;
+    var pendingLeaves = ViewBag.PendingLeaves as List<PayroTech.Models.Entities.Leave> ?? new List<PayroTech.Models.Entities.Leave>();
+    var lateArrivals = ViewBag.LateArrivals as List<PayroTech.Models.Entities.Attendance> ?? new List<PayroTech.Models.Entities.Attendance>();
+    var absentEmployees = ViewBag.AbsentEmployees as List<PayroTech.Models.Entities.Employee> ?? new List<PayroTech.Models.Entities.Employee>();
+    var attendanceRate = totalMembers > 0 ? (int)((presentCount / (double)totalMembers) * 100) : 0;
+}
+
+<!-- Quick Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card pt-stagger-1">
+            <div class="pt-stats-value">@totalMembers</div>
+            <div class="pt-stats-label">Team Members</div>
+            <i class="bi bi-people pt-stats-icon"></i>
+            <div class="pt-trend up mt-2">
+                <i class="bi bi-check-circle"></i> All Active
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card success pt-stagger-2">
+            <div class="pt-stats-value">@presentCount</div>
+            <div class="pt-stats-label">Present Today</div>
+            <i class="bi bi-calendar-check pt-stats-icon"></i>
+            <div class="pt-trend up mt-2">
+                <i class="bi bi-arrow-up"></i> @attendanceRate% Rate
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card warning pt-stagger-3">
+            <div class="pt-stats-value">@pendingLeaves.Count</div>
+            <div class="pt-stats-label">Pending Leave</div>
+            <i class="bi bi-calendar-x pt-stats-icon"></i>
+            @if (pendingLeaves.Count > 0)
+            {
+                <div class="pt-trend warning mt-2">
+                    <i class="bi bi-exclamation-circle"></i> Needs Action
+                </div>
+            }
+            else
+            {
+                <div class="pt-trend mt-2">
+                    <i class="bi bi-check-circle"></i> All Clear
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card @(lateCount > 0 ? "warning" : "") pt-stagger-4">
+            <div class="pt-stats-value">@lateCount</div>
+            <div class="pt-stats-label">Late Today</div>
+            <i class="bi bi-clock pt-stats-icon"></i>
+            @if (lateCount > 0)
+            {
+                <div class="pt-trend warning mt-2">
+                    <i class="bi bi-exclamation-circle"></i> @lateCount Late
+                </div>
+            }
+            else
+            {
+                <div class="pt-trend mt-2">
+                    <i class="bi bi-check-circle"></i> On Time
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row mb-4">
+    <!-- Leave Requests -->
+    <div class="col-md-6">
+        <div class="pt-card h-100">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-x me-2"></i>Pending Leave Requests</span>
+                <a href="/HR/Leaves" class="pt-btn pt-btn-ghost pt-btn-sm">View All</a>
+            </div>
+            <div class="pt-card-body p-0">
+                @if (pendingLeaves.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var leave in pendingLeaves.Take(5))
+                        {
+                            var initials = $"{leave.Employee.User?.FirstName?.Substring(0, 1) ?? ""}{leave.Employee.User?.LastName?.Substring(0, 1) ?? ""}";
+                            var leaveTypeClass = leave.LeaveType == PayroTech.Models.Enums.LeaveType.Sick ? "danger" : 
+                                               leave.LeaveType == PayroTech.Models.Enums.LeaveType.Vacation ? "primary" : "warning";
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="pt-avatar" style="background: linear-gradient(135deg, #2563eb, #60a5fa);">@initials</div>
+                                    <div>
+                                        <strong>@leave.Employee.User?.FirstName @leave.Employee.User?.LastName</strong>
+                                        <div class="small text-muted">@leave.LeaveType • @leave.StartDate.ToString("MMM dd") - @leave.EndDate.ToString("MMM dd")</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="pt-btn pt-btn-success pt-btn-sm"><i class="bi bi-check-lg"></i></button>
+                                    <button class="pt-btn pt-btn-danger pt-btn-sm"><i class="bi bi-x-lg"></i></button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        <p class="mt-2 mb-0">No pending leave requests</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Attendance -->
+    <div class="col-md-6">
+        <div class="pt-card h-100">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-check me-2"></i>Today's Attendance</span>
+                <a href="/HR/Attendance" class="pt-btn pt-btn-ghost pt-btn-sm">View All</a>
+            </div>
+            <div class="pt-card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-4">
+                        <div class="p-3 rounded" style="background: #d1fae5;">
+                            <div class="h3 mb-0 text-success">@presentCount</div>
+                            <small class="text-muted">Present</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded" style="background: #fef3c7;">
+                            <div class="h3 mb-0 text-warning">@lateCount</div>
+                            <small class="text-muted">Late</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded" style="background: #fee2e2;">
+                            <div class="h3 mb-0 text-danger">@absentCount</div>
+                            <small class="text-muted">Absent</small>
+                        </div>
+                    </div>
+                </div>
+                
+                @if (lateArrivals.Any())
+                {
+                    <h6 class="mb-3">Late Arrivals</h6>
+                    @foreach (var late in lateArrivals.Take(2))
+                    {
+                        var initials = $"{late.Employee.User?.FirstName?.Substring(0, 1) ?? ""}{late.Employee.User?.LastName?.Substring(0, 1) ?? ""}";
+                        var lateMinutes = late.LateMinutes;
+                        <div class="d-flex align-items-center gap-3 p-2 rounded mb-2" style="background: #fef3c7;">
+                            <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">@initials</div>
+                            <div class="flex-grow-1">
+                                <strong>@late.Employee.User?.FirstName @late.Employee.User?.LastName</strong>
+                                <div class="small text-muted">Arrived at @late.TimeIn?.ToString("h:mm tt") (@lateMinutes mins late)</div>
+                            </div>
+                        </div>
+                    }
+                }
+                
+                @if (absentEmployees.Any())
+                {
+                    <h6 class="mt-3 mb-3">Absent</h6>
+                    @foreach (var absent in absentEmployees.Take(2))
+                    {
+                        var initials = $"{absent.User?.FirstName?.Substring(0, 1) ?? ""}{absent.User?.LastName?.Substring(0, 1) ?? ""}";
+                        <div class="d-flex align-items-center gap-3 p-2 rounded mb-2" style="background: #fee2e2;">
+                            <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #ef4444, #f87171);">@initials</div>
+                            <div class="flex-grow-1">
+                                <strong>@absent.User?.FirstName @absent.User?.LastName</strong>
+                                <div class="small text-muted">No time-in recorded</div>
+                            </div>
+                        </div>
+                    }
+                }
+                
+                @if (!lateArrivals.Any() && !absentEmployees.Any())
+                {
+                    <div class="text-center text-muted mt-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <p class="mt-2 mb-0">Perfect attendance today!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-lightning me-2"></i>Quick Actions
+            </div>
+            <div class="pt-card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="/HR/MyTeam" class="pt-btn pt-btn-primary w-100 mb-2">
+                            <i class="bi bi-people me-2"></i>View Team
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/HR/Leaves" class="pt-btn pt-btn-secondary w-100 mb-2">
+                            <i class="bi bi-calendar-x me-2"></i>Review Leaves
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/HR/Attendance" class="pt-btn pt-btn-ghost w-100 mb-2">
+                            <i class="bi bi-calendar-check me-2"></i>View Attendance
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/HR/IncidentReport" class="pt-btn pt-btn-ghost w-100 mb-2">
+                            <i class="bi bi-exclamation-triangle me-2"></i>File Incident
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid var(--pt-border-primary);
+        padding: 1rem;
+    }
+
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    .progress {
+        background-color: var(--pt-gray-200);
+    }
+
+    .progress-bar {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+</style>

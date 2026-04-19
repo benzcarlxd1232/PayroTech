@@ -1,0 +1,223 @@
+@model List<PayroTech.Models.Entities.VendorLog>
+@{
+    ViewData["Title"] = "System Logs";
+    Layout = "~/Views/Shared/_SuperAdminLayout.cshtml";
+    
+    // Pagination settings
+    var pageSize = 20;
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    var itemsList = Model.ToList();
+    var totalItems = itemsList.Count;
+    var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+    var pagedItems = itemsList.Skip((currentPage - 1) * pageSize).Take(pageSize);
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1"><i class="bi bi-journal-text me-2"></i>System Activity Logs</h4>
+                <p class="text-muted mb-0">Monitor all system activities and security events</p>
+            </div>
+            <button class="pt-btn pt-btn-primary" onclick="exportLogs()">
+                <i class="bi bi-download me-1"></i>Export Logs
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Time Range</label>
+                        <select name="days" class="form-select" onchange="this.form.submit()">
+                            <option value="1" selected="@(ViewBag.Days == 1)">Last 24 Hours</option>
+                            <option value="7" selected="@(ViewBag.Days == 7)">Last 7 Days</option>
+                            <option value="30" selected="@(ViewBag.Days == 30)">Last 30 Days</option>
+                            <option value="90" selected="@(ViewBag.Days == 90)">Last 90 Days</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Filter by Type</label>
+                        <select name="filter" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Activities</option>
+                            <option value="failed-login" selected="@(ViewBag.Filter == "failed-login")">Failed Logins</option>
+                            <option value="security" selected="@(ViewBag.Filter == "security")">Security Events</option>
+                            <option value="company" selected="@(ViewBag.Filter == "company")">Company Activities</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Search</label>
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="Search logs..." value="@ViewBag.Search">
+                            <button class="pt-btn pt-btn-primary" type="submit">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logs Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <span><i class="bi bi-journal-text me-2"></i>Activity Logs (@totalItems entries)</span>
+            </div>
+            <div class="pt-card-body p-0">
+                <div class="table-responsive">
+                    <table class="pt-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Company</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!pagedItems.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        No logs found for the selected criteria
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var log in pagedItems)
+                                {
+                                    var isWarning = log.Action.Contains("Failed") || log.Action.Contains("Error");
+                                    var isDanger = log.Action.Contains("Security") || log.Action.Contains("Breach");
+                                    
+                                    <tr>
+                                        <td>
+                                            <small>@log.CreatedAt.ToString("MMM dd, yyyy")</small><br>
+                                            <small class="text-muted">@log.CreatedAt.ToString("hh:mm:ss tt")</small>
+                                        </td>
+                                        <td>
+                                            @if (log.Vendor != null)
+                                            {
+                                                <div>@log.Vendor.FullName</div>
+                                                <small class="text-muted">@log.Vendor.Email</small>
+                                            }
+                                            else
+                                            {
+                                                <div>@log.VendorName</div>
+                                                <small class="text-muted">System</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (log.EntityType == "Company")
+                                            {
+                                                <div>@(log.Description ?? "Company")</div>
+                                                <small class="text-muted">@log.EntityId</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">System</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (isDanger)
+                                            {
+                                                <span class="pt-badge pt-badge-danger">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>@log.Action
+                                                </span>
+                                            }
+                                            else if (isWarning)
+                                            {
+                                                <span class="pt-badge pt-badge-warning">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>@log.Action
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="pt-badge pt-badge-info">@log.Action</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <small>@(log.Description ?? "-")</small>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">@(log.IpAddress ?? "-")</small>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            @if (totalPages > 1)
+            {
+                <div class="pt-pagination">
+                    <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "") onclick="window.location.href='?page=@(currentPage - 1)&days=@ViewBag.Days&filter=@ViewBag.Filter&search=@ViewBag.Search'">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div class="pt-pagination-info">
+                        <span class="text-muted me-2">Page</span>
+                        @{
+                            int startPage = Math.Max(1, currentPage - 2);
+                            int endPage = Math.Min(totalPages, currentPage + 2);
+                            
+                            if (startPage > 1)
+                            {
+                                <button class="pt-pagination-page" onclick="window.location.href='?page=1&days=@ViewBag.Days&filter=@ViewBag.Filter&search=@ViewBag.Search'">1</button>
+                                if (startPage > 2)
+                                {
+                                    <span class="px-2">...</span>
+                                }
+                            }
+                            
+                            for (int i = startPage; i <= endPage; i++)
+                            {
+                                <button class="pt-pagination-page @(currentPage == i ? "active" : "")" onclick="window.location.href='?page=@i&days=@ViewBag.Days&filter=@ViewBag.Filter&search=@ViewBag.Search'">@i</button>
+                            }
+                            
+                            if (endPage < totalPages)
+                            {
+                                if (endPage < totalPages - 1)
+                                {
+                                    <span class="px-2">...</span>
+                                }
+                                <button class="pt-pagination-page" onclick="window.location.href='?page=@totalPages&days=@ViewBag.Days&filter=@ViewBag.Filter&search=@ViewBag.Search'">@totalPages</button>
+                            }
+                        }
+                    </div>
+                    <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "") onclick="window.location.href='?page=@(currentPage + 1)&days=@ViewBag.Days&filter=@ViewBag.Filter&search=@ViewBag.Search'">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="p-3 text-center text-muted">
+                    <small>Showing all @totalItems logs</small>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function exportLogs() {
+            const params = new URLSearchParams(window.location.search);
+            window.location.href = `/SuperAdmin/ExportLogs?${params.toString()}`;
+        }
+    </script>
+}

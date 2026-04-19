@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PayroTech Design System - Component Usage Guide</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; max-width: 1200px; margin: 0 auto; padding: 40px; background: #f8fafc; }
+        h1 { color: #1e293b; border-bottom: 3px solid #2563eb; padding-bottom: 10px; }
+        h2 { color: #2563eb; margin-top: 40px; }
+        h3 { color: #475569; }
+        pre { background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 12px; overflow-x: auto; font-size: 14px; }
+        code { font-family: 'Fira Code', monospace; }
+        .section { background: white; padding: 30px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .note { background: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+        .warning { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+<body>
+
+<h1>🎨 PayroTech Design System v1.0</h1>
+<p>A comprehensive design system with CSS variables, animations, typography, and reusable components for consistent UI/UX across the entire PayroTech platform.</p>
+
+<div class="section">
+<h2>📦 Installation</h2>
+<p>The design system is automatically loaded via the layouts. To use it in custom pages:</p>
+<pre><code>&lt;!-- In your HTML head --&gt;
+&lt;link href="~/css/design-system.css" rel="stylesheet"&gt;
+
+&lt;!-- Before closing body tag --&gt;
+&lt;script src="~/js/design-system.js"&gt;&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🎨 CSS Variables (Design Tokens)</h2>
+<p>Use these variables for consistent theming:</p>
+<pre><code>/* Colors */
+var(--pt-primary-500)    /* Primary blue */
+var(--pt-success-500)    /* Success green */
+var(--pt-warning-500)    /* Warning amber */
+var(--pt-danger-500)     /* Danger red */
+
+/* Semantic Colors (auto-switch in dark mode) */
+var(--pt-bg-primary)     /* Main background */
+var(--pt-bg-card)        /* Card background */
+var(--pt-text-primary)   /* Primary text */
+var(--pt-text-secondary) /* Secondary text */
+var(--pt-border-primary) /* Border color */
+
+/* Spacing */
+var(--pt-space-2)  /* 0.5rem */
+var(--pt-space-4)  /* 1rem */
+var(--pt-space-6)  /* 1.5rem */
+var(--pt-space-8)  /* 2rem */
+
+/* Border Radius */
+var(--pt-radius-md)   /* 8px */
+var(--pt-radius-lg)   /* 12px */
+var(--pt-radius-xl)   /* 16px */
+var(--pt-radius-full) /* Fully rounded */
+
+/* Shadows */
+var(--pt-shadow-sm)  /* Subtle shadow */
+var(--pt-shadow-md)  /* Medium shadow */
+var(--pt-shadow-lg)  /* Large shadow */
+</code></pre>
+</div>
+
+<div class="section">
+<h2>📊 Stats Cards (KPI Cards)</h2>
+<pre><code>&lt;div class="pt-stats-card"&gt;
+    &lt;div class="pt-stats-value" data-countup="1234"&gt;0&lt;/div&gt;
+    &lt;div class="pt-stats-label"&gt;Total Employees&lt;/div&gt;
+    &lt;i class="bi bi-people pt-stats-icon"&gt;&lt;/i&gt;
+    &lt;div class="pt-trend up mt-2"&gt;
+        &lt;i class="bi bi-arrow-up"&gt;&lt;/i&gt; 12% vs last month
+    &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- Variants: success, warning, danger --&gt;
+&lt;div class="pt-stats-card success"&gt;...&lt;/div&gt;
+&lt;div class="pt-stats-card warning"&gt;...&lt;/div&gt;
+&lt;div class="pt-stats-card danger"&gt;...&lt;/div&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🎴 Cards</h2>
+<pre><code>&lt;!-- Basic Card --&gt;
+&lt;div class="pt-card"&gt;
+    &lt;div class="pt-card-header"&gt;Card Title&lt;/div&gt;
+    &lt;div class="pt-card-body"&gt;Card content here&lt;/div&gt;
+    &lt;div class="pt-card-footer"&gt;Card footer&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- Glassmorphism Card --&gt;
+&lt;div class="pt-card-glass"&gt;
+    &lt;div class="pt-card-body"&gt;Frosted glass effect&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- Gradient Card --&gt;
+&lt;div class="pt-card-gradient"&gt;...&lt;/div&gt;
+&lt;div class="pt-card-gradient success"&gt;...&lt;/div&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🔘 Buttons</h2>
+<pre><code>&lt;button class="pt-btn pt-btn-primary"&gt;Primary&lt;/button&gt;
+&lt;button class="pt-btn pt-btn-secondary"&gt;Secondary&lt;/button&gt;
+&lt;button class="pt-btn pt-btn-success"&gt;Success&lt;/button&gt;
+&lt;button class="pt-btn pt-btn-danger"&gt;Danger&lt;/button&gt;
+&lt;button class="pt-btn pt-btn-ghost"&gt;Ghost&lt;/button&gt;
+
+&lt;!-- Sizes --&gt;
+&lt;button class="pt-btn pt-btn-primary pt-btn-sm"&gt;Small&lt;/button&gt;
+&lt;button class="pt-btn pt-btn-primary pt-btn-lg"&gt;Large&lt;/button&gt;
+
+&lt;!-- Icon Button --&gt;
+&lt;button class="pt-btn pt-btn-primary pt-btn-icon"&gt;
+    &lt;i class="bi bi-plus"&gt;&lt;/i&gt;
+&lt;/button&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>📋 Tables</h2>
+<pre><code>&lt;div class="pt-table-wrapper"&gt;
+    &lt;table class="pt-table"&gt;
+        &lt;thead&gt;
+            &lt;tr&gt;
+                &lt;th&gt;Name&lt;/th&gt;
+                &lt;th&gt;Status&lt;/th&gt;
+            &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+            &lt;tr&gt;
+                &lt;td&gt;John Doe&lt;/td&gt;
+                &lt;td&gt;&lt;span class="pt-badge pt-badge-success"&gt;Active&lt;/span&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;/tbody&gt;
+    &lt;/table&gt;
+&lt;/div&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🏷️ Badges & Status</h2>
+<pre><code>&lt;!-- Badges --&gt;
+&lt;span class="pt-badge pt-badge-primary"&gt;Primary&lt;/span&gt;
+&lt;span class="pt-badge pt-badge-success"&gt;Active&lt;/span&gt;
+&lt;span class="pt-badge pt-badge-warning"&gt;Pending&lt;/span&gt;
+&lt;span class="pt-badge pt-badge-danger"&gt;Expired&lt;/span&gt;
+&lt;span class="pt-badge pt-badge-neutral"&gt;Draft&lt;/span&gt;
+
+&lt;!-- Status Dots --&gt;
+&lt;span class="pt-status-dot online"&gt;&lt;/span&gt; Online
+&lt;span class="pt-status-dot offline"&gt;&lt;/span&gt; Offline
+&lt;span class="pt-status-dot busy"&gt;&lt;/span&gt; Busy
+&lt;span class="pt-status-dot away"&gt;&lt;/span&gt; Away
+
+&lt;!-- Pulsing Status --&gt;
+&lt;span class="pt-status-dot online pulse"&gt;&lt;/span&gt; Live
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🦴 Skeleton Loaders</h2>
+<pre><code>&lt;!-- HTML --&gt;
+&lt;div id="myLoader"&gt;&lt;/div&gt;
+
+&lt;!-- JavaScript --&gt;
+&lt;script&gt;
+// Show skeleton while loading
+PT.Skeleton.show('#myLoader', 'card', 3);  // Type: card, stat, table, text
+
+// Hide when done
+PT.Skeleton.hide('#myLoader');
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🔔 Toast Notifications</h2>
+<pre><code>&lt;script&gt;
+// Simple toasts
+PT.Toast.success('Employee added successfully', 'Success');
+PT.Toast.error('Failed to save changes', 'Error');
+PT.Toast.warning('Your session will expire soon', 'Warning');
+PT.Toast.info('New features available', 'Info');
+
+// Custom options
+PT.Toast.show({
+    type: 'success',
+    title: 'Custom Toast',
+    message: 'With custom duration',
+    duration: 10000,  // 10 seconds
+    closable: true
+});
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>⌨️ Command Palette (Cmd+K)</h2>
+<pre><code>&lt;script&gt;
+// Auto-initializes with default navigation items
+// Or customize:
+PT.CommandPalette.init([
+    { 
+        id: 'dashboard', 
+        icon: 'bi-speedometer2', 
+        title: 'Dashboard', 
+        description: 'Go to main dashboard',
+        action: () => window.location.href = '/',
+        shortcut: ['D']
+    },
+    // ... more items
+]);
+
+// Programmatic control
+PT.CommandPalette.open();
+PT.CommandPalette.close();
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🌙 Theme Management</h2>
+<pre><code>&lt;script&gt;
+// Toggle theme
+PT.Theme.toggle();
+
+// Set specific theme
+PT.Theme.set('dark');
+PT.Theme.set('light');
+
+// Get current theme
+const theme = PT.Theme.get(); // 'light' or 'dark'
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>📊 Progress Indicators</h2>
+<pre><code>&lt;!-- Progress Bar --&gt;
+&lt;div id="progressBar"&gt;&lt;/div&gt;
+&lt;script&gt;
+const progress = PT.Progress.createBar('#progressBar', 75, { variant: 'success' });
+progress.update(100);  // Update value
+&lt;/script&gt;
+
+&lt;!-- Circular Progress --&gt;
+&lt;div id="circularProgress"&gt;&lt;/div&gt;
+&lt;script&gt;
+const circle = PT.Progress.createCircle('#circularProgress', 65, {
+    size: 80,
+    showValue: true
+});
+circle.update(100);  // Update value
+&lt;/script&gt;
+
+&lt;!-- Spinner --&gt;
+&lt;div class="pt-spinner"&gt;&lt;/div&gt;
+&lt;div class="pt-spinner sm"&gt;&lt;/div&gt;
+&lt;div class="pt-spinner lg"&gt;&lt;/div&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🗂️ Breadcrumb Navigation</h2>
+<pre><code>&lt;!-- Auto-generate from URL --&gt;
+&lt;nav class="pt-breadcrumb" id="breadcrumb"&gt;&lt;/nav&gt;
+&lt;script&gt;
+PT.Breadcrumb.init('#breadcrumb');
+&lt;/script&gt;
+
+&lt;!-- Custom items --&gt;
+&lt;script&gt;
+PT.Breadcrumb.init('#breadcrumb', [
+    { label: 'Home', url: '/', icon: 'bi-house' },
+    { label: 'Employees', url: '/Employee' },
+    { label: 'John Doe' }  // No url = current page
+]);
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>📝 Multi-Step Forms (Stepper)</h2>
+<pre><code>&lt;div id="formStepper"&gt;&lt;/div&gt;
+&lt;script&gt;
+const stepper = PT.Stepper.create('#formStepper', [
+    'Personal Info',
+    'Employment',
+    'Compensation',
+    'Review'
+], 1);  // Current step (0-indexed)
+
+// Control
+stepper.next();
+stepper.prev();
+stepper.setStep(2);
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🔢 Count Up Animation</h2>
+<pre><code>&lt;!-- Auto-animate on scroll into view --&gt;
+&lt;span data-countup="1234" data-prefix="$" data-decimals="2"&gt;0&lt;/span&gt;
+
+&lt;!-- Manual control --&gt;
+&lt;script&gt;
+PT.CountUp.animate('#myElement', 5000, {
+    duration: 2000,
+    prefix: '₱',
+    suffix: '.00',
+    decimals: 2,
+    separator: ','
+});
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🚀 Floating Action Button (FAB)</h2>
+<pre><code>&lt;script&gt;
+PT.FAB.init([
+    { 
+        icon: 'bi-person-plus', 
+        label: 'Add Employee', 
+        action: () => window.location.href = '/Employee/Create' 
+    },
+    { 
+        icon: 'bi-calendar-plus', 
+        label: 'File Leave', 
+        action: () => window.location.href = '/Leave/Create' 
+    }
+]);
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>📤 Data Export</h2>
+<pre><code>&lt;script&gt;
+// Export table data
+const data = [
+    { name: 'John', salary: 50000 },
+    { name: 'Jane', salary: 60000 }
+];
+
+PT.Export.toCSV(data, 'employees.csv');
+PT.Export.toJSON(data, 'employees.json');
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>✨ Scroll Animations</h2>
+<pre><code>&lt;!-- Add data-animate attribute to any element --&gt;
+&lt;div data-animate="fadeInUp"&gt;Animates when scrolled into view&lt;/div&gt;
+
+&lt;!-- Available animations --&gt;
+fadeIn, fadeInUp, fadeInDown, fadeInLeft, fadeInRight
+scaleIn, popIn, slideInRight, slideInUp
+
+&lt;!-- Staggered animations for lists --&gt;
+&lt;div class="pt-stagger-1"&gt;First&lt;/div&gt;
+&lt;div class="pt-stagger-2"&gt;Second&lt;/div&gt;
+&lt;div class="pt-stagger-3"&gt;Third&lt;/div&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>🔳 Empty States</h2>
+<pre><code>&lt;div class="pt-empty-state"&gt;
+    &lt;div class="pt-empty-state-icon"&gt;
+        &lt;i class="bi bi-people"&gt;&lt;/i&gt;
+    &lt;/div&gt;
+    &lt;div class="pt-empty-state-title"&gt;No employees yet&lt;/div&gt;
+    &lt;div class="pt-empty-state-description"&gt;
+        Add your first employee to get started.
+    &lt;/div&gt;
+    &lt;a href="/Employee/Create" class="pt-btn pt-btn-primary"&gt;
+        &lt;i class="bi bi-plus-circle me-2"&gt;&lt;/i&gt;Add Employee
+    &lt;/a&gt;
+&lt;/div&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>👤 Avatars</h2>
+<pre><code>&lt;!-- Initial Avatar --&gt;
+&lt;div class="pt-avatar"&gt;JD&lt;/div&gt;
+&lt;div class="pt-avatar sm"&gt;JD&lt;/div&gt;
+&lt;div class="pt-avatar lg"&gt;JD&lt;/div&gt;
+
+&lt;!-- Image Avatar --&gt;
+&lt;div class="pt-avatar"&gt;
+    &lt;img src="user.jpg" alt="User"&gt;
+&lt;/div&gt;
+
+&lt;!-- Avatar Group --&gt;
+&lt;div class="pt-avatar-group"&gt;
+    &lt;div class="pt-avatar"&gt;JD&lt;/div&gt;
+    &lt;div class="pt-avatar"&gt;AB&lt;/div&gt;
+    &lt;div class="pt-avatar"&gt;+3&lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+</div>
+
+<div class="section">
+<h2>⌨️ Keyboard Shortcuts</h2>
+<pre><code>&lt;script&gt;
+// Default shortcuts (auto-registered):
+// Ctrl+K - Command palette
+// N - New employee
+// E - Employees list
+// D - Toggle dark mode
+// ? - Show shortcuts help
+
+// Register custom shortcut
+PT.Shortcuts.register('s', () => {
+    document.getElementById('searchInput').focus();
+});
+
+// Unregister
+PT.Shortcuts.unregister('s');
+&lt;/script&gt;
+</code></pre>
+</div>
+
+<div class="note">
+<strong>💡 Pro Tip:</strong> All components automatically adapt to dark mode. Just use the design system's CSS variables for any custom styling.
+</div>
+
+<div class="warning">
+<strong>⚠️ Note:</strong> Remember to include both CSS and JS files. The JavaScript initializes automatically on DOM ready.
+</div>
+
+</body>
+</html>
+            <i class="bi bi-file-earmark-excel"></i> Export as Excel
+        </button>
+        <button class="export-option" onclick="exportData('csv')">
+            <i class="bi bi-file-earmark-text"></i> Export as CSV
+        </button>
+    </div>
+</div>
+
+<!-- ==================== DARK MODE INFO ==================== -->
+<!-- Dark mode is automatically handled by the theme toggle in navbar -->
+<!-- Your CSS classes will automatically adjust based on 'dark-mode' class on html -->
+
+<!--
+Dark Mode automatically applies:
+- body.dark-mode → Dark background
+- All cards get dark borders and background
+- Text colors automatically adjust
+- Sidebar becomes darker
+- All components respect dark mode
+
+Just add body.dark-mode class and the CSS variables handle everything!
+-->
+
+<!-- ==================== NOTIFICATION EXAMPLES ==================== -->
+<!-- Notifications are built into the navbar -->
+<!-- To add custom notifications, you can update the notification-dropdown dynamically:
+-->
+
+<script>
+    // Example: Add a new notification programmatically
+    function addNotification(title, message, type = 'info') {
+        const notifDropdown = document.getElementById('notificationDropdown');
+        const notifItem = document.createElement('div');
+        notifItem.className = 'notification-item unread';
+        notifItem.innerHTML = `
+            <strong style="color: #2563eb;">${title}</strong>
+            <p style="margin: 5px 0 0; font-size: 0.85rem; color: #64748b;">${message}</p>
+            <small style="color: #94a3b8;">now</small>
+        `;
+
+        // Insert before the "View all" link
+        const lastChild = notifDropdown.children[notifDropdown.children.length - 1];
+        notifDropdown.insertBefore(notifItem, lastChild);
+
+        // Update badge count
+        const badge = document.querySelector('.notification-badge');
+        badge.textContent = parseInt(badge.textContent) + 1;
+    }
+
+    // Usage:
+    // addNotification('Leave Approved', 'Your leave request has been approved!');
+</script>
+
+<!-- ==================== COMPLETE EXAMPLE: EMPLOYEE TABLE ==================== -->
+
+<div class="breadcrumb-nav">
+    <a href="/" class="breadcrumb-item">Dashboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-item active">Employees</span>
+</div>
+
+<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <h5>Employee List</h5>
+    <div style="position: relative; display: inline-block;">
+        <button class="export-btn" onclick="showExportOptions(this)">
+            <i class="bi bi-download"></i> Export
+        </button>
+        <div class="export-dropdown">
+            <button class="export-option" onclick="exportData('pdf')">
+                <i class="bi bi-file-pdf"></i> Export as PDF
+            </button>
+            <button class="export-option" onclick="exportData('excel')">
+                <i class="bi bi-file-earmark-excel"></i> Export as Excel
+            </button>
+            <button class="export-option" onclick="exportData('csv')">
+                <i class="bi bi-file-earmark-text"></i> Export as CSV
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading skeleton while fetching -->
+<div id="employeeTableLoader"></div>
+
+<!-- Table content (shown after skeleton) -->
+<table class="table" id="employeeTable" style="display: none;">
+    <thead>
+        <tr>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>EMP001</td>
+            <td>John Doe</td>
+            <td>Engineering</td>
+            <td><span class="badge bg-success">Active</span></td>
+            <td>
+                <a href="#" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
+            </td>
+        </tr>
+        <!-- More rows... -->
+    </tbody>
+</table>
+
+<script>
+    // Show skeleton while loading
+    showSkeleton('employeeTableLoader', 'table');
+
+    // Simulate API call
+    setTimeout(() => {
+        removeSkeleton('employeeTableLoader');
+        document.getElementById('employeeTable').style.display = 'table';
+    }, 2000);
+</script>
+
+<!-- ==================== CSS VARIABLES REFERENCE ==================== -->
+<!--
+Light Mode (Default):
+--primary-color: #2563eb (Blue)
+--text-light: #333
+--text-muted: #64748b
+--bg-light: #f1f5f9
+--bg-card: #ffffff
+--border-color: #e2e8f0
+
+Dark Mode (body.dark-mode):
+--primary-color: #2563eb (stays same)
+--text-light: #e0e7ff
+--text-muted: #a1a5b4
+--bg-light: #0f172a
+--bg-card: #1e293b
+--border-color: #334155
+
+For Super Admin (primary color changes to #7c3aed):
+Light Mode:
+--primary-color: #7c3aed (Purple)
+backgrounds and colors use purple shades
+
+Dark Mode:
+--primary-color: #7c3aed (stays same)
+darker versions of purple applied
+-->
+
+<!-- ==================== COMPONENT COLORS BY TYPE ==================== -->
+
+<!-- Success (Green) -->
+<div class="alert alert-success">
+    <i class="bi bi-check-circle"></i> Operation successful
+</div>
+
+<!-- Error (Red) -->
+<div class="alert alert-danger">
+    <i class="bi bi-x-circle"></i> Operation failed
+</div>
+
+<!-- Warning (Yellow) -->
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i> Please review this
+</div>
+
+<!-- Info (Blue) -->
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Information notice
+</div>
+
+<!-- ==================== THEME DETECTION IN JAVASCRIPT ==================== -->
+
+<script>
+    // Check if dark mode is enabled
+    function isDarkMode() {
+        return document.documentElement.classList.contains('dark-mode');
+    }
+
+    // Example usage
+    if (isDarkMode()) {
+        // Use darker chart colors for charts.js or similar
+        console.log('Dark mode is enabled');
+    } else {
+        // Use lighter chart colors
+        console.log('Light mode is enabled');
+    }
+</script>
+

@@ -1,0 +1,161 @@
+@{
+    ViewData["Title"] = "Team Management";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+    var departments = ViewBag.Departments as List<PayroTech.Models.Entities.Department> ?? new List<PayroTech.Models.Entities.Department>();
+    bool hasTeams = ViewBag.HasTeams == true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Team Management</h4>
+        <p class="text-muted mb-0">Create and manage your departments / teams</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeamModal">
+        <i class="bi bi-plus-circle me-2"></i>Add Team
+    </button>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!hasTeams)
+{
+    <!-- Empty state -->
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-people fs-1 text-muted mb-3 d-block"></i>
+            <h5>No teams yet</h5>
+            <p class="text-muted mb-4">Create your first team before adding staff members.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeamModal">
+                <i class="bi bi-plus-circle me-2"></i>Create First Team
+            </button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var dept in departments)
+        {
+            var empCount = dept.Employees?.Count(e => e.IsActive) ?? 0;
+            var colors = new[] {
+                "linear-gradient(135deg,#0891b2,#22d3ee)",
+                "linear-gradient(135deg,#059669,#34d399)",
+                "linear-gradient(135deg,#7c3aed,#a855f7)",
+                "linear-gradient(135deg,#f59e0b,#fbbf24)",
+                "linear-gradient(135deg,#2563eb,#60a5fa)"
+            };
+            var color = colors[dept.Id % colors.Length];
+            var initial = dept.DepartmentName.FirstOrDefault().ToString().ToUpper();
+
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;border-radius:12px;background:@color;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.2rem;flex-shrink:0;">
+                                @initial
+                            </div>
+                            <div>
+                                <h5 class="mb-0">@dept.DepartmentName</h5>
+                                <small class="text-muted">Code: @dept.DepartmentCode</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between text-center mb-3">
+                            <div>
+                                <div class="fw-bold fs-5">@empCount</div>
+                                <small class="text-muted">Employees</small>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-5 text-success">Active</div>
+                                <small class="text-muted">Status</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a href="/Manager/CreateStaff?teamId=@dept.Id" class="btn btn-sm btn-outline-primary flex-grow-1">
+                                <i class="bi bi-person-plus me-1"></i>Add Staff
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="deleteTeam(@dept.Id, '@dept.DepartmentName')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Add Team Modal -->
+<div class="modal fade" id="addTeamModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-people me-2"></i>Create New Team</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Team Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="teamName" placeholder="e.g., Engineering, Sales, Finance">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Team Code <small class="text-muted">(auto-generated if empty)</small></label>
+                    <input type="text" class="form-control" id="teamCode" placeholder="e.g., ENG" maxlength="10">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createTeam()">
+                    <i class="bi bi-check-lg me-1"></i>Create Team
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+async function createTeam() {
+    const name = document.getElementById('teamName').value.trim();
+    const code = document.getElementById('teamCode').value.trim();
+    if (!name) { alert('Team name is required'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value
+        || document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] || '';
+
+    const res = await fetch('/Manager/CreateTeam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+        body: `teamName=${encodeURIComponent(name)}&teamCode=${encodeURIComponent(code)}&__RequestVerificationToken=${encodeURIComponent(token)}`
+    });
+    const data = await res.json();
+    if (data.success) { location.reload(); }
+    else { alert(data.message); }
+}
+
+async function deleteTeam(id, name) {
+    if (!confirm(`Delete team "${name}"? This cannot be undone.`)) return;
+
+    const token = document.querySelector('meta[name="csrf-token"]')?.content
+        || document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+    const res = await fetch('/Manager/DeleteTeam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `id=${id}&__RequestVerificationToken=${encodeURIComponent(token)}`
+    });
+    const data = await res.json();
+    if (data.success) { location.reload(); }
+    else { alert(data.message); }
+}
+</script>
+@Html.AntiForgeryToken()
+}

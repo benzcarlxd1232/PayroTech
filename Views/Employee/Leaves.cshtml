@@ -1,0 +1,103 @@
+@{
+    ViewData["Title"] = "My Leaves";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    var leaves   = ViewBag.Leaves   as List<PayroTech.Models.Entities.Leave>        ?? new();
+    var balance  = ViewBag.Balance  as PayroTech.Models.Entities.LeaveBalance;
+    var employee = ViewBag.Employee as PayroTech.Models.Entities.Employee;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">My Leaves</h4>
+        <p class="text-muted mb-0">Leave balance and history</p>
+    </div>
+    <a href="/MyPortal/RequestLeave" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Request Leave
+    </a>
+</div>
+
+<!-- Leave Balance -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-primary">@((balance?.VacationLeaveBalance ?? 0).ToString("0"))</div>
+            <div class="text-muted small">Vacation Leave Available</div>
+            <div class="text-muted" style="font-size:.75rem;">@((balance?.VacationLeaveUsed ?? 0).ToString("0")) used</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-success">@((balance?.SickLeaveBalance ?? 0).ToString("0"))</div>
+            <div class="text-muted small">Sick Leave Available</div>
+            <div class="text-muted" style="font-size:.75rem;">@((balance?.SickLeaveUsed ?? 0).ToString("0")) used</div>
+        </div>
+    </div>
+</div>
+
+<!-- Leave History -->
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-clock-history me-2"></i>Leave History
+    </div>
+    @if (!leaves.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
+            <h6>No leave requests yet</h6>
+            <p class="text-muted small mb-3">Submit your first leave request.</p>
+            <a href="/MyPortal/RequestLeave" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>Request Leave
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Days</th>
+                        <th>Reason</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var l in leaves)
+                    {
+                        var statusBadge = l.Status switch
+                        {
+                            PayroTech.Models.Enums.LeaveStatus.Approved => "bg-success",
+                            PayroTech.Models.Enums.LeaveStatus.Rejected => "bg-danger",
+                            PayroTech.Models.Enums.LeaveStatus.Cancelled => "bg-secondary",
+                            _ => "bg-warning text-dark"
+                        };
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-primary-subtle text-primary">@l.LeaveType</span>
+                            </td>
+                            <td class="text-muted small">@l.StartDate.ToString("MMM dd, yyyy")</td>
+                            <td class="text-muted small">@l.EndDate.ToString("MMM dd, yyyy")</td>
+                            <td class="fw-medium">@l.TotalDays</td>
+                            <td class="text-muted small">@(l.Reason?.Length > 40 ? l.Reason[..40] + "…" : l.Reason ?? "—")</td>
+                            <td class="text-center">
+                                <span class="badge @statusBadge">@l.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

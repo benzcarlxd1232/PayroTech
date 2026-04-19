@@ -1,0 +1,166 @@
+@model List<PayroTech.Models.Entities.IncidentReport>
+@using PayroTech.Models.Enums
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<PayroTech.Models.Entities.ApplicationUser> UserManager
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+    ViewData["Title"] = "My Submitted Reports";
+    Layout = currentUser?.Role switch
+    {
+        UserRole.HR           => "_HRLayout",
+        UserRole.Accountant   => "_AccountantLayout",
+        UserRole.CompanyAdmin => "_ManagerLayout",
+        _                     => "_EmployeeLayout"
+    };
+    var approvedIdRequestIds = ViewBag.ApprovedIDRequestIds as List<int> ?? new();
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0 fw-bold">My Submitted Reports</h4>
+            <p class="text-muted small mb-0">All incident reports you have submitted, including their status and results.</p>
+        </div>
+        <a href="/IncidentReport/Create" class="btn btn-danger">
+            <i class="bi bi-plus-circle me-2"></i>New Report
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm text-center py-5" style="border-radius:16px;">
+            <div class="card-body">
+                <div style="width:64px;height:64px;background:#f1f5f9;border-radius:50%;
+                            display:flex;align-items:center;justify-content:center;
+                            margin:0 auto 16px;font-size:1.8rem;color:#94a3b8;">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <h5 class="fw-semibold text-muted">No reports submitted yet</h5>
+                <p class="text-muted small">When you submit an incident report, it will appear here.</p>
+                <a href="/IncidentReport/Create" class="btn btn-danger mt-2">
+                    <i class="bi bi-plus-circle me-2"></i>Submit Your First Report
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var report in Model)
+            {
+                var statusColor = report.Status switch
+                {
+                    IncidentStatus.Open       => "warning",
+                    IncidentStatus.InProgress => "info",
+                    IncidentStatus.Resolved   => "success",
+                    IncidentStatus.Closed     => "danger",
+                    _                         => "secondary"
+                };
+                var statusIcon = report.Status switch
+                {
+                    IncidentStatus.Open       => "bi-clock",
+                    IncidentStatus.InProgress => "bi-arrow-repeat",
+                    IncidentStatus.Resolved   => "bi-check-circle-fill",
+                    IncidentStatus.Closed     => "bi-x-circle-fill",
+                    _                         => "bi-circle"
+                };
+                var isLostId = report.Type == IncidentType.LostIDCard;
+                var isApproved = report.Status == IncidentStatus.Resolved;
+                var canDownloadId = isLostId && isApproved && approvedIdRequestIds.Any();
+
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                                <!-- Left: Info -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                        <span class="badge bg-@statusColor">
+                                            <i class="bi @statusIcon me-1"></i>@report.Status
+                                        </span>
+                                        <span class="badge bg-light text-dark border">@report.Title</span>
+                                        <span class="text-muted small">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            @report.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")
+                                        </span>
+                                    </div>
+
+                                    <p class="mb-1 fw-semibold">@report.WhatHappened</p>
+
+                                    @if (!string.IsNullOrEmpty(report.WhyHappened))
+                                    {
+                                        <p class="text-muted small mb-1">
+                                            <strong>Why:</strong> @report.WhyHappened
+                                        </p>
+                                    }
+
+                                    @if (report.WhenHappened.HasValue)
+                                    {
+                                        <p class="text-muted small mb-1">
+                                            <i class="bi bi-clock me-1"></i>
+                                            Incident occurred: @report.WhenHappened.Value.ToString("MMM dd, yyyy hh:mm tt")
+                                        </p>
+                                    }
+
+                                    <!-- Resolution / Manager Response -->
+                                    @if (!string.IsNullOrEmpty(report.Resolution))
+                                    {
+                                        <div class="mt-2 p-3 rounded-3"
+                                             style="background:@(isApproved ? "#f0fdf4" : "#fef2f2");
+                                                    border-left:4px solid @(isApproved ? "#22c55e" : "#ef4444");">
+                                            <p class="small mb-0">
+                                                <strong>Manager's Response:</strong> @report.Resolution
+                                            </p>
+                                            @if (report.ResolvedAt.HasValue)
+                                            {
+                                                <p class="text-muted small mb-0 mt-1">
+                                                    <i class="bi bi-person-check me-1"></i>
+                                                    Reviewed on @report.ResolvedAt.Value.ToString("MMM dd, yyyy")
+                                                </p>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Right: Actions -->
+                                <div class="d-flex flex-column gap-2 align-items-end">
+                                    <a href="/IncidentReport/Details/@report.Id" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+
+                                    @if (canDownloadId)
+                                    {
+                                        var idReqId = approvedIdRequestIds.First();
+                                        <a href="/IDCard/PrintReplacement/@idReqId"
+                                           class="btn btn-sm btn-success"
+                                           target="_blank">
+                                            <i class="bi bi-download me-1"></i>Download ID Card
+                                        </a>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                                            <i class="bi bi-id-card me-1"></i>ID Ready
+                                        </span>
+                                    }
+                                    else if (isLostId && !isApproved)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle small">
+                                            <i class="bi bi-hourglass-split me-1"></i>Awaiting Approval
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

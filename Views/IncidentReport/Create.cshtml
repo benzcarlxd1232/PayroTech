@@ -1,0 +1,135 @@
+@model PayroTech.Controllers.CreateIncidentViewModel
+@{
+    ViewData["Title"] = "Submit Incident Report";
+    var types = ViewBag.IncidentTypes as List<(int Value, string Label)> ?? new();
+
+    // Use the correct layout based on role
+    var userRole = User.IsInRole("HR") ? "HR"
+                 : User.IsInRole("Accountant") ? "Accountant"
+                 : User.IsInRole("CompanyAdmin") ? "Manager"
+                 : "Employee";
+}
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<PayroTech.Models.Entities.ApplicationUser> UserManager
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+    Layout = currentUser?.Role switch
+    {
+        PayroTech.Models.Enums.UserRole.HR           => "_HRLayout",
+        PayroTech.Models.Enums.UserRole.Accountant   => "_AccountantLayout",
+        PayroTech.Models.Enums.UserRole.CompanyAdmin => "_ManagerLayout",
+        _                                            => "_EmployeeLayout"
+    };
+}
+
+<div class="container-fluid py-4" style="max-width:720px;">
+    <!-- Header -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,#ef4444,#f87171);
+                    border-radius:12px;display:flex;align-items:center;justify-content:center;
+                    font-size:1.4rem;color:#fff;flex-shrink:0;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <div>
+            <h4 class="mb-0 fw-bold">Submit Incident Report</h4>
+            <p class="text-muted small mb-0">Your report will be sent to your manager for review.</p>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm" style="border-radius:16px;">
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+
+                <!-- Report Type -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">
+                        Report Type <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="IncidentType" class="form-select" id="incidentTypeSelect" required>
+                        <option value="">— Select report type —</option>
+                        @foreach (var t in types)
+                        {
+                            <option value="@t.Value">@t.Label</option>
+                        }
+                    </select>
+                    <span asp-validation-for="IncidentType" class="text-danger small"></span>
+
+                    <!-- Lost ID hint -->
+                    <div id="lostIdHint" class="alert alert-info mt-2 small py-2" style="display:none;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        For a <strong>Lost ID Card</strong>, your manager will approve and generate a replacement ID card for you to download.
+                    </div>
+                </div>
+
+                <!-- When it happened -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Date of Incident <span class="text-danger">*</span></label>
+                        <input asp-for="WhenHappenedDate" type="date" class="form-control"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        <span asp-validation-for="WhenHappenedDate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Time of Incident</label>
+                        <input name="WhenHappenedTime" type="time" class="form-control"
+                               value="@DateTime.Now.ToString("HH:mm")" />
+                    </div>
+                </div>
+
+                <!-- What happened -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">
+                        What Happened <span class="text-danger">*</span>
+                    </label>
+                    <textarea asp-for="WhatHappened" class="form-control" rows="4"
+                              placeholder="Describe the incident in detail..." required></textarea>
+                    <span asp-validation-for="WhatHappened" class="text-danger small"></span>
+                </div>
+
+                <!-- Why it happened -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Why Did It Happen?</label>
+                    <textarea asp-for="WhyHappened" class="form-control" rows="3"
+                              placeholder="Explain the cause or circumstances (optional)..."></textarea>
+                </div>
+
+                <!-- Additional notes -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Additional Notes</label>
+                    <textarea asp-for="Description" class="form-control" rows="2"
+                              placeholder="Any other relevant information (optional)..."></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-send me-2"></i>Submit Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('incidentTypeSelect').addEventListener('change', function () {
+            const hint = document.getElementById('lostIdHint');
+            // LostIDCard = enum value 1
+            hint.style.display = this.value === '1' ? 'block' : 'none';
+        });
+    </script>
+}

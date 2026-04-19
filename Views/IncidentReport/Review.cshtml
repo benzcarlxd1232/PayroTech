@@ -1,0 +1,306 @@
+@model List<PayroTech.Models.Entities.IncidentReport>
+@using PayroTech.Models.Enums
+@{
+    ViewData["Title"] = "Incident Reports — Review";
+    Layout = "_ManagerLayout";
+    var pending = Model.Count(r => r.Status == IncidentStatus.Open || r.Status == IncidentStatus.InProgress);
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0 fw-bold">Incident Reports</h4>
+            <p class="text-muted small mb-0">Review and take action on staff incident reports.</p>
+        </div>
+        @if (pending > 0)
+        {
+            <span class="badge bg-danger fs-6 px-3 py-2">
+                <i class="bi bi-exclamation-circle me-1"></i>@pending Pending
+            </span>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-pills mb-4 gap-1" id="filterTabs">
+        <li class="nav-item">
+            <button class="nav-link active" onclick="filterReports('all')">
+                All <span class="badge bg-secondary ms-1">@Model.Count</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" onclick="filterReports('pending')">
+                Pending <span class="badge bg-warning text-dark ms-1">@pending</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" onclick="filterReports('resolved')">
+                Resolved <span class="badge bg-success ms-1">@Model.Count(r => r.Status == IncidentStatus.Resolved)</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" onclick="filterReports('lostid')">
+                Lost ID <span class="badge bg-info ms-1">@Model.Count(r => r.Type == IncidentType.LostIDCard)</span>
+            </button>
+        </li>
+    </ul>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm text-center py-5" style="border-radius:16px;">
+            <div class="card-body">
+                <i class="bi bi-inbox text-muted" style="font-size:3rem;"></i>
+                <h5 class="fw-semibold text-muted mt-3">No incident reports yet</h5>
+                <p class="text-muted small">Reports submitted by your staff will appear here.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div id="reportsList">
+            @foreach (var report in Model)
+            {
+                var statusColor = report.Status switch
+                {
+                    IncidentStatus.Open       => "warning",
+                    IncidentStatus.InProgress => "info",
+                    IncidentStatus.Resolved   => "success",
+                    IncidentStatus.Closed     => "danger",
+                    _                         => "secondary"
+                };
+                var isPending = report.Status == IncidentStatus.Open || report.Status == IncidentStatus.InProgress;
+                var isLostId  = report.Type == IncidentType.LostIDCard;
+                var dataFilter = isPending ? "pending" : (report.Status == IncidentStatus.Resolved ? "resolved" : "closed");
+                if (isLostId) dataFilter += " lostid";
+
+                <div class="card border-0 shadow-sm mb-3 report-card"
+                     data-filter="@dataFilter all"
+                     style="border-radius:14px;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                            <!-- Left -->
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                    <span class="badge bg-@statusColor">@report.Status</span>
+                                    <span class="badge bg-light text-dark border">@report.Title</span>
+                                    @if (isLostId)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            <i class="bi bi-id-card me-1"></i>Lost ID
+                                        </span>
+                                    }
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    @if (!string.IsNullOrEmpty(report.ReportedBy?.FaceImagePath))
+                                    {
+                                        <img src="@report.ReportedBy.FaceImagePath"
+                                             style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;
+                                                    display:flex;align-items:center;justify-content:center;
+                                                    font-size:.75rem;font-weight:700;color:#64748b;">
+                                            @(report.ReportedBy?.FirstName?.FirstOrDefault())@(report.ReportedBy?.LastName?.FirstOrDefault())
+                                        </div>
+                                    }
+                                    <div>
+                                        <p class="mb-0 fw-semibold small">@report.ReportedBy?.FullName</p>
+                                        <p class="mb-0 text-muted" style="font-size:.75rem;">
+                                            @report.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <p class="mb-1"><strong>What:</strong> @report.WhatHappened</p>
+                                @if (!string.IsNullOrEmpty(report.WhyHappened))
+                                {
+                                    <p class="text-muted small mb-1"><strong>Why:</strong> @report.WhyHappened</p>
+                                }
+                                @if (!string.IsNullOrEmpty(report.Resolution))
+                                {
+                                    <p class="text-muted small mb-0">
+                                        <strong>Resolution:</strong> @report.Resolution
+                                    </p>
+                                }
+                            </div>
+
+                            <!-- Right: Actions -->
+                            <div class="d-flex flex-column gap-2 align-items-end" style="min-width:140px;">
+                                <a href="/IncidentReport/Details/@report.Id" class="btn btn-sm btn-outline-secondary w-100">
+                                    <i class="bi bi-eye me-1"></i>View Details
+                                </a>
+
+                                @if (isPending)
+                                {
+                                    <button class="btn btn-sm btn-success w-100"
+                                            onclick="openApproveModal(@report.Id, '@report.Title', @(isLostId ? "true" : "false"))">
+                                        <i class="bi bi-check-circle me-1"></i>Approve
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger w-100"
+                                            onclick="openRejectModal(@report.Id, '@report.Title')">
+                                        <i class="bi bi-x-circle me-1"></i>Reject
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius:16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>Approve Report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3" id="approveModalDesc"></p>
+                <div id="lostIdApproveNote" class="alert alert-success small py-2" style="display:none;">
+                    <i class="bi bi-id-card me-1"></i>
+                    This will <strong>automatically generate a replacement ID card</strong> for the staff member to download.
+                </div>
+                <label class="form-label fw-semibold small">Notes (optional)</label>
+                <textarea id="approveNotes" class="form-control" rows="3"
+                          placeholder="Add any notes for the staff member..."></textarea>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success px-4" onclick="submitApprove()">
+                    <i class="bi bi-check-circle me-1"></i>Approve
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius:16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-x-circle-fill text-danger me-2"></i>Reject Report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3" id="rejectModalDesc"></p>
+                <label class="form-label fw-semibold small">Reason for Rejection <span class="text-danger">*</span></label>
+                <textarea id="rejectReason" class="form-control" rows="3"
+                          placeholder="Explain why this report is being rejected..."></textarea>
+                <div id="rejectReasonError" class="text-danger small mt-1" style="display:none;">
+                    Please provide a reason.
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" onclick="submitReject()">
+                    <i class="bi bi-x-circle me-1"></i>Reject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentReportId = null;
+
+        // Filter tabs
+        function filterReports(filter) {
+            document.querySelectorAll('.report-card').forEach(card => {
+                const filters = card.dataset.filter || '';
+                card.style.display = filters.includes(filter) ? '' : 'none';
+            });
+            document.querySelectorAll('#filterTabs .nav-link').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('onclick')?.includes(`'${filter}'`));
+            });
+        }
+
+        // Approve modal
+        function openApproveModal(id, title, isLostId) {
+            currentReportId = id;
+            document.getElementById('approveModalDesc').textContent = `Approving: "${title}"`;
+            document.getElementById('lostIdApproveNote').style.display = isLostId === 'true' ? 'block' : 'none';
+            document.getElementById('approveNotes').value = '';
+            new bootstrap.Modal(document.getElementById('approveModal')).show();
+        }
+
+        async function submitApprove() {
+            const notes = document.getElementById('approveNotes').value;
+            const formData = new FormData();
+            formData.append('notes', notes);
+            formData.append('__RequestVerificationToken',
+                document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '');
+
+            const res = await fetch(`/IncidentReport/Approve/${currentReportId}`, {
+                method: 'POST', body: formData
+            });
+            const data = await res.json();
+
+            bootstrap.Modal.getInstance(document.getElementById('approveModal')).hide();
+
+            if (data.success) {
+                PT.Toast.success(data.message);
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                PT.Toast.error(data.message);
+            }
+        }
+
+        // Reject modal
+        function openRejectModal(id, title) {
+            currentReportId = id;
+            document.getElementById('rejectModalDesc').textContent = `Rejecting: "${title}"`;
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectReasonError').style.display = 'none';
+            new bootstrap.Modal(document.getElementById('rejectModal')).show();
+        }
+
+        async function submitReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                document.getElementById('rejectReasonError').style.display = 'block';
+                return;
+            }
+            document.getElementById('rejectReasonError').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('reason', reason);
+            formData.append('__RequestVerificationToken',
+                document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '');
+
+            const res = await fetch(`/IncidentReport/Reject/${currentReportId}`, {
+                method: 'POST', body: formData
+            });
+            const data = await res.json();
+
+            bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
+
+            if (data.success) {
+                PT.Toast.success(data.message);
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                PT.Toast.error(data.message);
+            }
+        }
+    </script>
+    @Html.AntiForgeryToken()
+}

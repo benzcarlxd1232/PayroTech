@@ -1,0 +1,94 @@
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "~/Views/Shared/_AccountantLayout.cshtml";
+    var user = ViewBag.CurrentUser as PayroTech.Models.Entities.ApplicationUser;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">My Profile</h4>
+        <p class="text-muted mb-0">Your account information</p>
+    </div>
+</div>
+
+@if (user == null)
+{
+    <div class="alert alert-warning">Could not load profile.</div>
+    return;
+}
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm text-center p-4">
+            @if (!string.IsNullOrEmpty(user.FaceImagePath))
+            {
+                <img src="@user.FaceImagePath" class="rounded-circle border mb-3"
+                     style="width:100px;height:100px;object-fit:cover;" />
+            }
+            else
+            {
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold mb-3"
+                     style="width:100px;height:100px;font-size:2.5rem;background:linear-gradient(135deg,#ea8a1a,#f59e0b);">
+                    @(user.FirstName?.Length > 0 ? user.FirstName[0].ToString() : "")@(user.LastName?.Length > 0 ? user.LastName[0].ToString() : "")
+                </div>
+            }
+            <h5 class="fw-bold mb-1">@user.FullName</h5>
+            <span class="badge bg-warning text-dark mb-2">Accountant</span>
+            @if (!string.IsNullOrEmpty(user.StaffCode))
+            {
+                <div class="text-muted small"><code>@user.StaffCode</code></div>
+            }
+            @if (user.Department != null)
+            {
+                <div class="text-muted small mt-1">@user.Department.DepartmentName</div>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold"><i class="bi bi-person me-2"></i>Personal Information</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="text-muted small">Full Name</div>
+                        <div class="fw-medium">@user.FullName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Email</div>
+                        <div class="fw-medium">@(user.Email ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Contact</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.ContactNumber) ? "—" : user.ContactNumber)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Start Date</div>
+                        <div class="fw-medium">@(user.StartDate?.ToString("MMMM dd, yyyy") ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Staff Code</div>
+                        <div class="fw-medium"><code>@(string.IsNullOrEmpty(user.StaffCode) ? "—" : user.StaffCode)</code></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Company</div>
+                        <div class="fw-medium">@(user.Company?.CompanyName ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold"><i class="bi bi-shield-lock me-2"></i>Kiosk PIN</div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">Your kiosk PIN is used for dual verification when clocking in/out.</p>
+                <div class="d-flex align-items-center gap-3">
+                    <code class="fs-5">****</code>
+                    <a href="/ChangePin" class="btn btn-sm btn-outline-warning">
+                        <i class="bi bi-pencil me-1"></i>Change PIN
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,217 @@
+@model PayroTech.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Breadcrumb -->
+<nav class="pt-breadcrumb" data-animate="fadeInLeft">
+    <a href="/" class="pt-breadcrumb-item active">
+        <i class="bi bi-house"></i> Dashboard
+    </a>
+</nav>
+
+<!-- Stats Cards with Animation -->
+<div class="row mb-4">
+    <div class="col-md-3" data-animate="fadeInUp">
+        <div class="pt-stats-card pt-stagger-1">
+            <div class="pt-stats-value" data-countup="@Model.TotalCompanies">0</div>
+            <div class="pt-stats-label">Total Companies</div>
+            <i class="bi bi-building pt-stats-icon"></i>
+            <div class="pt-trend up mt-2">
+                <i class="bi bi-arrow-up"></i> Active
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-animate="fadeInUp">
+        <div class="pt-stats-card success pt-stagger-2">
+            <div class="pt-stats-value" data-countup="@Model.TotalEmployees">0</div>
+            <div class="pt-stats-label">Total Employees</div>
+            <i class="bi bi-people pt-stats-icon"></i>
+            <div class="pt-trend up mt-2">
+                <i class="bi bi-arrow-up"></i> Growing
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3" data-animate="fadeInUp">
+        <div class="pt-stats-card warning pt-stagger-3">
+            <div class="pt-stats-value" data-countup="@Model.TotalDepartments">0</div>
+            <div class="pt-stats-label">Departments</div>
+            <i class="bi bi-diagram-3 pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3" data-animate="fadeInUp">
+        <div class="pt-stats-card pt-stagger-4">
+            <div class="pt-stats-value" data-countup="@Model.TodayAttendance">0</div>
+            <div class="pt-stats-label">Today's Attendance</div>
+            <i class="bi bi-clock pt-stats-icon"></i>
+            <div class="pt-trend up mt-2">
+                <i class="bi bi-check-circle"></i> On Track
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4" data-animate="fadeInUp">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-body">
+                <h5 class="pt-font-semibold mb-3"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="/Attendance/TimeIn" class="pt-btn pt-btn-primary"><i class="bi bi-box-arrow-in-right me-2"></i>Time In</a>
+                    <a href="/Attendance/TimeOut" class="pt-btn pt-btn-success"><i class="bi bi-box-arrow-right me-2"></i>Time Out</a>
+                    <a href="/Employee/Create" class="pt-btn pt-btn-ghost"><i class="bi bi-person-plus me-2"></i>Add Employee</a>
+                    <a href="/Leave/Create" class="pt-btn pt-btn-ghost"><i class="bi bi-calendar-plus me-2"></i>File Leave</a>
+                    <a href="/Overtime/Create" class="pt-btn pt-btn-ghost"><i class="bi bi-clock-history me-2"></i>File Overtime</a>
+                    <a href="/Payroll/Process" class="pt-btn pt-btn-secondary"><i class="bi bi-cash-stack me-2"></i>Process Payroll</a>
+                </div>
+                <div class="mt-3 pt-text-secondary pt-text-sm">
+                    <i class="bi bi-keyboard me-1"></i> Press <kbd>Ctrl+K</kbd> to open command palette
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Employees -->
+<div class="row">
+    <div class="col-md-8" data-animate="fadeInUp">
+        <div class="pt-table-wrapper pt-stagger-5">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-2"></i>Recent Employees</span>
+                <div class="d-flex gap-2">
+                    <!-- Export Button -->
+                    <div style="position: relative;">
+                        <button class="export-btn" onclick="showExportOptions(this)">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                        <div class="export-dropdown">
+                            <button class="export-option" onclick="exportData('csv', '#employeeTable')">
+                                <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV
+                            </button>
+                            <button class="export-option" onclick="exportData('json', '#employeeTable')">
+                                <i class="bi bi-file-earmark-code me-2"></i>JSON
+                            </button>
+                        </div>
+                    </div>
+                    <a href="/Employee" class="pt-btn pt-btn-ghost pt-btn-sm">View All</a>
+                </div>
+            </div>
+            <table class="pt-table" id="employeeTable">
+                <thead>
+                    <tr>
+                        <th>Employee #</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Hire Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.RecentEmployees.Any())
+                    {
+                        <tr>
+                            <td colspan="4">
+                                <div class="pt-empty-state">
+                                    <div class="pt-empty-state-icon">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                    <div class="pt-empty-state-title">No employees yet</div>
+                                    <div class="pt-empty-state-description">Add your first employee to get started with PayroTech.</div>
+                                    <a href="/Employee/Create" class="pt-btn pt-btn-primary">
+                                        <i class="bi bi-person-plus me-2"></i>Add Employee
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var emp in Model.RecentEmployees)
+                    {
+                        <tr>
+                            <td><strong>@emp.EmployeeNumber</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="pt-avatar pt-avatar sm">@emp.FullName.Substring(0, 1)</div>
+                                    @emp.FullName
+                                </div>
+                            </td>
+                            <td><span class="pt-badge pt-badge-neutral">@emp.Department</span></td>
+                            <td>@emp.HireDate.ToString("MMM dd, yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-4" data-animate="fadeInRight">
+        <div class="pt-card pt-stagger-6">
+            <div class="pt-card-body">
+                <h5 class="pt-font-semibold mb-3"><i class="bi bi-info-circle me-2"></i>System Info</h5>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-3 d-flex justify-content-between">
+                        <span class="pt-text-secondary">System</span>
+                        <strong>PayroTech ERP</strong>
+                    </li>
+                    <li class="mb-3 d-flex justify-content-between">
+                        <span class="pt-text-secondary">Version</span>
+                        <span class="pt-badge pt-badge-primary">1.0.0</span>
+                    </li>
+                    <li class="mb-3 d-flex justify-content-between">
+                        <span class="pt-text-secondary">Date</span>
+                        <strong>@DateTime.Now.ToString("MMMM dd, yyyy")</strong>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="pt-text-secondary">Company</span>
+                        <strong>PayroTech Solutions Inc.</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="pt-card mt-4 pt-stagger-7">
+            <div class="pt-card-body">
+                <h5 class="pt-font-semibold mb-3"><i class="bi bi-calculator me-2"></i>PH Payroll Formulas</h5>
+                <div class="pt-text-sm">
+                    <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom: 1px solid var(--pt-border-primary);">
+                        <span class="pt-text-secondary">SSS</span>
+                        <span>Based on MSC Table</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom: 1px solid var(--pt-border-primary);">
+                        <span class="pt-text-secondary">PhilHealth</span>
+                        <span>5% / 2</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom: 1px solid var(--pt-border-primary);">
+                        <span class="pt-text-secondary">Pag-IBIG</span>
+                        <span>2% (max ₱100)</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom: 1px solid var(--pt-border-primary);">
+                        <span class="pt-text-secondary">OT Regular</span>
+                        <span class="pt-badge pt-badge-success">1.25x</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom: 1px solid var(--pt-border-primary);">
+                        <span class="pt-text-secondary">OT Rest Day</span>
+                        <span class="pt-badge pt-badge-warning">1.30x</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="pt-text-secondary">OT Holiday</span>
+                        <span class="pt-badge pt-badge-danger">2.00x</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initialize FAB for quick actions
+        document.addEventListener('DOMContentLoaded', function() {
+            PT.FAB.init([
+                { icon: 'bi-person-plus', label: 'Add Employee', action: () => window.location.href = '/Employee/Create' },
+                { icon: 'bi-calendar-plus', label: 'File Leave', action: () => window.location.href = '/Leave/Create' },
+                { icon: 'bi-clock-history', label: 'File Overtime', action: () => window.location.href = '/Overtime/Create' },
+                { icon: 'bi-box-arrow-in-right', label: 'Time In', action: () => window.location.href = '/Attendance/TimeIn' },
+            ]);
+        });
+    </script>
+}

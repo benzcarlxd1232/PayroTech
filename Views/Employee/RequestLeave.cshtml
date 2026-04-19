@@ -1,0 +1,146 @@
+@{
+    ViewData["Title"] = "Request Leave";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    var balance  = ViewBag.Balance  as PayroTech.Models.Entities.LeaveBalance;
+    var holidays = ViewBag.Holidays as List<PayroTech.Models.Entities.Holiday> ?? new();
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Request Leave</h4>
+        <p class="text-muted mb-0">Submit a new leave request</p>
+    </div>
+    <a href="/MyPortal/Leaves" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Leaves
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-calendar-plus me-2"></i>New Leave Request
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="RequestLeave" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
+                            <select name="leaveType" class="form-select" required>
+                                <option value="">Select leave type…</option>
+                                <option value="@((int)PayroTech.Models.Enums.LeaveType.Vacation)">Vacation Leave</option>
+                                <option value="@((int)PayroTech.Models.Enums.LeaveType.Sick)">Sick Leave</option>
+                                <option value="@((int)PayroTech.Models.Enums.LeaveType.Emergency)">Emergency Leave</option>
+                                <option value="@((int)PayroTech.Models.Enums.LeaveType.Maternity)">Maternity Leave</option>
+                                <option value="@((int)PayroTech.Models.Enums.LeaveType.Paternity)">Paternity Leave</option>
+                                <option value="@((int)PayroTech.Models.Enums.LeaveType.Unpaid)">Unpaid Leave</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" name="startDate" class="form-control"
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   onchange="calcDays()" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">End Date <span class="text-danger">*</span></label>
+                            <input type="date" name="endDate" class="form-control"
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   onchange="calcDays()" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3 p-3 rounded bg-light">
+                        <div class="d-flex justify-content-between">
+                            <span>Total Leave Days:</span>
+                            <strong class="text-primary" id="totalDays">1 day</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control" rows="3"
+                                  placeholder="Please provide a reason for your leave request…" required></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-2"></i>Submit Request
+                        </button>
+                        <a href="/MyPortal/Leaves" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Leave Balance -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-wallet2 me-2"></i>Leave Balance
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Vacation Leave</span>
+                    <strong>@((balance?.VacationLeaveBalance ?? 0).ToString("0")) days</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Sick Leave</span>
+                    <strong>@((balance?.SickLeaveBalance ?? 0).ToString("0")) days</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Holidays -->
+        @if (holidays.Any())
+        {
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-calendar-event me-2"></i>Upcoming Holidays
+                </div>
+                <div class="card-body p-0">
+                    @foreach (var h in holidays)
+                    {
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <div>
+                                <div class="fw-medium small">@h.HolidayName</div>
+                                <div class="text-muted" style="font-size:.75rem;">@h.HolidayType</div>
+                            </div>
+                            <span class="text-muted small">@h.Date.ToString("MMM dd")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function calcDays() {
+    const s = new Date(document.querySelector('[name="startDate"]').value);
+    const e = new Date(document.querySelector('[name="endDate"]').value);
+    if (s && e && e >= s) {
+        const d = Math.ceil((e - s) / 86400000) + 1;
+        document.getElementById('totalDays').textContent = d + ' day' + (d > 1 ? 's' : '');
+    }
+}
+</script>
+}

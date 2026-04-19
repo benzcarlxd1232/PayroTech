@@ -1,0 +1,275 @@
+@{
+    ViewData["Title"] = "Budget Tracker";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Budget Tracker</h4>
+        <p class="text-muted mb-0">Monitor your team's payroll budget in real-time</p>
+    </div>
+    <div class="d-flex gap-2">
+        <select class="form-select" style="width: 180px;">
+            <option>March 2026</option>
+            <option>February 2026</option>
+            <option>January 2026</option>
+        </select>
+    </div>
+</div>
+
+<!-- Budget Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card" style="background: linear-gradient(135deg, #064e3b 0%, #059669 100%); color: white;">
+            <div class="pt-card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-3 opacity-75">Engineering Team - March 2026</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="opacity-75 small">Total Budget</div>
+                                    <div class="h2 mb-0">₱500,000.00</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="opacity-75 small">Used</div>
+                                    <div class="h2 mb-0">₱375,000.00</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="opacity-75 small">Remaining</div>
+                                    <div class="h2 mb-0 text-warning">₱125,000.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="progress mb-2" style="height: 12px; background: rgba(255,255,255,0.2);">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 75%;">75%</div>
+                        </div>
+                        <div class="d-flex justify-content-between small opacity-75">
+                            <span>75% utilized</span>
+                            <span>25% remaining for current period</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="d-inline-block p-4 rounded-circle mb-2" style="background: rgba(255,255,255,0.15);">
+                            <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        </div>
+                        <div class="fw-semibold">Within Budget</div>
+                        <small class="opacity-75">You're on track!</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Breakdown -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-pie-chart me-2"></i>Budget Breakdown
+            </div>
+            <div class="pt-card-body">
+                <!-- Basic Salaries -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>Basic Salaries</strong>
+                            <small class="text-muted ms-2">(24 employees)</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-semibold">₱320,000.00</span>
+                            <small class="text-muted ms-2">64%</small>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" style="width: 64%"></div>
+                    </div>
+                </div>
+
+                <!-- Overtime Pay -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>Overtime Pay</strong>
+                            <small class="text-muted ms-2">(32 hours logged)</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-semibold">₱25,000.00</span>
+                            <small class="text-muted ms-2">5%</small>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 5%"></div>
+                    </div>
+                </div>
+
+                <!-- Allowances -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>Allowances</strong>
+                            <small class="text-muted ms-2">(Transportation, Meal)</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-semibold">₱30,000.00</span>
+                            <small class="text-muted ms-2">6%</small>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-info" style="width: 6%"></div>
+                    </div>
+                </div>
+
+                <!-- Bonuses -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>Bonuses & Incentives</strong>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-semibold">₱0.00</span>
+                            <small class="text-muted ms-2">0%</small>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Reserved -->
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong class="text-success">Available Budget</strong>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-semibold text-success">₱125,000.00</span>
+                            <small class="text-muted ms-2">25%</small>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-secondary" style="width: 25%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="pt-card h-100">
+            <div class="pt-card-header">
+                <i class="bi bi-clock-history me-2"></i>Budget History
+            </div>
+            <div class="pt-card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>March 2026 (1st Half)</strong>
+                                <div class="small text-muted">Paid on Mar 15</div>
+                            </div>
+                            <span class="text-danger">-₱225,000</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>OT Payment</strong>
+                                <div class="small text-muted">Mar 12</div>
+                            </div>
+                            <span class="text-danger">-₱15,000</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>March Budget Allocated</strong>
+                                <div class="small text-muted">Mar 1</div>
+                            </div>
+                            <span class="text-success">+₱500,000</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>February 2026 (2nd Half)</strong>
+                                <div class="small text-muted">Paid on Feb 28</div>
+                            </div>
+                            <span class="text-danger">-₱220,000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projected vs Actual -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-graph-up me-2"></i>Upcoming Payroll Projection
+            </div>
+            <div class="pt-card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Next Payroll:</strong> March 2026 (2nd Half) - Due in 5 days
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Projected Expenses</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Basic Salaries</td>
+                                <td class="text-end">₱160,000.00</td>
+                            </tr>
+                            <tr>
+                                <td>Projected OT</td>
+                                <td class="text-end">₱12,000.00</td>
+                            </tr>
+                            <tr>
+                                <td>Allowances</td>
+                                <td class="text-end">₱15,000.00</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td>Total Projected</td>
+                                <td class="text-end">₱187,000.00</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Budget Status After Payroll</h6>
+                        <div class="p-4 rounded text-center" style="background: #d1fae5;">
+                            <div class="h4 text-success mb-1">-₱62,000.00</div>
+                            <div class="text-muted">Projected surplus after this payroll</div>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <span class="pt-badge pt-badge-success">Within Budget ✓</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress {
+        background-color: var(--pt-gray-200);
+    }
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid var(--pt-border-primary);
+        padding: 1rem;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+</style>

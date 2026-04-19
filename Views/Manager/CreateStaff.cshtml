@@ -1,0 +1,292 @@
+@model PayroTech.Controllers.CreateStaffViewModel
+@{
+    ViewData["Title"] = "Create Staff Account";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+    var branches    = ViewBag.Branches    as List<PayroTech.Models.Entities.Branch>     ?? new List<PayroTech.Models.Entities.Branch>();
+    var departments = ViewBag.Departments as List<PayroTech.Models.Entities.Department> ?? new List<PayroTech.Models.Entities.Department>();
+    int preselectedTeam = ViewContext.HttpContext.Request.Query.ContainsKey("teamId")
+        ? int.Parse(ViewContext.HttpContext.Request.Query["teamId"].ToString())
+        : 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Create Staff Account</h4>
+        <p class="text-muted mb-0">Add HR, Accountant, or Employee — you set the role, salary, and branch</p>
+    </div>
+    <a href="/Manager/HRManagement" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<!-- Manager Role Notice -->
+<div class="alert alert-success d-flex align-items-center gap-3 mb-4">
+    <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;">
+        <i class="bi bi-shield-check fs-5"></i>
+    </div>
+    <div>
+        <strong>Manager Access</strong> — You can create <span class="badge bg-success">HR</span>,
+        <span class="badge bg-warning text-dark">Accountant</span>, and
+        <span class="badge bg-primary">Employee</span> accounts.
+        You control the role, daily rate, branch, and team assignment.
+    </div>
+</div>
+
+@if (!departments.Any())
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>No teams found.</strong> You need to create at least one team before adding staff.
+        <a href="/Manager/Teams" class="alert-link ms-2">Create a team first →</a>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+        <form asp-action="CreateStaff" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <!-- Role Selection -->
+            <h6 class="fw-semibold mb-3"><i class="bi bi-person-badge me-2"></i>Select Role</h6>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="d-block border rounded-3 p-3 cursor-pointer role-card" id="cardHR" for="roleHR">
+                        <input class="form-check-input float-end" type="radio" asp-for="Role" value="HR" id="roleHR" onchange="updateRoleUI()" />
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">HR Staff</div>
+                                <small class="text-muted">Team & attendance</small>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <div class="col-md-4">
+                    <label class="d-block border rounded-3 p-3 cursor-pointer role-card" id="cardAccountant" for="roleAccountant">
+                        <input class="form-check-input float-end" type="radio" asp-for="Role" value="Accountant" id="roleAccountant" onchange="updateRoleUI()" />
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#ea8a1a,#f59e0b);display:flex;align-items:center;justify-content:center;color:#fff;">
+                                <i class="bi bi-calculator-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">Accountant</div>
+                                <small class="text-muted">Payroll & salary</small>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <div class="col-md-4">
+                    <label class="d-block border rounded-3 p-3 cursor-pointer role-card" id="cardEmployee" for="roleEmployee">
+                        <input class="form-check-input float-end" type="radio" asp-for="Role" value="Employee" id="roleEmployee" onchange="updateRoleUI()" />
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#60a5fa);display:flex;align-items:center;justify-content:center;color:#fff;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">Employee</div>
+                                <small class="text-muted">Regular staff</small>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Personal Information -->
+            <h6 class="fw-semibold mb-3"><i class="bi bi-person me-2"></i>Personal Information</h6>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">First Name <span class="text-danger">*</span></label>
+                    <input asp-for="FirstName" class="form-control" placeholder="First name" required />
+                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Middle Initial</label>
+                    <input asp-for="MiddleInitial" class="form-control" placeholder="M" maxlength="1" style="text-transform:uppercase" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                    <input asp-for="LastName" class="form-control" placeholder="Last name" required />
+                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Gender</label>
+                    <select asp-for="Gender" class="form-select">
+                        <option value="">Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                    <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" required />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Contact Number</label>
+                    <input asp-for="ContactNumber" class="form-control" placeholder="09XXXXXXXXX" maxlength="11" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                    <input asp-for="BirthDate" type="date" class="form-control" required />
+                    <span asp-validation-for="BirthDate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Civil Status</label>
+                    <select asp-for="CivilStatus" class="form-select">
+                        <option value="">Select</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Widowed">Widowed</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Blood Type</label>
+                    <select asp-for="BloodType" class="form-select">
+                        <option value="">Select</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Address</label>
+                    <input asp-for="Address" class="form-control" placeholder="Complete address" />
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Assignment -->
+            <h6 class="fw-semibold mb-3"><i class="bi bi-briefcase me-2"></i>Assignment & Compensation</h6>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Team / Department <span class="text-danger">*</span></label>
+                    @if (!departments.Any())
+                    {
+                        <div class="alert alert-warning py-2 mb-0">
+                            <small><a href="/Manager/Teams">Create a team first</a></small>
+                        </div>
+                    }
+                    else
+                    {
+                        <select asp-for="DepartmentId" class="form-select" required>
+                            <option value="">-- Select Team --</option>
+                            @foreach (var d in departments)
+                            {
+                                if (d.Id == preselectedTeam)
+                                {
+                                    <option value="@d.Id" selected>@d.DepartmentName</option>
+                                }
+                                else
+                                {
+                                    <option value="@d.Id">@d.DepartmentName</option>
+                                }
+                            }
+                        </select>
+                    }
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Branch</label>
+                    <select asp-for="BranchId" class="form-select">
+                        <option value="0">Main Branch</option>
+                        @foreach (var b in branches)
+                        {
+                            <option value="@b.Id">@b.BranchName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Daily Rate (₱) <span class="text-danger">*</span></label>
+                    <input asp-for="DailyRate" type="number" step="0.01" class="form-control" placeholder="0.00" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Shift Schedule <span class="text-danger">*</span></label>
+                    <select asp-for="ShiftId" class="form-select" required>
+                        <option value="">-- Select Shift --</option>
+                        @foreach (var s in (ViewBag.Shifts as List<PayroTech.Models.Entities.Shift> ?? new List<PayroTech.Models.Entities.Shift>()))
+                        {
+                            <option value="@s.Id">@s.ShiftName</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ShiftId" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <hr class="my-4">
+            <h6 class="fw-semibold mb-3"><i class="bi bi-telephone me-2"></i>Emergency Contact</h6>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Contact Name</label>
+                    <input asp-for="EmergencyContactName" class="form-control" placeholder="Full name" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Relationship</label>
+                    <input asp-for="EmergencyContactRelation" class="form-control" placeholder="e.g., Spouse, Parent" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Contact Number</label>
+                    <input asp-for="EmergencyContactNumber" class="form-control" placeholder="09XXXXXXXXX" maxlength="11" />
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-envelope me-2"></i>
+                A welcome email with a <strong>randomly generated secure temporary password</strong> will be sent to the staff's email.
+                They will be required to change it on first login (min 12 chars), then capture their face photo for their ID card.
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                @if (departments.Any())
+                {
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-1"></i>Create Account
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-primary" disabled>
+                        <i class="bi bi-person-plus me-1"></i>Create Account
+                    </button>
+                }
+                <a href="/Manager/HRManagement" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function updateRoleUI() {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected', 'border-primary'));
+    const checked = document.querySelector('input[name="Role"]:checked');
+    if (checked) checked.closest('.role-card').classList.add('selected', 'border-primary');
+}
+
+function updateTempPassword() {
+    const fn = document.querySelector('input[name="FirstName"]')?.value || 'FirstName';
+    const dob = document.querySelector('input[name="BirthDate"]')?.value;
+    const year = dob ? new Date(dob).getFullYear() : 'BirthYear';
+    document.getElementById('tempPasswordPreview').textContent = `${fn}@@${year}`;
+}
+
+document.querySelector('input[name="FirstName"]')?.addEventListener('input', updateTempPassword);
+document.querySelector('input[name="BirthDate"]')?.addEventListener('change', updateTempPassword);
+updateRoleUI();
+</script>
+<style>
+.role-card { cursor:pointer; transition:all .2s; }
+.role-card.selected { border-color:var(--primary-color,#0891b2) !important; background:rgba(8,145,178,.06); }
+.role-card:hover { border-color:var(--primary-color,#0891b2); }
+</style>
+@{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

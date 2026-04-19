@@ -1,0 +1,329 @@
+@model List<PayroTech.Models.Entities.AuditLog>
+@{
+    ViewData["Title"] = "Activity Logs";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages  = ViewBag.TotalPages  ?? 1;
+    int days        = ViewBag.Days        ?? 7;
+    string? action  = ViewBag.Action      as string;
+    string? search  = ViewBag.Search      as string;
+    int startP      = Math.Max(1, currentPage - 2);
+    int endP        = Math.Min(totalPages, currentPage + 2);
+    string qp       = $"&days={days}&action={action}&search={search}";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1">Activity Logs - Security Warnings</h4>
+                <p class="text-muted mb-0">Monitor security-related activities and warnings for your team</p>
+            </div>
+            <button class="btn btn-outline-primary" onclick="exportLogs()">
+                <i class="bi bi-download me-1"></i>Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card border-start border-danger border-4">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="text-muted mb-1">Failed Logins</p>
+                    <h3 class="mb-0 text-danger">@Model.Count(l => l.Action.Contains("Failed Login"))</h3>
+                </div>
+                <i class="bi bi-shield-exclamation fs-1 text-danger opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card border-start border-warning border-4">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="text-muted mb-1">Password Changes</p>
+                    <h3 class="mb-0 text-warning">@Model.Count(l => l.Action.Contains("Password"))</h3>
+                </div>
+                <i class="bi bi-key fs-1 text-warning opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card border-start border-info border-4">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="text-muted mb-1">Security Events</p>
+                    <h3 class="mb-0 text-info">@Model.Count(l => l.Action.Contains("Security"))</h3>
+                </div>
+                <i class="bi bi-shield-check fs-1 text-info opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card border-start border-secondary border-4">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="text-muted mb-1">Total Warnings</p>
+                    <h3 class="mb-0">@Model.Count</h3>
+                </div>
+                <i class="bi bi-exclamation-triangle fs-1 text-secondary opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Date Range</label>
+                        <select name="days" class="form-select" onchange="this.form.submit()">
+                            <option value="1" selected="@(ViewBag.Days == 1)">Last 24 Hours</option>
+                            <option value="7" selected="@(ViewBag.Days == 7 || ViewBag.Days == null)">Last 7 Days</option>
+                            <option value="30" selected="@(ViewBag.Days == 30)">Last 30 Days</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Warning Type</label>
+                        <select name="action" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Warnings</option>
+                            <option value="Failed Login" selected="@(ViewBag.Action == "Failed Login")">Failed Logins</option>
+                            <option value="Password" selected="@(ViewBag.Action == "Password")">Password Changes</option>
+                            <option value="Security" selected="@(ViewBag.Action == "Security")">Security Events</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Search Employee</label>
+                        <input type="text" name="search" class="form-control" placeholder="Search by name or email..." value="@ViewBag.Search">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Logs Table -->
+<div class="pt-card">
+    <div class="pt-card-header">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Security Warning Logs</h5>
+    </div>
+    <div class="pt-card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Employee</th>
+                        <th>Warning Type</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var log in Model)
+                        {
+                            var severityClass = log.Action.Contains("Failed Login") ? "danger" :
+                                              log.Action.Contains("Password") ? "warning" :
+                                              log.Action.Contains("Security") ? "info" : "secondary";
+                            
+                            var iconClass = log.Action.Contains("Failed Login") ? "bi-shield-exclamation" :
+                                          log.Action.Contains("Password") ? "bi-key" :
+                                          log.Action.Contains("Security") ? "bi-shield-check" : "bi-exclamation-triangle";
+                            
+                            <tr>
+                                <td>
+                                    <small>@log.CreatedAt.ToString("MMM dd, yyyy")</small><br>
+                                    <small class="text-muted">@log.CreatedAt.ToString("hh:mm:ss tt")</small>
+                                </td>
+                                <td>
+                                    @if (log.User != null)
+                                    {
+                                        <div>
+                                            <strong>@log.User.FullName</strong><br>
+                                            <small class="text-muted">@log.User.Email</small>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Unknown User</span>
+                                    }
+                                </td>
+                                <td>
+                                    <i class="bi @iconClass text-@severityClass me-1"></i>
+                                    @if (log.Action.Contains("Failed Login"))
+                                    {
+                                        <span>Failed Login Attempt</span>
+                                    }
+                                    else if (log.Action.Contains("Password"))
+                                    {
+                                        <span>Password Change</span>
+                                    }
+                                    else if (log.Action.Contains("Security"))
+                                    {
+                                        <span>Security Event</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Warning</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-@severityClass">@log.Action</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(log.NewValues))
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary" onclick="showDetails(@log.Id)">
+                                            <i class="bi bi-eye"></i> View
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (log.Action.Contains("Failed Login"))
+                                    {
+                                        <span class="badge bg-danger">High</span>
+                                    }
+                                    else if (log.Action.Contains("Password"))
+                                    {
+                                        <span class="badge bg-warning">Medium</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info">Low</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-shield-check fs-1 d-block mb-2 text-success"></i>
+                                <strong>No security warnings found</strong>
+                                <p class="mb-0">All systems operating normally</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="pt-pagination">
+            <small class="text-muted me-auto ps-1">
+                Page @currentPage of @totalPages (@Model.Count entries shown)
+            </small>
+            <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage - 1)@qp'">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            @if (startP > 1) {
+                <button class="pt-pagination-btn" onclick="window.location.href='?page=1@qp'">1</button>
+                if (startP > 2) { <span class="pt-pagination-ellipsis">…</span> }
+            }
+            @for (int i = startP; i <= endP; i++) {
+                <button class="pt-pagination-btn @(currentPage == i ? "active" : "")"
+                        onclick="window.location.href='?page=@i@qp'">@i</button>
+            }
+            @if (endP < totalPages) {
+                if (endP < totalPages - 1) { <span class="pt-pagination-ellipsis">…</span> }
+                <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages@qp'">@totalPages</button>
+            }
+            <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage + 1)@qp'">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>Warning Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showDetails(logId) {
+            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            modal.show();
+            
+            fetch(`/HR/GetLogDetails/${logId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('detailsContent').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Action</h6>
+                                <p>${data.action}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Timestamp</h6>
+                                <p>${new Date(data.createdAt).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6>User</h6>
+                                <p>${data.userName || 'Unknown'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Email</h6>
+                                <p>${data.userEmail || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Details</h6>
+                                <pre class="bg-light p-3 rounded">${data.details || 'No additional details'}</pre>
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('detailsContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error loading details
+                        </div>
+                    `;
+                });
+        }
+        
+        function exportLogs() {
+            const params = new URLSearchParams(window.location.search);
+            window.location.href = `/HR/ExportAuditLogs?${params.toString()}`;
+        }
+    </script>
+}

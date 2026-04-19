@@ -1,0 +1,157 @@
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    var user     = ViewBag.CurrentUser as PayroTech.Models.Entities.ApplicationUser;
+    var employee = ViewBag.Employee    as PayroTech.Models.Entities.Employee;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">My Profile</h4>
+        <p class="text-muted mb-0">Your personal and employment information</p>
+    </div>
+</div>
+
+@if (user == null)
+{
+    <div class="alert alert-warning">Could not load profile. Please try again.</div>
+    return;
+}
+
+<div class="row">
+    <!-- Left: Photo + basic -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm text-center p-4">
+            <div class="mb-3">
+                @if (!string.IsNullOrEmpty(user.FaceImagePath))
+                {
+                    <img src="@user.FaceImagePath" alt="@user.FullName"
+                         class="rounded-circle border"
+                         style="width:100px;height:100px;object-fit:cover;" />
+                }
+                else
+                {
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold"
+                         style="width:100px;height:100px;font-size:2.5rem;background:linear-gradient(135deg,#2563eb,#60a5fa);">
+                        @(user.FirstName?.Length > 0 ? user.FirstName[0].ToString() : "")@(user.LastName?.Length > 0 ? user.LastName[0].ToString() : "")
+                    </div>
+                }
+            </div>
+            <h5 class="fw-bold mb-1">@user.FullName</h5>
+            <div class="badge bg-primary mb-2">Employee</div>
+            @if (!string.IsNullOrEmpty(user.StaffCode))
+            {
+                <div class="text-muted small"><code>@user.StaffCode</code></div>
+            }
+            @if (user.Department != null)
+            {
+                <div class="text-muted small mt-1">@user.Department.DepartmentName</div>
+            }
+        </div>
+    </div>
+
+    <!-- Right: Details -->
+    <div class="col-md-8">
+        <!-- Personal Info -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-person me-2"></i>Personal Information
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="text-muted small">Full Name</div>
+                        <div class="fw-medium">@user.FullName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Email</div>
+                        <div class="fw-medium">@(user.Email ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Contact Number</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.ContactNumber) ? "—" : user.ContactNumber)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Birth Date</div>
+                        <div class="fw-medium">@(user.BirthDate?.ToString("MMMM dd, yyyy") ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Gender</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.Gender) ? "—" : user.Gender)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Civil Status</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.CivilStatus) ? "—" : user.CivilStatus)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Blood Type</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.BloodType) ? "—" : user.BloodType)</div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="text-muted small">Address</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.Address) ? "—" : user.Address)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employment Info -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-briefcase me-2"></i>Employment Information
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="text-muted small">Staff Code</div>
+                        <div class="fw-medium"><code>@(string.IsNullOrEmpty(user.StaffCode) ? "—" : user.StaffCode)</code></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Start Date</div>
+                        <div class="fw-medium">@(user.StartDate?.ToString("MMMM dd, yyyy") ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Department</div>
+                        <div class="fw-medium">@(user.Department?.DepartmentName ?? employee?.Department?.DepartmentName ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Shift</div>
+                        <div class="fw-medium">@(employee?.Shift?.ShiftName ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Daily Rate</div>
+                        <div class="fw-medium">₱@((employee?.DailyRate ?? user.DailyRate).ToString("N2"))</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Company</div>
+                        <div class="fw-medium">@(user.Company?.CompanyName ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-telephone me-2"></i>Emergency Contact
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="text-muted small">Name</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.EmergencyContactName) ? "—" : user.EmergencyContactName)</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Relationship</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.EmergencyContactRelation) ? "—" : user.EmergencyContactRelation)</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Contact Number</div>
+                        <div class="fw-medium">@(string.IsNullOrEmpty(user.EmergencyContactNumber) ? "—" : user.EmergencyContactNumber)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

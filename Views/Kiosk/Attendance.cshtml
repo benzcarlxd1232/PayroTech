@@ -1,0 +1,697 @@
+@{
+    Layout = null;
+    var companyId = ViewBag.CompanyId;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayroTech Attendance Kiosk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .kiosk-container {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,.35);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+        }
+
+        /* ── Header ── */
+        .kiosk-header {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            padding: 28px 30px 24px;
+            text-align: center;
+        }
+        .kiosk-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+        .kiosk-header p  { opacity: .85; font-size: 13px; }
+        .datetime-display {
+            background: rgba(255,255,255,.15);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 16px;
+        }
+        .current-time { font-size: 44px; font-weight: 700; line-height: 1; }
+        .current-date { font-size: 14px; opacity: .9; margin-top: 4px; }
+
+        /* ── Body ── */
+        .kiosk-body { padding: 28px; }
+
+        /* ── Step panels ── */
+        .step { display: none; text-align: center; }
+        .step.active { display: block; }
+
+        /* ── QR scan step ── */
+        .scan-title    { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+        .scan-subtitle { color: #64748b; font-size: 13px; margin-bottom: 18px; }
+
+        .camera-wrap {
+            position: relative;
+            display: inline-block;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 3px solid #2563eb;
+        }
+        #qr-video  { display: block; width: 280px; height: 280px; object-fit: cover; background: #000; }
+        #qr-canvas { display: none; }
+
+        .scan-line {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: rgba(37,99,235,.8);
+            animation: scanDown 2s linear infinite;
+            display: none;
+        }
+        @@keyframes scanDown { 0%{top:0} 100%{top:100%} }
+
+        .camera-status {
+            margin-top: 12px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .camera-status.error   { background: #fee2e2; color: #dc2626; }
+        .camera-status.scanning{ background: #d1fae5; color: #059669; }
+
+        .manual-toggle {
+            margin-top: 12px;
+            padding: 8px 18px;
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .manual-toggle:hover { background: #e2e8f0; }
+
+        .manual-area { display: none; margin-top: 12px; }
+        .manual-area.show { display: block; }
+
+        .qr-input {
+            width: 100%;
+            padding: 14px 18px;
+            font-size: 17px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .qr-input:focus { outline: none; border-color: #2563eb; }
+
+        /* ── PIN step ── */
+        .employee-card {
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-align: left;
+        }
+        .emp-avatar {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e2e8f0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 700; color: #64748b;
+            flex-shrink: 0;
+        }
+        .emp-name   { font-size: 18px; font-weight: 700; color: #1e293b; }
+        .emp-code   { font-size: 13px; color: #64748b; margin-top: 2px; }
+        .pin-hint   { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+        .pin-label  { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 16px; }
+
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .pin-dot {
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            background: #fff;
+            transition: all .2s;
+        }
+        .pin-dot.filled { background: #2563eb; border-color: #2563eb; }
+
+        /* ── Numpad ── */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        .num-btn {
+            padding: 18px;
+            font-size: 22px;
+            font-weight: 600;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all .15s;
+            user-select: none;
+        }
+        .num-btn:hover  { background: #f8fafc; border-color: #2563eb; }
+        .num-btn:active { transform: scale(.95); }
+        .num-btn.del    { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+        .num-btn.ok     { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; }
+
+        /* ── Result card ── */
+        .result-card {
+            border-radius: 16px;
+            padding: 28px 24px;
+            text-align: center;
+            animation: popIn .3s ease;
+        }
+        @@keyframes popIn {
+            0%   { transform: scale(.85); opacity: 0; }
+            100% { transform: scale(1);   opacity: 1; }
+        }
+        .result-card.success { background: #f0fdf4; border: 2px solid #86efac; }
+        .result-card.late    { background: #fffbeb; border: 2px solid #fcd34d; }
+        .result-card.error   { background: #fef2f2; border: 2px solid #fca5a5; }
+
+        .result-icon {
+            font-size: 52px;
+            margin-bottom: 12px;
+            line-height: 1;
+        }
+        .result-card.success .result-icon { color: #16a34a; }
+        .result-card.late    .result-icon { color: #d97706; }
+        .result-card.error   .result-icon { color: #dc2626; }
+
+        .result-type  { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .result-card.success .result-type { color: #15803d; }
+        .result-card.late    .result-type { color: #b45309; }
+        .result-card.error   .result-type { color: #b91c1c; }
+
+        .result-name  { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .result-time  { font-size: 15px; color: #64748b; margin-bottom: 16px; }
+        .result-msg   { font-size: 13px; color: #64748b; }
+
+        .result-details {
+            background: rgba(0,0,0,.04);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 14px;
+            text-align: left;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(0,0,0,.06);
+        }
+        .result-row:last-child { border-bottom: none; }
+        .result-row span:first-child { color: #64748b; }
+        .result-row span:last-child  { font-weight: 600; color: #1e293b; }
+
+        .countdown-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 18px;
+            overflow: hidden;
+        }
+        .countdown-fill {
+            height: 100%;
+            background: #2563eb;
+            border-radius: 2px;
+            transition: width .1s linear;
+        }
+
+        /* ── Error message ── */
+        .err-msg {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        /* ── Footer ── */
+        .kiosk-footer {
+            text-align: center;
+            padding: 16px;
+            color: #94a3b8;
+            font-size: 11px;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+<div class="kiosk-container">
+
+    <!-- Header -->
+    <div class="kiosk-header">
+        <h1><i class="bi bi-clock-history"></i> PayroTech</h1>
+        <p>Attendance Kiosk System</p>
+        <div class="datetime-display">
+            <div class="current-time" id="currentTime">--:--:--</div>
+            <div class="current-date" id="currentDate">Loading...</div>
+        </div>
+    </div>
+
+    <div class="kiosk-body">
+
+        <!-- ── STEP 1: QR Scan ── -->
+        <div class="step active" id="stepQR">
+            <div class="scan-title">Scan Your QR Code</div>
+            <div class="scan-subtitle">Hold your ID badge in front of the camera</div>
+
+            <div class="camera-wrap">
+                <video id="qr-video" autoplay playsinline muted></video>
+                <canvas id="qr-canvas" width="280" height="280"></canvas>
+                <div class="scan-line" id="scanLine"></div>
+            </div>
+
+            <div class="camera-status" id="cameraStatus">
+                <i class="bi bi-camera me-1"></i> Initializing camera...
+            </div>
+
+            <button class="manual-toggle" onclick="toggleManual()">
+                <i class="bi bi-keyboard me-1"></i> Enter QR Code Manually
+            </button>
+
+            <div class="manual-area" id="manualArea">
+                <input type="text" class="qr-input" id="qrInput"
+                       placeholder="Scan or type QR code..." autocomplete="off">
+                <button class="num-btn ok" style="width:100%;margin-top:10px;padding:14px;"
+                        onclick="verifyManual()">
+                    <i class="bi bi-check-lg me-1"></i> Verify
+                </button>
+            </div>
+
+            <div class="err-msg" id="qrErr"></div>
+        </div>
+
+        <!-- ── STEP 2: PIN Entry (staff only) ── -->
+        <div class="step" id="stepPIN">
+            <div class="employee-card">
+                <div class="emp-avatar" id="empAvatar">?</div>
+                <div>
+                    <div class="emp-name" id="empName">—</div>
+                    <div class="emp-code" id="empCode">—</div>
+                    <div class="pin-hint">Enter the last 4 digits of your Staff Code</div>
+                </div>
+            </div>
+
+            <div class="pin-label">Enter Your 4-Digit PIN</div>
+
+            <div class="pin-dots">
+                <div class="pin-dot" id="d1"></div>
+                <div class="pin-dot" id="d2"></div>
+                <div class="pin-dot" id="d3"></div>
+                <div class="pin-dot" id="d4"></div>
+            </div>
+
+            <div class="numpad">
+                <button class="num-btn" onclick="numPress('1')">1</button>
+                <button class="num-btn" onclick="numPress('2')">2</button>
+                <button class="num-btn" onclick="numPress('3')">3</button>
+                <button class="num-btn" onclick="numPress('4')">4</button>
+                <button class="num-btn" onclick="numPress('5')">5</button>
+                <button class="num-btn" onclick="numPress('6')">6</button>
+                <button class="num-btn" onclick="numPress('7')">7</button>
+                <button class="num-btn" onclick="numPress('8')">8</button>
+                <button class="num-btn" onclick="numPress('9')">9</button>
+                <button class="num-btn del" onclick="numDel()"><i class="bi bi-backspace"></i></button>
+                <button class="num-btn" onclick="numPress('0')">0</button>
+                <button class="num-btn ok" onclick="submitPIN()"><i class="bi bi-check-lg"></i></button>
+            </div>
+
+            <div class="err-msg" id="pinErr"></div>
+
+            <button onclick="backToQR()" style="margin-top:16px;background:none;border:none;
+                    color:#94a3b8;font-size:13px;cursor:pointer;">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </button>
+        </div>
+
+        <!-- ── STEP 3: Result ── -->
+        <div class="step" id="stepResult">
+            <div class="result-card" id="resultCard">
+                <div class="result-icon" id="resultIcon">✅</div>
+                <div class="result-type" id="resultType">Time In</div>
+                <div class="result-name" id="resultName">—</div>
+                <div class="result-time" id="resultTime">—</div>
+                <div class="result-details" id="resultDetails"></div>
+                <div class="result-msg"  id="resultMsg"></div>
+                <div class="countdown-bar">
+                    <div class="countdown-fill" id="countdownFill" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /kiosk-body -->
+
+    <div class="kiosk-footer">
+        &copy; 2026 PayroTech ERP &nbsp;|&nbsp; Kiosk Mode
+    </div>
+</div>
+
+<script>
+// ── Clock ──────────────────────────────────────────────────────────────────
+(function tick() {
+    const now = new Date();
+    document.getElementById('currentTime').textContent =
+        now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    document.getElementById('currentDate').textContent =
+        now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    setTimeout(tick, 1000);
+})();
+
+// ── State ──────────────────────────────────────────────────────────────────
+let currentUserId = null;
+let currentQRCode = null;
+let pin = '';
+let videoStream = null;
+let scanInterval = null;
+let countdownTimer = null;
+
+// ── Camera ─────────────────────────────────────────────────────────────────
+async function startCamera() {
+    const status = document.getElementById('cameraStatus');
+    const video  = document.getElementById('qr-video');
+    const line   = document.getElementById('scanLine');
+
+    try {
+        // Stop any existing stream first
+        stopCamera();
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
+        });
+        videoStream = stream;
+        video.srcObject = stream;
+
+        // Wait for video to actually have data before scanning
+        await new Promise(resolve => {
+            video.onloadeddata = resolve;
+            video.play();
+        });
+
+        status.className = 'camera-status scanning';
+        status.innerHTML = '<i class="bi bi-camera-video me-1"></i> Camera ready — hold QR code in frame';
+        line.style.display = 'block';
+
+        scanInterval = setInterval(scanFrame, 150);
+
+    } catch (err) {
+        console.error('Camera error:', err);
+        status.className = 'camera-status error';
+        status.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> Camera access denied. Use manual input below.';
+        document.getElementById('manualArea').classList.add('show');
+        document.getElementById('qrInput').focus();
+    }
+}
+
+function stopCamera() {
+    if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+    if (videoStream)  { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+    document.getElementById('scanLine').style.display = 'none';
+    // Clear video source so it doesn't show last frame
+    const video = document.getElementById('qr-video');
+    video.srcObject = null;
+}
+
+function scanFrame() {
+    const video  = document.getElementById('qr-video');
+    const canvas = document.getElementById('qr-canvas');
+    if (!video || video.readyState < video.HAVE_ENOUGH_DATA) return;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+
+    if (code && code.data) {
+        stopCamera();
+        onQRScanned(code.data);
+    }
+}
+
+// ── QR Verified ────────────────────────────────────────────────────────────
+async function onQRScanned(qrCode) {
+    currentQRCode = qrCode;
+    setQRErr('');
+
+    const status = document.getElementById('cameraStatus');
+    status.className = 'camera-status';
+    status.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Verifying...';
+
+    try {
+        const res  = await fetch('/Kiosk/VerifyQRCode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrCode })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+            setQRErr(data.message);
+            startCamera(); // restart camera for next attempt
+            return;
+        }
+
+        currentUserId = data.userId;
+
+        if (data.isManager) {
+            // Manager: skip PIN, process directly
+            await processManagerAttendance(qrCode, data);
+        } else {
+            // Staff: show PIN step
+            showPINStep(data);
+        }
+
+    } catch (err) {
+        console.error(err);
+        setQRErr('Connection error. Please try again.');
+        startCamera();
+    }
+}
+
+function toggleManual() {
+    document.getElementById('manualArea').classList.toggle('show');
+    document.getElementById('qrInput').focus();
+}
+
+function verifyManual() {
+    const val = document.getElementById('qrInput').value.trim();
+    if (!val) { setQRErr('Please enter your QR code.'); return; }
+    stopCamera();
+    onQRScanned(val);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('qrInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') verifyManual();
+    });
+    startCamera();
+});
+
+// ── Manager direct attendance ──────────────────────────────────────────────
+async function processManagerAttendance(qrCode, verifyData) {
+    try {
+        const res  = await fetch('/Kiosk/ProcessAttendanceQROnly', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrCode })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showResult(data);
+        } else {
+            setQRErr(data.message);
+            startCamera();
+        }
+    } catch (err) {
+        setQRErr('Connection error. Please try again.');
+        startCamera();
+    }
+}
+
+// ── PIN Step ───────────────────────────────────────────────────────────────
+function showPINStep(data) {
+    // Populate employee card
+    const avatar = document.getElementById('empAvatar');
+    if (data.faceImagePath) {
+        avatar.innerHTML = `<img src="${data.faceImagePath}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;">`;
+    } else {
+        const initials = (data.employeeName || '?').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+        avatar.textContent = initials;
+    }
+    document.getElementById('empName').textContent = data.employeeName;
+    document.getElementById('empCode').textContent = data.staffCode;
+
+    pin = '';
+    updateDots();
+    setPINErr('');
+
+    showStep('stepPIN');
+}
+
+function numPress(digit) {
+    if (pin.length >= 4) return;
+    pin += digit;
+    updateDots();
+    if (pin.length === 4) setTimeout(submitPIN, 250);
+}
+
+function numDel() {
+    pin = pin.slice(0, -1);
+    updateDots();
+    setPINErr('');
+}
+
+function updateDots() {
+    for (let i = 1; i <= 4; i++) {
+        const dot = document.getElementById('d' + i);
+        dot.classList.toggle('filled', i <= pin.length);
+    }
+}
+
+async function submitPIN() {
+    if (pin.length !== 4) { setPINErr('Please enter all 4 digits.'); return; }
+    setPINErr('');
+
+    try {
+        const res  = await fetch('/Kiosk/ProcessAttendanceWithPIN', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUserId, pin, PIN: pin })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showResult(data);
+        } else {
+            pin = '';
+            updateDots();
+            setPINErr(data.message);
+        }
+    } catch (err) {
+        pin = '';
+        updateDots();
+        setPINErr('Connection error. Please try again.');
+    }
+}
+
+function backToQR() {
+    pin = '';
+    updateDots();
+    setPINErr('');
+    currentUserId = null;
+    currentQRCode = null;
+    showStep('stepQR');
+    startCamera();
+}
+
+// ── Result ─────────────────────────────────────────────────────────────────
+function showResult(data) {
+    const isIn   = data.type === 'in';
+    const isLate = data.isLate;
+
+    const card = document.getElementById('resultCard');
+    card.className = 'result-card ' + (isLate ? 'late' : 'success');
+
+    document.getElementById('resultIcon').textContent = isIn
+        ? (isLate ? '⚠️' : '✅')
+        : '👋';
+
+    document.getElementById('resultType').textContent = isIn
+        ? (isLate ? 'Time In — Late' : 'Time In')
+        : 'Time Out';
+
+    document.getElementById('resultName').textContent = data.employeeName;
+    document.getElementById('resultTime').textContent = data.time;
+
+    // Details rows
+    let rows = `
+        <div class="result-row">
+            <span>Staff Code</span><span>${data.staffCode || '—'}</span>
+        </div>
+        <div class="result-row">
+            <span>Timestamp</span><span>${data.time}</span>
+        </div>`;
+
+    if (data.isLate) {
+        rows += `<div class="result-row"><span>Status</span><span style="color:#d97706;">⚠ Late</span></div>`;
+    }
+    if (data.isOvertime) {
+        rows += `<div class="result-row"><span>Overtime</span><span style="color:#7c3aed;">✓ Recorded</span></div>`;
+    }
+
+    document.getElementById('resultDetails').innerHTML = rows;
+    document.getElementById('resultMsg').textContent = data.message;
+
+    showStep('stepResult');
+
+    // Countdown bar — 2 seconds then auto-reset
+    const DURATION = 2000;
+    const fill = document.getElementById('countdownFill');
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+
+    // Force reflow then animate
+    fill.getBoundingClientRect();
+    fill.style.transition = `width ${DURATION}ms linear`;
+    fill.style.width = '0%';
+
+    if (countdownTimer) clearTimeout(countdownTimer);
+    countdownTimer = setTimeout(resetKiosk, DURATION);
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+function resetKiosk() {
+    if (countdownTimer) { clearTimeout(countdownTimer); countdownTimer = null; }
+    pin = '';
+    currentUserId = null;
+    currentQRCode = null;
+    document.getElementById('qrInput').value = '';
+    document.getElementById('manualArea').classList.remove('show');
+    updateDots();
+    setQRErr('');
+    setPINErr('');
+    showStep('stepQR');
+    startCamera();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function showStep(id) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function setQRErr(msg)  { document.getElementById('qrErr').textContent  = msg; }
+function setPINErr(msg) { document.getElementById('pinErr').textContent = msg; }
+</script>
+</body>
+</html>

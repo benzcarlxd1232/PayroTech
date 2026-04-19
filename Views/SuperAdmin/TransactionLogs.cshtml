@@ -1,0 +1,208 @@
+@model List<PayroTech.Models.Entities.VendorLog>
+@{
+    ViewData["Title"] = "Transaction Logs";
+    Layout = "~/Views/Shared/_SuperAdminLayout.cshtml";
+    
+    // Pagination settings
+    var pageSize = 20;
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    var itemsList = Model.ToList();
+    var totalItems = itemsList.Count;
+    var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+    var pagedItems = itemsList.Skip((currentPage - 1) * pageSize).Take(pageSize);
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1"><i class="bi bi-receipt me-2"></i>Transaction Logs</h4>
+                <p class="text-muted mb-0">All vendor transactions and activities</p>
+            </div>
+            <a href="/SuperAdmin" class="pt-btn pt-btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Time Range</label>
+                        <select name="days" class="form-select" onchange="this.form.submit()">
+                            <option value="7" selected="@(ViewBag.Days == 7)">Last 7 Days</option>
+                            <option value="30" selected="@(ViewBag.Days == 30)">Last 30 Days</option>
+                            <option value="90" selected="@(ViewBag.Days == 90)">Last 90 Days</option>
+                            <option value="365" selected="@(ViewBag.Days == 365)">Last Year</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Transaction Type</label>
+                        <select name="type" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Types</option>
+                            <option value="Company" selected="@(ViewBag.Type == "Company")">Company Management</option>
+                            <option value="Payment" selected="@(ViewBag.Type == "Payment")">Payments</option>
+                            <option value="Subscription" selected="@(ViewBag.Type == "Subscription")">Subscriptions</option>
+                            <option value="Module" selected="@(ViewBag.Type == "Module")">Module Changes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="pt-btn pt-btn-primary w-100" onclick="exportTransactions()">
+                            <i class="bi bi-download me-1"></i>Export to Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <span><i class="bi bi-receipt me-2"></i>Transactions (@totalItems entries)</span>
+            </div>
+            <div class="pt-card-body p-0">
+                <div class="table-responsive">
+                    <table class="pt-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Company</th>
+                                <th>Transaction Type</th>
+                                <th>Performed By</th>
+                                <th>Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!pagedItems.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        No transactions found
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var transaction in pagedItems)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div>@transaction.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                            <small class="text-muted">@transaction.CreatedAt.ToString("hh:mm tt")</small>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(transaction.EntityType) && transaction.EntityType == "Company")
+                                            {
+                                                <div>@(transaction.Description ?? "Company")</div>
+                                                <small class="text-muted">@transaction.EntityType</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">System</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="pt-badge pt-badge-primary">@transaction.Action</span>
+                                        </td>
+                                        <td>
+                                            @if (transaction.Vendor != null)
+                                            {
+                                                <div>@transaction.Vendor.FullName</div>
+                                                <small class="text-muted">@transaction.Vendor.Email</small>
+                                            }
+                                            else if (!string.IsNullOrEmpty(transaction.VendorName))
+                                            {
+                                                <div>@transaction.VendorName</div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">System</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <small>@(transaction.Description ?? "-")</small>
+                                        </td>
+                                        <td>
+                                            <a href="/SuperAdmin/TransactionReceipt/@transaction.Id" class="pt-btn pt-btn-ghost pt-btn-sm">
+                                                <i class="bi bi-receipt"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            @if (totalPages > 1)
+            {
+                <div class="pt-pagination">
+                    <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "") onclick="window.location.href='?page=@(currentPage - 1)&days=@ViewBag.Days&type=@ViewBag.Type'">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div class="pt-pagination-info">
+                        <span class="text-muted me-2">Page</span>
+                        @{
+                            int startPage = Math.Max(1, currentPage - 2);
+                            int endPage = Math.Min(totalPages, currentPage + 2);
+                            
+                            if (startPage > 1)
+                            {
+                                <button class="pt-pagination-page" onclick="window.location.href='?page=1&days=@ViewBag.Days&type=@ViewBag.Type'">1</button>
+                                if (startPage > 2)
+                                {
+                                    <span class="px-2">...</span>
+                                }
+                            }
+                            
+                            for (int i = startPage; i <= endPage; i++)
+                            {
+                                <button class="pt-pagination-page @(currentPage == i ? "active" : "")" onclick="window.location.href='?page=@i&days=@ViewBag.Days&type=@ViewBag.Type'">@i</button>
+                            }
+                            
+                            if (endPage < totalPages)
+                            {
+                                if (endPage < totalPages - 1)
+                                {
+                                    <span class="px-2">...</span>
+                                }
+                                <button class="pt-pagination-page" onclick="window.location.href='?page=@totalPages&days=@ViewBag.Days&type=@ViewBag.Type'">@totalPages</button>
+                            }
+                        }
+                    </div>
+                    <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "") onclick="window.location.href='?page=@(currentPage + 1)&days=@ViewBag.Days&type=@ViewBag.Type'">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="p-3 text-center text-muted">
+                    <small>Showing all @totalItems transactions</small>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function exportTransactions() {
+            const params = new URLSearchParams(window.location.search);
+            window.location.href = `/SuperAdmin/ExportTransactions?${params.toString()}`;
+        }
+    </script>
+}

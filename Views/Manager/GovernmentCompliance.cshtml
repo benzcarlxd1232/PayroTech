@@ -1,0 +1,354 @@
+@{
+    ViewData["Title"] = "Government Compliance";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Government Compliance</h4>
+        <p class="text-muted mb-0">Manage SSS, PhilHealth, Pag-IBIG settings and remittances</p>
+    </div>
+</div>
+
+<!-- Compliance Status Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-card h-100">
+            <div class="pt-card-body">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: #1a365d; display: flex; align-items: center; justify-content: center;">
+                        <span class="text-white fw-bold">SSS</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">SSS</h5>
+                        <span class="pt-badge pt-badge-success">Up to date</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Last Remittance</span>
+                    <strong>Mar 10, 2026</strong>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Amount</span>
+                    <strong>₱ 124,800</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-card h-100">
+            <div class="pt-card-body">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: #047857; display: flex; align-items: center; justify-content: center;">
+                        <span class="text-white fw-bold">PH</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">PhilHealth</h5>
+                        <span class="pt-badge pt-badge-success">Up to date</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Last Remittance</span>
+                    <strong>Mar 10, 2026</strong>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Amount</span>
+                    <strong>₱ 89,600</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-card h-100">
+            <div class="pt-card-body">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: #dc2626; display: flex; align-items: center; justify-content: center;">
+                        <span class="text-white fw-bold small">HDMF</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">Pag-IBIG</h5>
+                        <span class="pt-badge pt-badge-warning">Due in 5 days</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Next Due Date</span>
+                    <strong>Apr 3, 2026</strong>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Amount Due</span>
+                    <strong>₱ 29,600</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-card h-100">
+            <div class="pt-card-body">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: #7c3aed; display: flex; align-items: center; justify-content: center;">
+                        <span class="text-white fw-bold">BIR</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">Withholding Tax</h5>
+                        <span class="pt-badge pt-badge-success">Up to date</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Last Filing</span>
+                    <strong>Mar 15, 2026</strong>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Amount</span>
+                    <strong>₱ 215,400</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Section -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="pt-card h-100">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-gear me-2"></i>Contribution Rates</span>
+                <button class="pt-btn pt-btn-ghost pt-btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+            </div>
+            <div class="pt-card-body">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Contribution</th>
+                            <th>Employee</th>
+                            <th>Employer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>SSS</strong></td>
+                            <td>4.5%</td>
+                            <td>9.5%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PhilHealth</strong></td>
+                            <td>2.5%</td>
+                            <td>2.5%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pag-IBIG</strong></td>
+                            <td>₱100 (max)</td>
+                            <td>₱100 (max)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="alert alert-info mt-3 mb-0 small">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Rates are based on latest government mandates. Updated as of January 2026.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="pt-card h-100">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-building me-2"></i>Company Registration Numbers</span>
+                <button class="pt-btn pt-btn-ghost pt-btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+            </div>
+            <div class="pt-card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <strong>SSS Employer Number</strong>
+                        <div class="small text-muted">Social Security System</div>
+                    </div>
+                    <code class="fs-6">34-1234567-8</code>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <strong>PhilHealth Employer Number</strong>
+                        <div class="small text-muted">Philippine Health Insurance</div>
+                    </div>
+                    <code class="fs-6">12-345678901-0</code>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <strong>Pag-IBIG Employer Number</strong>
+                        <div class="small text-muted">Home Development Mutual Fund</div>
+                    </div>
+                    <code class="fs-6">123456789012</code>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>TIN</strong>
+                        <div class="small text-muted">Bureau of Internal Revenue</div>
+                    </div>
+                    <code class="fs-6">123-456-789-000</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remittance History -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="pt-table-wrapper">
+            <div class="pt-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2"></i>Remittance History</span>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" style="width: 120px;">
+                        <option>All Types</option>
+                        <option>SSS</option>
+                        <option>PhilHealth</option>
+                        <option>Pag-IBIG</option>
+                        <option>BIR</option>
+                    </select>
+                    <select class="form-select form-select-sm" style="width: 100px;">
+                        <option>2026</option>
+                        <option>2025</option>
+                    </select>
+                </div>
+            </div>
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th>Type</th>
+                        <th class="text-end">Employee Share</th>
+                        <th class="text-end">Employer Share</th>
+                        <th class="text-end">Total</th>
+                        <th>Remittance Date</th>
+                        <th>Status</th>
+                        <th>Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>March 2026</strong></td>
+                        <td><span class="pt-badge" style="background: #1a365d; color: white;">SSS</span></td>
+                        <td class="text-end">₱ 44,800.00</td>
+                        <td class="text-end">₱ 80,000.00</td>
+                        <td class="text-end"><strong>₱ 124,800.00</strong></td>
+                        <td>Mar 10, 2026</td>
+                        <td><span class="pt-badge pt-badge-success">Remitted</span></td>
+                        <td><a href="#" class="text-primary"><i class="bi bi-file-earmark-pdf"></i></a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>March 2026</strong></td>
+                        <td><span class="pt-badge" style="background: #047857; color: white;">PhilHealth</span></td>
+                        <td class="text-end">₱ 44,800.00</td>
+                        <td class="text-end">₱ 44,800.00</td>
+                        <td class="text-end"><strong>₱ 89,600.00</strong></td>
+                        <td>Mar 10, 2026</td>
+                        <td><span class="pt-badge pt-badge-success">Remitted</span></td>
+                        <td><a href="#" class="text-primary"><i class="bi bi-file-earmark-pdf"></i></a></td>
+                    </tr>
+                    <tr class="table-warning">
+                        <td><strong>March 2026</strong></td>
+                        <td><span class="pt-badge" style="background: #dc2626; color: white;">Pag-IBIG</span></td>
+                        <td class="text-end">₱ 14,800.00</td>
+                        <td class="text-end">₱ 14,800.00</td>
+                        <td class="text-end"><strong>₱ 29,600.00</strong></td>
+                        <td>-</td>
+                        <td><span class="pt-badge pt-badge-warning">Due Apr 3</span></td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td><strong>March 2026</strong></td>
+                        <td><span class="pt-badge" style="background: #7c3aed; color: white;">BIR</span></td>
+                        <td class="text-end">₱ 215,400.00</td>
+                        <td class="text-end">-</td>
+                        <td class="text-end"><strong>₱ 215,400.00</strong></td>
+                        <td>Mar 15, 2026</td>
+                        <td><span class="pt-badge pt-badge-success">Filed</span></td>
+                        <td><a href="#" class="text-primary"><i class="bi bi-file-earmark-pdf"></i></a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>February 2026</strong></td>
+                        <td><span class="pt-badge" style="background: #1a365d; color: white;">SSS</span></td>
+                        <td class="text-end">₱ 43,200.00</td>
+                        <td class="text-end">₱ 77,200.00</td>
+                        <td class="text-end"><strong>₱ 120,400.00</strong></td>
+                        <td>Feb 10, 2026</td>
+                        <td><span class="pt-badge pt-badge-success">Remitted</span></td>
+                        <td><a href="#" class="text-primary"><i class="bi bi-file-earmark-pdf"></i></a></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="p-3 d-flex justify-content-between align-items-center">
+                <span class="text-muted">Showing 5 of 48 remittances</span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Deadlines -->
+<div class="row">
+    <div class="col-12">
+        <div class="pt-card">
+            <div class="pt-card-header">
+                <i class="bi bi-calendar-check me-2"></i>Upcoming Deadlines
+            </div>
+            <div class="pt-card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="p-3 rounded text-center" style="background: rgba(220, 38, 38, 0.1); border-left: 4px solid #dc2626;">
+                            <div class="text-muted small">Pag-IBIG Remittance</div>
+                            <h5 class="text-danger mb-0">April 3, 2026</h5>
+                            <span class="pt-badge pt-badge-danger mt-2">5 days left</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 rounded text-center" style="background: rgba(26, 54, 93, 0.1); border-left: 4px solid #1a365d;">
+                            <div class="text-muted small">SSS Remittance</div>
+                            <h5 class="mb-0">April 10, 2026</h5>
+                            <span class="pt-badge pt-badge-neutral mt-2">12 days left</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 rounded text-center" style="background: rgba(4, 120, 87, 0.1); border-left: 4px solid #047857;">
+                            <div class="text-muted small">PhilHealth Remittance</div>
+                            <h5 class="mb-0">April 10, 2026</h5>
+                            <span class="pt-badge pt-badge-neutral mt-2">12 days left</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 rounded text-center" style="background: rgba(124, 58, 237, 0.1); border-left: 4px solid #7c3aed;">
+                            <div class="text-muted small">BIR Filing</div>
+                            <h5 class="mb-0">April 15, 2026</h5>
+                            <span class="pt-badge pt-badge-neutral mt-2">17 days left</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-warning {
+        background-color: rgba(245, 158, 11, 0.1) !important;
+    }
+    code {
+        background: var(--pt-bg-secondary);
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+</style>

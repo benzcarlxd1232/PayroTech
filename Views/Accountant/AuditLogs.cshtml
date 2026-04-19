@@ -1,0 +1,83 @@
+@{
+    ViewData["Title"] = "Activity Logs";
+    Layout = "~/Views/Shared/_AccountantLayout.cshtml";
+    var logs        = ViewBag.AuditLogs   as List<PayroTech.Models.Entities.AuditLog> ?? new();
+    int totalCount  = ViewBag.TotalCount  ?? logs.Count;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages  = ViewBag.TotalPages  ?? 1;
+    int days        = ViewBag.Days        ?? 30;
+    int startP      = Math.Max(1, currentPage - 2);
+    int endP        = Math.Min(totalPages, currentPage + 2);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Activity Logs</h4>
+        <p class="text-muted mb-0">Your recent system activity</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold"><i class="bi bi-journal-text me-2"></i>Last 30 Days</div>
+    @if (!logs.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-journal-x fs-1 text-muted d-block mb-3"></i>
+            <h6>No activity logs</h6>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date & Time</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in logs)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-medium small">@log.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                <div class="text-muted" style="font-size:.75rem;">@log.CreatedAt.ToString("hh:mm tt")</div>
+                            </td>
+                            <td><span class="badge bg-info text-dark">@log.Action</span></td>
+                            <td class="text-muted small">
+                                @(string.IsNullOrEmpty(log.NewValues) ? "—" : log.NewValues.Length > 60 ? log.NewValues[..60] + "…" : log.NewValues)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="pt-pagination">
+            <small class="text-muted me-auto ps-1">
+                Showing @((currentPage - 1) * 20 + 1)–@Math.Min(currentPage * 20, totalCount) of @totalCount entries
+            </small>
+            <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage - 1)&days=@days'">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            @if (startP > 1) {
+                <button class="pt-pagination-btn" onclick="window.location.href='?page=1&days=@days'">1</button>
+                if (startP > 2) { <span class="pt-pagination-ellipsis">…</span> }
+            }
+            @for (int i = startP; i <= endP; i++) {
+                <button class="pt-pagination-btn @(currentPage == i ? "active" : "")"
+                        onclick="window.location.href='?page=@i&days=@days'">@i</button>
+            }
+            @if (endP < totalPages) {
+                if (endP < totalPages - 1) { <span class="pt-pagination-ellipsis">…</span> }
+                <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages&days=@days'">@totalPages</button>
+            }
+            <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage + 1)&days=@days'">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    }
+</div>

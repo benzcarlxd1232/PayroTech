@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "System Settings";
+    Layout = "~/Views/Shared/_SuperAdminLayout.cshtml";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-1"><i class="bi bi-gear me-2"></i>System Settings</h4>
+        <p class="text-muted mb-0">Configure system-wide settings and preferences</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Pricing Configuration -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Pricing Configuration</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Manage subscription plans and pricing tiers</p>
+                <button class="btn btn-outline-primary" disabled>Configure Pricing</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Government Rates -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bank me-2"></i>Government Rates</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Update SSS, PhilHealth, and Pag-IBIG contribution rates</p>
+                <button class="btn btn-outline-primary" disabled>Update Rates</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Branding -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-palette me-2"></i>System Branding</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Customize system logo, colors, and branding</p>
+                <button class="btn btn-outline-primary" disabled>Customize Branding</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notification Settings</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Configure email and system notifications</p>
+                <button class="btn btn-outline-primary" disabled>Configure Notifications</button>
+            </div>
+        </div>
+    </div>
+</div>

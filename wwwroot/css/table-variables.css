@@ -1,0 +1,366 @@
+/**
+ * PayroTech Table System - Role-Based Color Variables
+ * Defines table-specific colors for each role (SuperAdmin, HR, Accountant, Manager, Kiosk)
+ */
+
+/* ============================================
+   SUPERADMIN - MIDNIGHT OCEAN
+   ============================================ */
+
+[data-role="superadmin"] {
+    /* Light Mode */
+    --pt-table-toolbar-bg: #FFFFFF;
+    --pt-table-search-bg: #F5F8FF;
+    --pt-table-search-border: #E0E7FF;
+    --pt-table-filter-chip-bg: #F5F8FF;
+    --pt-table-filter-chip-text: #475569;
+    --pt-table-filter-chip-border: #E0E7FF;
+    --pt-table-filter-chip-hover-bg: #EEF2FF;
+    --pt-table-bulk-bar-bg: #EEF2FF;
+    --pt-table-bulk-bar-text: #1E3A8A;
+    --pt-table-header-bg: #EEF2FF;
+    --pt-table-header-text: #3B5BDB;
+    --pt-table-header-hover-bg: #E0E7FF;
+    --pt-table-row-hover-bg: #F5F8FF;
+    --pt-table-row-selected-bg: #EEF2FF;
+    --pt-table-zebra-bg: #FAFBFF;
+    --pt-table-action-hover-bg: #EEF2FF;
+    --pt-table-pagination-hover-bg: #F5F8FF;
+    --pt-table-empty-icon: #C7D2FE;
+    --pt-skeleton-base: #F1F5F9;
+    --pt-skeleton-shimmer: #FAFBFF;
+    
+    /* Status Pills - Light */
+    --pt-status-active-bg: #ECFDF5;
+    --pt-status-active-text: #047857;
+    --pt-status-pending-bg: #FEF3C7;
+    --pt-status-pending-text: #B45309;
+    --pt-status-inactive-bg: #F1F5F9;
+    --pt-status-inactive-text: #64748B;
+    --pt-status-error-bg: #FEE2E2;
+    --pt-status-error-text: #B91C1C;
+}
+
+[data-role="superadmin"][data-theme="dark"] {
+    /* Dark Mode */
+    --pt-table-toolbar-bg: #141A2E;
+    --pt-table-search-bg: #0F1525;
+    --pt-table-search-border: #252D45;
+    --pt-table-filter-chip-bg: #1A2138;
+    --pt-table-filter-chip-text: #94A3B8;
+    --pt-table-filter-chip-border: #252D45;
+    --pt-table-filter-chip-hover-bg: #1E2A4A;
+    --pt-table-bulk-bar-bg: #1E2A4A;
+    --pt-table-bulk-bar-text: #A5B8FF;
+    --pt-table-header-bg: #1E2A4A;
+    --pt-table-header-text: #A5B8FF;
+    --pt-table-header-hover-bg: #252D45;
+    --pt-table-row-hover-bg: #1C2340;
+    --pt-table-row-selected-bg: #1E2A4A;
+    --pt-table-zebra-bg: #161C30;
+    --pt-table-action-hover-bg: #1E2A4A;
+    --pt-table-pagination-hover-bg: #1C2340;
+    --pt-table-empty-icon: #3730A3;
+    --pt-skeleton-base: #1A2138;
+    --pt-skeleton-shimmer: #252D45;
+    
+    /* Status Pills - Dark */
+    --pt-status-active-bg: #0F2E25;
+    --pt-status-active-text: #6EE7B7;
+    --pt-status-pending-bg: #3B2A0F;
+    --pt-status-pending-text: #FCD34D;
+    --pt-status-inactive-bg: #1E293B;
+    --pt-status-inactive-text: #94A3B8;
+    --pt-status-error-bg: #3F1212;
+    --pt-status-error-text: #FCA5A5;
+}
+
+/* ============================================
+   HR - FRESH SAGE
+   ============================================ */
+
+[data-role="hr"] {
+    /* Light Mode */
+    --pt-table-toolbar-bg: #FFFFFF;
+    --pt-table-search-bg: #F0FAF5;
+    --pt-table-search-border: #D1FAE5;
+    --pt-table-filter-chip-bg: #F0FAF5;
+    --pt-table-filter-chip-text: #475569;
+    --pt-table-filter-chip-border: #D1FAE5;
+    --pt-table-filter-chip-hover-bg: #ECFDF5;
+    --pt-table-bulk-bar-bg: #ECFDF5;
+    --pt-table-bulk-bar-text: #047857;
+    --pt-table-header-bg: #ECFDF5;
+    --pt-table-header-text: #047857;
+    --pt-table-header-hover-bg: #D1FAE5;
+    --pt-table-row-hover-bg: #F0FAF5;
+    --pt-table-row-selected-bg: #ECFDF5;
+    --pt-table-zebra-bg: #FAFDFB;
+    --pt-table-action-hover-bg: #ECFDF5;
+    --pt-table-pagination-hover-bg: #F0FAF5;
+    --pt-table-empty-icon: #A7F3D0;
+    --pt-skeleton-base: #F1F5F9;
+    --pt-skeleton-shimmer: #F0FAF5;
+    
+    /* Status Pills - Light */
+    --pt-status-active-bg: #ECFDF5;
+    --pt-status-active-text: #047857;
+    --pt-status-pending-bg: #FEF3C7;
+    --pt-status-pending-text: #B45309;
+    --pt-status-inactive-bg: #F1F5F9;
+    --pt-status-inactive-text: #64748B;
+    --pt-status-error-bg: #FEE2E2;
+    --pt-status-error-text: #B91C1C;
+}
+
+[data-role="hr"][data-theme="dark"] {
+    /* Dark Mode */
+    --pt-table-toolbar-bg: #0D1A16;
+    --pt-table-search-bg: #0D1A16;
+    --pt-table-search-border: #1F3A2E;
+    --pt-table-filter-chip-bg: #162B22;
+    --pt-table-filter-chip-text: #94A3B8;
+    --pt-table-filter-chip-border: #1F3A2E;
+    --pt-table-filter-chip-hover-bg: #0F2E25;
+    --pt-table-bulk-bar-bg: #0F2E25;
+    --pt-table-bulk-bar-text: #6EE7B7;
+    --pt-table-header-bg: #0F2E25;
+    --pt-table-header-text: #6EE7B7;
+    --pt-table-header-hover-bg: #1F3A2E;
+    --pt-table-row-hover-bg: #162B22;
+    --pt-table-row-selected-bg: #0F2E25;
+    --pt-table-zebra-bg: #101D18;
+    --pt-table-action-hover-bg: #0F2E25;
+    --pt-table-pagination-hover-bg: #162B22;
+    --pt-table-empty-icon: #065F46;
+    --pt-skeleton-base: #1F3A2E;
+    --pt-skeleton-shimmer: #162B22;
+    
+    /* Status Pills - Dark */
+    --pt-status-active-bg: #0F2E25;
+    --pt-status-active-text: #6EE7B7;
+    --pt-status-pending-bg: #3B2A0F;
+    --pt-status-pending-text: #FCD34D;
+    --pt-status-inactive-bg: #1E293B;
+    --pt-status-inactive-text: #94A3B8;
+    --pt-status-error-bg: #3F1212;
+    --pt-status-error-text: #FCA5A5;
+}
+
+/* ============================================
+   ACCOUNTANT - WARM AMBER
+   ============================================ */
+
+[data-role="accountant"] {
+    /* Light Mode */
+    --pt-table-toolbar-bg: #FFFFFF;
+    --pt-table-search-bg: #FFF8E8;
+    --pt-table-search-border: #FDE68A;
+    --pt-table-filter-chip-bg: #FFF8E8;
+    --pt-table-filter-chip-text: #475569;
+    --pt-table-filter-chip-border: #FDE68A;
+    --pt-table-filter-chip-hover-bg: #FFF7E6;
+    --pt-table-bulk-bar-bg: #FFF7E6;
+    --pt-table-bulk-bar-text: #92400E;
+    --pt-table-header-bg: #FFF7E6;
+    --pt-table-header-text: #B45309;
+    --pt-table-header-hover-bg: #FDE68A;
+    --pt-table-row-hover-bg: #FFF8E8;
+    --pt-table-row-selected-bg: #FFF7E6;
+    --pt-table-zebra-bg: #FFFCF5;
+    --pt-table-action-hover-bg: #FFF7E6;
+    --pt-table-pagination-hover-bg: #FFF8E8;
+    --pt-table-empty-icon: #FDE68A;
+    --pt-skeleton-base: #F5F5F4;
+    --pt-skeleton-shimmer: #FFF8E8;
+    
+    /* Status Pills - Light */
+    --pt-status-active-bg: #ECFDF5;
+    --pt-status-active-text: #047857;
+    --pt-status-pending-bg: #FEF3C7;
+    --pt-status-pending-text: #B45309;
+    --pt-status-inactive-bg: #F1F5F9;
+    --pt-status-inactive-text: #64748B;
+    --pt-status-error-bg: #FEE2E2;
+    --pt-status-error-text: #B91C1C;
+}
+
+[data-role="accountant"][data-theme="dark"] {
+    /* Dark Mode */
+    --pt-table-toolbar-bg: #1A1408;
+    --pt-table-search-bg: #1A1408;
+    --pt-table-search-border: #3B2A0F;
+    --pt-table-filter-chip-bg: #2A2010;
+    --pt-table-filter-chip-text: #94A3B8;
+    --pt-table-filter-chip-border: #3B2A0F;
+    --pt-table-filter-chip-hover-bg: #3B2A0F;
+    --pt-table-bulk-bar-bg: #3B2A0F;
+    --pt-table-bulk-bar-text: #FCD34D;
+    --pt-table-header-bg: #3B2A0F;
+    --pt-table-header-text: #FCD34D;
+    --pt-table-header-hover-bg: #3B2A0F;
+    --pt-table-row-hover-bg: #2A2010;
+    --pt-table-row-selected-bg: #3B2A0F;
+    --pt-table-zebra-bg: #1D1609;
+    --pt-table-action-hover-bg: #3B2A0F;
+    --pt-table-pagination-hover-bg: #2A2010;
+    --pt-table-empty-icon: #78350F;
+    --pt-skeleton-base: #3B2A0F;
+    --pt-skeleton-shimmer: #2A2010;
+    
+    /* Status Pills - Dark */
+    --pt-status-active-bg: #0F2E25;
+    --pt-status-active-text: #6EE7B7;
+    --pt-status-pending-bg: #3B2A0F;
+    --pt-status-pending-text: #FCD34D;
+    --pt-status-inactive-bg: #1E293B;
+    --pt-status-inactive-text: #94A3B8;
+    --pt-status-error-bg: #3F1212;
+    --pt-status-error-text: #FCA5A5;
+}
+
+/* ============================================
+   MANAGER/ADMIN - LAGOON BREEZE
+   ============================================ */
+
+[data-role="manager"],
+[data-role="companyadmin"] {
+    /* Light Mode */
+    --pt-table-toolbar-bg: #FFFFFF;
+    --pt-table-search-bg: #EFFCFD;
+    --pt-table-search-border: #A5F3FC;
+    --pt-table-filter-chip-bg: #EFFCFD;
+    --pt-table-filter-chip-text: #475569;
+    --pt-table-filter-chip-border: #A5F3FC;
+    --pt-table-filter-chip-hover-bg: #ECFEFF;
+    --pt-table-bulk-bar-bg: #ECFEFF;
+    --pt-table-bulk-bar-text: #155E75;
+    --pt-table-header-bg: #ECFEFF;
+    --pt-table-header-text: #0E7490;
+    --pt-table-header-hover-bg: #A5F3FC;
+    --pt-table-row-hover-bg: #EFFCFD;
+    --pt-table-row-selected-bg: #ECFEFF;
+    --pt-table-zebra-bg: #F8FEFE;
+    --pt-table-action-hover-bg: #ECFEFF;
+    --pt-table-pagination-hover-bg: #EFFCFD;
+    --pt-table-empty-icon: #A5F3FC;
+    --pt-skeleton-base: #F1F5F9;
+    --pt-skeleton-shimmer: #EFFCFD;
+    
+    /* Status Pills - Light */
+    --pt-status-active-bg: #ECFDF5;
+    --pt-status-active-text: #047857;
+    --pt-status-pending-bg: #FEF3C7;
+    --pt-status-pending-text: #B45309;
+    --pt-status-inactive-bg: #F1F5F9;
+    --pt-status-inactive-text: #64748B;
+    --pt-status-error-bg: #FEE2E2;
+    --pt-status-error-text: #B91C1C;
+}
+
+[data-role="manager"][data-theme="dark"],
+[data-role="companyadmin"][data-theme="dark"] {
+    /* Dark Mode */
+    --pt-table-toolbar-bg: #08191D;
+    --pt-table-search-bg: #08191D;
+    --pt-table-search-border: #1B3A42;
+    --pt-table-filter-chip-bg: #142E36;
+    --pt-table-filter-chip-text: #94A3B8;
+    --pt-table-filter-chip-border: #1B3A42;
+    --pt-table-filter-chip-hover-bg: #0E2F36;
+    --pt-table-bulk-bar-bg: #0E2F36;
+    --pt-table-bulk-bar-text: #67E8F9;
+    --pt-table-header-bg: #0E2F36;
+    --pt-table-header-text: #67E8F9;
+    --pt-table-header-hover-bg: #1B3A42;
+    --pt-table-row-hover-bg: #142E36;
+    --pt-table-row-selected-bg: #0E2F36;
+    --pt-table-zebra-bg: #0C1E22;
+    --pt-table-action-hover-bg: #0E2F36;
+    --pt-table-pagination-hover-bg: #142E36;
+    --pt-table-empty-icon: #155E75;
+    --pt-skeleton-base: #1B3A42;
+    --pt-skeleton-shimmer: #142E36;
+    
+    /* Status Pills - Dark */
+    --pt-status-active-bg: #0F2E25;
+    --pt-status-active-text: #6EE7B7;
+    --pt-status-pending-bg: #3B2A0F;
+    --pt-status-pending-text: #FCD34D;
+    --pt-status-inactive-bg: #1E293B;
+    --pt-status-inactive-text: #94A3B8;
+    --pt-status-error-bg: #3F1212;
+    --pt-status-error-text: #FCA5A5;
+}
+
+/* ============================================
+   KIOSK - FOCUS GLOW
+   ============================================ */
+
+body.kiosk-mode {
+    /* Light Mode */
+    --pt-table-toolbar-bg: #FFFFFF;
+    --pt-table-search-bg: #F0F2FF;
+    --pt-table-search-border: #C7D2FE;
+    --pt-table-filter-chip-bg: #EEF2FF;
+    --pt-table-filter-chip-text: #475569;
+    --pt-table-filter-chip-border: #C7D2FE;
+    --pt-table-filter-chip-hover-bg: #E0E7FF;
+    --pt-table-bulk-bar-bg: #EEF2FF;
+    --pt-table-bulk-bar-text: #3730A3;
+    --pt-table-header-bg: #EEF2FF;
+    --pt-table-header-text: #4338CA;
+    --pt-table-header-hover-bg: #C7D2FE;
+    --pt-table-row-hover-bg: #F0F2FF;
+    --pt-table-row-selected-bg: #EEF2FF;
+    --pt-table-zebra-bg: #FAFBFF;
+    --pt-table-action-hover-bg: #EEF2FF;
+    --pt-table-pagination-hover-bg: #F0F2FF;
+    --pt-table-empty-icon: #C7D2FE;
+    --pt-skeleton-base: #F1F5F9;
+    --pt-skeleton-shimmer: #F0F2FF;
+    
+    /* Status Pills - Light */
+    --pt-status-active-bg: #ECFDF5;
+    --pt-status-active-text: #047857;
+    --pt-status-pending-bg: #FEF3C7;
+    --pt-status-pending-text: #B45309;
+    --pt-status-inactive-bg: #F1F5F9;
+    --pt-status-inactive-text: #64748B;
+    --pt-status-error-bg: #FEE2E2;
+    --pt-status-error-text: #B91C1C;
+}
+
+body.kiosk-mode[data-theme="dark"] {
+    /* Dark Mode */
+    --pt-table-toolbar-bg: #0F1525;
+    --pt-table-search-bg: #0F1525;
+    --pt-table-search-border: #252D45;
+    --pt-table-filter-chip-bg: #1C2340;
+    --pt-table-filter-chip-text: #94A3B8;
+    --pt-table-filter-chip-border: #252D45;
+    --pt-table-filter-chip-hover-bg: #1E1B3A;
+    --pt-table-bulk-bar-bg: #1E1B3A;
+    --pt-table-bulk-bar-text: #A78BFA;
+    --pt-table-header-bg: #1E1B3A;
+    --pt-table-header-text: #A78BFA;
+    --pt-table-header-hover-bg: #252D45;
+    --pt-table-row-hover-bg: #1C2340;
+    --pt-table-row-selected-bg: #1E1B3A;
+    --pt-table-zebra-bg: #161C30;
+    --pt-table-action-hover-bg: #1E1B3A;
+    --pt-table-pagination-hover-bg: #1C2340;
+    --pt-table-empty-icon: #3730A3;
+    --pt-skeleton-base: #1A2138;
+    --pt-skeleton-shimmer: #252D45;
+    
+    /* Status Pills - Dark */
+    --pt-status-active-bg: #0F2E25;
+    --pt-status-active-text: #6EE7B7;
+    --pt-status-pending-bg: #3B2A0F;
+    --pt-status-pending-text: #FCD34D;
+    --pt-status-inactive-bg: #1E293B;
+    --pt-status-inactive-text: #94A3B8;
+    --pt-status-error-bg: #3F1212;
+    --pt-status-error-text: #FCA5A5;
+}

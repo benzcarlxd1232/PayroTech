@@ -1,0 +1,127 @@
+@model PayroTech.Models.Entities.IncidentReport
+@using PayroTech.Models.Enums
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<PayroTech.Models.Entities.ApplicationUser> UserManager
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+    ViewData["Title"] = "Incident Report Details";
+    Layout = currentUser?.Role switch
+    {
+        UserRole.HR           => "_HRLayout",
+        UserRole.Accountant   => "_AccountantLayout",
+        UserRole.CompanyAdmin => "_ManagerLayout",
+        _                     => "_EmployeeLayout"
+    };
+    var idRequest = ViewBag.IDRequest as PayroTech.Models.Entities.IDRequest;
+    var isApproved = Model.Status == IncidentStatus.Resolved;
+    var isRejected = Model.Status == IncidentStatus.Closed;
+    var isLostId   = Model.Type == IncidentType.LostIDCard;
+}
+
+<div class="container-fluid py-4" style="max-width:760px;">
+    <!-- Back -->
+    <div class="mb-3">
+        <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    <!-- Status Banner -->
+    @if (isApproved)
+    {
+        <div class="alert alert-success d-flex align-items-center gap-2 mb-4">
+            <i class="bi bi-check-circle-fill fs-5"></i>
+            <div>
+                <strong>Approved</strong> — This report has been resolved by your manager.
+                @if (isLostId && idRequest != null)
+                {
+                    <span> Your replacement ID card is ready to download.</span>
+                }
+            </div>
+            @if (isLostId && idRequest != null)
+            {
+                <a href="/IDCard/PrintReplacement/@idRequest.Id" target="_blank"
+                   class="btn btn-sm btn-success ms-auto">
+                    <i class="bi bi-download me-1"></i>Download ID Card
+                </a>
+            }
+        </div>
+    }
+    else if (isRejected)
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+            <i class="bi bi-x-circle-fill fs-5"></i>
+            <div>
+                <strong>Not Approved</strong> — @Model.Resolution
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+            <i class="bi bi-hourglass-split fs-5"></i>
+            <div><strong>Pending Review</strong> — Your report is awaiting manager action.</div>
+        </div>
+    }
+
+    <!-- Report Card -->
+    <div class="card border-0 shadow-sm" style="border-radius:16px;">
+        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge bg-secondary fs-6">@Model.Title</span>
+                <span class="text-muted small">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    Submitted @Model.CreatedAt.ToString("MMMM dd, yyyy hh:mm tt")
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <dl class="row g-3">
+                <dt class="col-sm-4 text-muted small">Report Type</dt>
+                <dd class="col-sm-8">@Model.Title</dd>
+
+                @if (Model.WhenHappened.HasValue)
+                {
+                    <dt class="col-sm-4 text-muted small">When It Happened</dt>
+                    <dd class="col-sm-8">@Model.WhenHappened.Value.ToString("MMMM dd, yyyy hh:mm tt")</dd>
+                }
+
+                <dt class="col-sm-4 text-muted small">What Happened</dt>
+                <dd class="col-sm-8">@Model.WhatHappened</dd>
+
+                @if (!string.IsNullOrEmpty(Model.WhyHappened))
+                {
+                    <dt class="col-sm-4 text-muted small">Why It Happened</dt>
+                    <dd class="col-sm-8">@Model.WhyHappened</dd>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <dt class="col-sm-4 text-muted small">Additional Notes</dt>
+                    <dd class="col-sm-8">@Model.Description</dd>
+                }
+
+                <dt class="col-sm-4 text-muted small">Assigned To</dt>
+                <dd class="col-sm-8">@(Model.AssignedTo?.FullName ?? "Manager")</dd>
+
+                @if (!string.IsNullOrEmpty(Model.Resolution))
+                {
+                    <dt class="col-sm-4 text-muted small">Manager's Response</dt>
+                    <dd class="col-sm-8">
+                        <div class="p-3 rounded-3"
+                             style="background:@(isApproved ? "#f0fdf4" : "#fef2f2");
+                                    border-left:4px solid @(isApproved ? "#22c55e" : "#ef4444");">
+                            @Model.Resolution
+                        </div>
+                    </dd>
+                }
+
+                @if (Model.ResolvedAt.HasValue)
+                {
+                    <dt class="col-sm-4 text-muted small">Reviewed On</dt>
+                    <dd class="col-sm-8">@Model.ResolvedAt.Value.ToString("MMMM dd, yyyy hh:mm tt")</dd>
+                }
+            </dl>
+        </div>
+    </div>
+</div>

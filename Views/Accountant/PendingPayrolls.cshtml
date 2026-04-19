@@ -1,0 +1,98 @@
+@{
+    ViewData["Title"] = "Pending Payrolls";
+    Layout = "~/Views/Shared/_AccountantLayout.cshtml";
+    var payrolls    = ViewBag.Payrolls    as List<PayroTech.Models.Entities.Payroll> ?? new();
+    int totalCount  = ViewBag.TotalCount  ?? payrolls.Count;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages  = ViewBag.TotalPages  ?? 1;
+    int pageSize    = ViewBag.PageSize    ?? 15;
+    int startP      = Math.Max(1, currentPage - 2);
+    int endP        = Math.Min(totalPages, currentPage + 2);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Pending Payrolls</h4>
+        <p class="text-muted mb-0">Approved payrolls ready for salary distribution</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-hourglass-split me-2"></i>@payrolls.Count record(s) pending
+    </div>
+    @if (!payrolls.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
+            <h6>No pending payrolls</h6>
+            <p class="text-muted small">All payrolls have been distributed.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Employee</th>
+                        <th>Department</th>
+                        <th>Period</th>
+                        <th class="text-end">Gross</th>
+                        <th class="text-end">Deductions</th>
+                        <th class="text-end">Net Pay</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in payrolls)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-medium">@p.Employee?.FullName</td>
+                            <td class="text-muted small">@(p.Employee?.Department?.DepartmentName ?? "—")</td>
+                            <td class="text-muted small">@(p.PayrollPeriod?.PeriodName ?? "—")</td>
+                            <td class="text-end">₱@p.GrossPay.ToString("N2")</td>
+                            <td class="text-end text-danger">-₱@p.TotalDeductions.ToString("N2")</td>
+                            <td class="text-end fw-bold text-success">₱@p.NetPay.ToString("N2")</td>
+                            <td class="text-center">
+                                <span class="badge bg-warning text-dark">@p.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="5" class="ps-4 fw-bold">Total</td>
+                        <td class="text-end fw-bold text-success">₱@payrolls.Sum(p => p.NetPay).ToString("N2")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="pt-pagination">
+            <small class="text-muted me-auto ps-1">
+                Showing @((currentPage - 1) * pageSize + 1)–@Math.Min(currentPage * pageSize, totalCount) of @totalCount records
+            </small>
+            <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage - 1)'">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            @if (startP > 1) {
+                <button class="pt-pagination-btn" onclick="window.location.href='?page=1'">1</button>
+                if (startP > 2) { <span class="pt-pagination-ellipsis">…</span> }
+            }
+            @for (int i = startP; i <= endP; i++) {
+                <button class="pt-pagination-btn @(currentPage == i ? "active" : "")"
+                        onclick="window.location.href='?page=@i'">@i</button>
+            }
+            @if (endP < totalPages) {
+                if (endP < totalPages - 1) { <span class="pt-pagination-ellipsis">…</span> }
+                <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages'">@totalPages</button>
+            }
+            <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "")
+                    onclick="window.location.href='?page=@(currentPage + 1)'">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    }
+</div>

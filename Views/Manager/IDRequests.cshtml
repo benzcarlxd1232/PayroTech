@@ -1,0 +1,188 @@
+@model List<PayroTech.Models.Entities.IDRequest>
+@{
+    ViewData["Title"] = "ID Card Requests";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<div class="pt-card">
+    <div class="pt-card-header">
+        <h3 class="pt-card-title">
+            <i class="bi bi-card-list me-2"></i>ID Card Requests
+        </h3>
+        <p class="pt-text-muted mb-0">Review and approve employee ID card requests</p>
+    </div>
+    <div class="pt-card-body">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <p class="mt-3 text-muted">No ID card requests found</p>
+            </div>
+        }
+        else
+        {
+            <div class="pt-table-wrapper">
+                <table class="pt-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Request Date</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="pt-avatar pt-avatar-sm me-2">
+                                            @request.User.FirstName.Substring(0, 1)
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">@request.User.FullName</div>
+                                            <small class="text-muted">@request.User.Email</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@request.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td>@request.Reason</td>
+                                <td>
+                                    @if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Pending)
+                                    {
+                                        <span class="pt-badge pt-badge-warning">
+                                            <i class="bi bi-clock me-1"></i>Pending
+                                        </span>
+                                    }
+                                    else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Approved)
+                                    {
+                                        <span class="pt-badge pt-badge-success">
+                                            <i class="bi bi-check-circle me-1"></i>Approved
+                                        </span>
+                                    }
+                                    else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Rejected)
+                                    {
+                                        <span class="pt-badge pt-badge-danger">
+                                            <i class="bi bi-x-circle me-1"></i>Rejected
+                                        </span>
+                                    }
+                                    else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Printed)
+                                    {
+                                        <span class="pt-badge pt-badge-neutral">
+                                            <i class="bi bi-printer me-1"></i>Printed
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Pending)
+                                    {
+                                        <button type="button" class="pt-btn pt-btn-sm pt-btn-success me-2" 
+                                                onclick="approveRequest(@request.Id, '@request.User.FullName')">
+                                            <i class="bi bi-check-lg me-1"></i>Approve
+                                        </button>
+                                        <button type="button" class="pt-btn pt-btn-sm pt-btn-danger" 
+                                                onclick="rejectRequest(@request.Id, '@request.User.FullName')">
+                                            <i class="bi bi-x-lg me-1"></i>Reject
+                                        </button>
+                                    }
+                                    else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Approved)
+                                    {
+                                        <span class="text-muted">
+                                            <small>Approved by @(request.ApprovedBy?.FullName ?? "Manager")</small>
+                                        </span>
+                                    }
+                                    else if (request.Status == PayroTech.Models.Enums.IDRequestStatus.Rejected)
+                                    {
+                                        <span class="text-muted">
+                                            <small>Rejected by @(request.ApprovedBy?.FullName ?? "Manager")</small>
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-action="ApproveIDRequest">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-check-circle me-2"></i>Approve ID Card Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="approveRequestId" />
+                    <p>Are you sure you want to approve the ID card request for <strong id="approveEmployeeName"></strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Add any notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="pt-btn pt-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="pt-btn pt-btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Approve Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-action="RejectIDRequest">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-x-circle me-2"></i>Reject ID Card Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="rejectRequestId" />
+                    <p>Are you sure you want to reject the ID card request for <strong id="rejectEmployeeName"></strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Rejection <span class="text-danger">*</span></label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Explain why this request is being rejected..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="pt-btn pt-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="pt-btn pt-btn-danger">
+                        <i class="bi bi-x-lg me-1"></i>Reject Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function approveRequest(id, name) {
+            document.getElementById('approveRequestId').value = id;
+            document.getElementById('approveEmployeeName').textContent = name;
+            var modal = new bootstrap.Modal(document.getElementById('approveModal'));
+            modal.show();
+        }
+
+        function rejectRequest(id, name) {
+            document.getElementById('rejectRequestId').value = id;
+            document.getElementById('rejectEmployeeName').textContent = name;
+            var modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+            modal.show();
+        }
+    </script>
+}

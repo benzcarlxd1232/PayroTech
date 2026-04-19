@@ -1,0 +1,403 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<PayroTech.Models.Entities.ApplicationUser> UserManager
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#7c3aed" />
+    <title>@ViewData["Title"] - PayroTech System Vendor</title>
+    <!-- Design System & Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- PayroTech Design System -->
+    <link href="~/css/design-system.css" rel="stylesheet" asp-append-version="true">
+    <!-- Role Theme -->
+    <link href="~/css/themes/superadmin.css" rel="stylesheet" asp-append-version="true">
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Sidebar Overlay (for mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/SuperAdmin" class="sidebar-brand">
+                <img src="/images/logo.png" alt="PayroTech"
+                     style="height:32px;width:auto;object-fit:contain;flex-shrink:0;"
+                     onerror="this.style.display='none';document.getElementById('saLogoFallback').style.display='inline';" />
+                <span id="saLogoFallback" style="display:none;">
+                    <i class="bi bi-box-seam"></i>
+                </span>
+                <span>PayroTech<span class="vendor-badge">Vendor</span></span>
+            </a>
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+
+        <ul class="sidebar-nav">
+            <!-- Dashboard -->
+            <li class="nav-item">
+                <a href="/SuperAdmin" class="nav-link @(currentAction == "Index" ? "active" : "")" title="Dashboard">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                </a>
+            </li>
+
+            <!-- Company Management -->
+            <li class="nav-header" title="Company Management"><span>Company Management</span></li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#companyMenu" role="button"
+                   aria-expanded="@(currentAction == "Companies" || currentAction == "CreateCompany" || currentAction == "CompanyDetails" || currentAction == "EditCompany" || currentAction == "CompanyStatus" ? "true" : "false")"
+                   title="Companies">
+                    <i class="bi bi-building"></i> <span>Companies</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <div class="collapse @(currentAction == "Companies" || currentAction == "CreateCompany" || currentAction == "CompanyDetails" || currentAction == "EditCompany" || currentAction == "CompanyStatus" ? "show" : "")" id="companyMenu">
+                    <ul class="sidebar-nav nav-dropdown">
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/Companies" class="nav-link @(currentAction == "Companies" ? "active" : "")" title="List Companies">
+                                <i class="bi bi-list-ul"></i> <span>List Companies</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/CreateCompany" class="nav-link @(currentAction == "CreateCompany" ? "active" : "")" title="Add Company">
+                                <i class="bi bi-plus-circle"></i> <span>Add Company</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/CompanyStatus" class="nav-link @(currentAction == "CompanyStatus" ? "active" : "")" title="Company Status">
+                                <i class="bi bi-toggle-on"></i> <span>Company Status</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Subscription Management -->
+            <li class="nav-header" title="Subscription Management"><span>Subscription Management</span></li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#subscriptionMenu" role="button"
+                   aria-expanded="@(currentAction == "BillingHistory" || currentAction == "ActiveSubscriptions" ? "true" : "false")"
+                   title="Subscriptions">
+                    <i class="bi bi-credit-card"></i> <span>Subscriptions</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <div class="collapse @(currentAction == "BillingHistory" || currentAction == "ActiveSubscriptions" ? "show" : "")" id="subscriptionMenu">
+                    <ul class="sidebar-nav nav-dropdown">
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/BillingHistory" class="nav-link @(currentAction == "BillingHistory" ? "active" : "")" title="Billing History">
+                                <i class="bi bi-receipt"></i> <span>Billing History</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Reports & Analytics -->
+            <li class="nav-header" title="Reports & Analytics"><span>Reports & Analytics</span></li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#reportMenu" role="button"
+                   aria-expanded="@(currentAction == "RevenueReports" || currentAction == "ClientAnalytics" || currentAction == "ModuleUsage" || currentAction == "ActivityLogs" ? "true" : "false")"
+                   title="Reports">
+                    <i class="bi bi-bar-chart-line"></i> <span>Reports</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <div class="collapse @(currentAction == "RevenueReports" || currentAction == "ClientAnalytics" || currentAction == "ModuleUsage" || currentAction == "ActivityLogs" ? "show" : "")" id="reportMenu">
+                    <ul class="sidebar-nav nav-dropdown">
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/RevenueReports" class="nav-link @(currentAction == "RevenueReports" ? "active" : "")" title="Revenue Reports">
+                                <i class="bi bi-currency-dollar"></i> <span>Revenue Reports</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/ClientAnalytics" class="nav-link @(currentAction == "ClientAnalytics" ? "active" : "")" title="Client Analytics">
+                                <i class="bi bi-graph-up"></i> <span>Client Analytics</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/ModuleUsage" class="nav-link @(currentAction == "ModuleUsage" ? "active" : "")" title="Module Usage">
+                                <i class="bi bi-pie-chart"></i> <span>Module Usage</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/ActivityLogs" class="nav-link @(currentAction == "ActivityLogs" ? "active" : "")" title="Activity Logs">
+                                <i class="bi bi-journal-text"></i> <span>Activity Logs</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Security -->
+            <li class="nav-header" title="Security"><span>Security</span></li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#securityMenu" role="button"
+                   aria-expanded="@(currentAction == "SystemLogs" || currentAction == "AuditTrail" ? "true" : "false")"
+                   title="Security">
+                    <i class="bi bi-shield-check"></i> <span>Security</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <div class="collapse @(currentAction == "SystemLogs" || currentAction == "AuditTrail" ? "show" : "")" id="securityMenu">
+                    <ul class="sidebar-nav nav-dropdown">
+                        <li class="nav-item">
+                            <a href="/SuperAdmin/SystemLogs" class="nav-link @(currentAction == "SystemLogs" ? "active" : "")" title="System Logs">
+                                <i class="bi bi-file-text"></i> <span>System Logs</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="top-navbar">
+            <div>
+                <h5 class="mb-0">@ViewData["Title"]</h5>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notification Center -->
+                <div style="position: relative; z-index: 1050;">
+                    <div class="notification-bell" onclick="toggleNotifications()" title="Notifications">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge">4</span>
+                    </div>
+                    <div class="notification-dropdown" id="notificationDropdown"
+                         style="position: absolute; top: calc(100% + 10px); right: 0; width: 320px;
+                                background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+                                box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 9999;
+                                display: none; overflow: hidden;">
+                        <div style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 0.9rem; background: #f8fafc;">
+                            <i class="bi bi-bell me-2" style="color:#7c3aed;"></i>System Notifications
+                        </div>
+                        <div style="max-height: 320px; overflow-y: auto;">
+                            <div class="notification-item unread" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; background: #faf5ff;">
+                                <strong style="color: #7c3aed; font-size: 0.85rem;">New Company Signup</strong>
+                                <p style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">ABC Corp has signed up for the enterprise plan.</p>
+                                <small style="color: #94a3b8; font-size: 0.75rem;">5 minutes ago</small>
+                            </div>
+                            <div class="notification-item unread" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; background: #faf5ff;">
+                                <strong style="color: #7c3aed; font-size: 0.85rem;">Payment Received</strong>
+                                <p style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">Payment of ₱2,500 received from XYZ Inc.</p>
+                                <small style="color: #94a3b8; font-size: 0.75rem;">30 minutes ago</small>
+                            </div>
+                            <div class="notification-item unread" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; background: #faf5ff;">
+                                <strong style="color: #7c3aed; font-size: 0.85rem;">Module Activated</strong>
+                                <p style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">Premium Analytics module activated for TechStart Ltd.</p>
+                                <small style="color: #94a3b8; font-size: 0.75rem;">2 hours ago</small>
+                            </div>
+                            <div class="notification-item" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">
+                                <strong style="font-size: 0.85rem;">System Maintenance</strong>
+                                <p style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">Scheduled maintenance completed successfully.</p>
+                                <small style="color: #94a3b8; font-size: 0.75rem;">Yesterday</small>
+                            </div>
+                        </div>
+                        <div style="padding: 12px; text-align: center; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+                            <a href="#" style="color: #7c3aed; font-size: 0.85rem; text-decoration: none; font-weight: 500;">View all notifications</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+
+                <!-- User Info -->
+                <span class="text-muted">
+                    <i class="bi bi-shield-check me-1" style="color: #7c3aed;"></i>
+                    @(user?.FirstName) @(user?.LastName)
+                </span>
+                <button class="btn btn-outline-danger btn-sm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+                <form id="logoutForm" method="post" action="/Auth/Logout" style="display: none;">
+                    @Html.AntiForgeryToken()
+                </form>
+            </div>
+        </div>
+
+        <!-- Logout Confirmation Modal -->
+        <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoutModalLabel">
+                            <i class="bi bi-box-arrow-right me-2"></i>Confirm Logout
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to logout from PayroTech?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="document.getElementById('logoutForm').submit();">
+                            <i class="bi bi-box-arrow-right me-1"></i>Yes, Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Warning"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-x-circle me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <main>
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- PayroTech Design System JS -->
+    <script src="~/js/design-system.js" asp-append-version="true"></script>
+    <script>
+        // Override primary color for SuperAdmin palette
+        document.documentElement.style.setProperty('--pt-primary-500', '#7c3aed');
+        document.documentElement.style.setProperty('--pt-primary-600', '#6d28d9');
+
+        // Theme Toggle (delegates to PT.Theme)
+        function toggleTheme() {
+            PT.Theme.toggle();
+        }
+
+        // Logout Confirmation
+        function confirmLogout() {
+            var logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
+            logoutModal.show();
+        }
+
+        // Notification Toggle
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+        }
+
+        // Close notifications when clicking outside
+        document.addEventListener('click', function(event) {
+            const notificationBell = document.querySelector('.notification-bell');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+
+            if (notificationBell && notificationDropdown &&
+                !notificationBell.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                notificationDropdown.style.display = 'none';
+            }
+        });
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            if (overlay) overlay.classList.toggle('show');
+
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+
+        // Restore sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
+            }
+
+            // Initialize command palette with SuperAdmin specific items
+            PT.CommandPalette.init([
+                { id: 'dashboard', icon: 'bi-speedometer2', title: 'Dashboard', description: 'Go to main dashboard', action: () => window.location.href = '/SuperAdmin' },
+                { id: 'companies', icon: 'bi-building', title: 'Companies', description: 'View all companies', action: () => window.location.href = '/SuperAdmin/Companies' },
+                { id: 'create-company', icon: 'bi-plus-circle', title: 'Add Company', description: 'Create new company', action: () => window.location.href = '/SuperAdmin/CreateCompany' },
+                { id: 'modules', icon: 'bi-grid-3x3-gap', title: 'Modules', description: 'Manage modules', action: () => window.location.href = '/SuperAdmin/Modules' },
+                { id: 'subscriptions', icon: 'bi-credit-card', title: 'Subscriptions', description: 'Manage subscriptions', action: () => window.location.href = '/SuperAdmin/SubscriptionPlans' },
+                { id: 'toggle-theme', icon: 'bi-moon-fill', title: 'Toggle Dark Mode', description: 'Switch theme', action: () => PT.Theme.toggle() },
+            ]);
+        });
+
+        // Export functionality using Design System
+        function showExportOptions(buttonElement) {
+            const dropdown = buttonElement.nextElementSibling;
+            dropdown.classList.toggle('show');
+        }
+
+        function exportData(format, tableId) {
+            const table = document.querySelector(tableId || 'table');
+            if (!table) {
+                PT.Toast.error('No data table found to export');
+                return;
+            }
+
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            const rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+                const cells = Array.from(row.querySelectorAll('td'));
+                const rowData = {};
+                headers.forEach((header, index) => {
+                    rowData[header] = cells[index]?.textContent.trim() || '';
+                });
+                return rowData;
+            });
+
+            if (format === 'csv') {
+                PT.Export.toCSV(rows, 'payrotech-export.csv');
+                PT.Toast.success('Data exported as CSV');
+            } else if (format === 'json') {
+                PT.Export.toJSON(rows, 'payrotech-export.json');
+                PT.Toast.success('Data exported as JSON');
+            }
+
+            document.querySelectorAll('.export-dropdown').forEach(d => d.classList.remove('show'));
+        }
+
+        // Close export dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const exportBtns = document.querySelectorAll('.export-btn');
+            exportBtns.forEach(btn => {
+                const dropdown = btn.nextElementSibling;
+                if (dropdown && !btn.contains(event.target) && !dropdown.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+
+        // Show a toast notification (helper for server-side integration)
+        function showToast(type, message, title) {
+            PT.Toast[type](message, title);
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

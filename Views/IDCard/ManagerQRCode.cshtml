@@ -1,0 +1,52 @@
+@model string
+@{
+    ViewData["Title"] = "Your QR Code";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="pt-card text-center">
+                <div class="pt-card-header">
+                    <h3 class="pt-card-title">
+                        <i class="bi bi-qr-code me-2"></i>Your QR Code
+                    </h3>
+                    <p class="pt-text-muted mb-0">Use this QR code for attendance tracking</p>
+                </div>
+                <div class="pt-card-body py-5">
+                    <div class="mb-4">
+                        <img src="@Model" alt="QR Code" class="img-fluid" style="max-width: 300px; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; background: white;" />
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Manager Access:</strong> As a manager, you only need this QR code for attendance tracking. 
+                        Full ID cards are available for HR, Accountants, and Employees.
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center mt-4">
+                        <button onclick="window.print()" class="pt-btn pt-btn-primary">
+                            <i class="bi bi-printer me-2"></i>Print QR Code
+                        </button>
+                        <a href="/Manager" class="pt-btn pt-btn-ghost">
+                            <i class="bi bi-house me-2"></i>Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        .sidebar, .top-navbar, .pt-btn, .alert {
+            display: none !important;
+        }
+        .pt-card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
