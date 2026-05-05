@@ -6,567 +6,470 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PayroTech - Enterprise Payroll & HR Management System</title>
+    <title>PayroTech - Smart Payroll & HR for Philippine Businesses</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #0f172a;
+            --accent: #0891b2;
+            --highlight: #22d3ee;
+            --mid: #1e3a5f;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; color: #1e293b; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-        }
-
-        /* Navbar */
+        /* ── NAVBAR ── */
         .navbar {
-            background: white;
+            background: #fff;
             border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 0;
+            padding: .85rem 0;
         }
+        .navbar-brand { font-size: 1.4rem; font-weight: 700; color: var(--primary) !important; display: flex; align-items: center; gap: 8px; }
+        .navbar-brand i { color: var(--accent); font-size: 1.7rem; }
+        .nav-link { color: #475569 !important; font-weight: 500; padding: .4rem .9rem !important; }
+        .nav-link:hover { color: var(--accent) !important; }
+        .btn-signin { border: 1.5px solid var(--accent); color: var(--accent) !important; border-radius: 7px; padding: .4rem 1.1rem !important; font-weight: 600; }
+        .btn-signin:hover { background: var(--accent); color: #fff !important; }
+        .btn-getstarted { background: var(--accent); color: #fff !important; border-radius: 7px; padding: .4rem 1.2rem !important; font-weight: 600; }
+        .btn-getstarted:hover { background: #0e7490; color: #fff !important; }
 
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .navbar-brand i {
-            color: #0891b2;
-            font-size: 1.8rem;
-        }
-
-        /* Hero Section */
+        /* ── HERO ── */
         .hero {
-            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-            color: white;
-            padding: 100px 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--mid) 100%);
+            color: #fff;
+            padding: 100px 0 80px;
             position: relative;
             overflow: hidden;
         }
-
-        /* Animated Background */
         .hero::before {
             content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, 
-                rgba(34, 211, 238, 0.3) 0%, 
-                rgba(8, 145, 178, 0.2) 50%, 
-                rgba(14, 116, 144, 0.3) 100%);
-            animation: gradientShift 15s ease infinite;
-            z-index: 0;
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 70% 50%, rgba(34,211,238,.12) 0%, transparent 65%);
+            pointer-events: none;
         }
-
-        .animated-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 0;
+        .hero-content { position: relative; z-index: 1; }
+        .hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; line-height: 1.15; margin-bottom: 1.2rem; }
+        .hero h1 span { color: var(--highlight); }
+        .hero .lead { font-size: 1.15rem; opacity: .9; max-width: 560px; margin-bottom: 2rem; }
+        .btn-hero-white { background: #fff; color: var(--accent); font-weight: 700; border-radius: 8px; padding: .75rem 1.8rem; border: none; text-decoration: none; display: inline-block; transition: all .25s; }
+        .btn-hero-white:hover { background: #e0f7fa; color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+        .btn-hero-outline { background: transparent; color: #fff; font-weight: 700; border-radius: 8px; padding: .75rem 1.8rem; border: 2px solid rgba(255,255,255,.7); text-decoration: none; display: inline-block; transition: all .25s; }
+        .btn-hero-outline:hover { background: rgba(255,255,255,.12); color: #fff; }
+        .stat-badges { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 2.2rem; }
+        .stat-badge { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #fff; border-radius: 50px; padding: .35rem 1rem; font-size: .82rem; font-weight: 500; backdrop-filter: blur(4px); }
+        .stat-badge i { color: var(--highlight); margin-right: 4px; }
+        .hero-visual { position: relative; z-index: 1; }
+        .hero-card {
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(8px);
         }
+        .hero-card .metric { font-size: 2rem; font-weight: 800; color: var(--highlight); }
+        .hero-card .metric-label { font-size: .8rem; opacity: .75; }
 
-        .wave {
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, transparent 70%);
-            border-radius: 45%;
-            animation: wave 25s infinite linear;
-        }
-
-        .wave:nth-child(1) {
-            top: -50%;
-            left: -50%;
-            animation-duration: 20s;
-        }
-
-        .wave:nth-child(2) {
-            top: -30%;
-            right: -50%;
-            animation-duration: 25s;
-            animation-delay: -5s;
-            background: radial-gradient(circle, rgba(103, 232, 249, 0.12) 0%, transparent 70%);
-        }
-
-        .wave:nth-child(3) {
-            bottom: -50%;
-            left: -30%;
-            animation-duration: 30s;
-            animation-delay: -10s;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-        }
-
-        @@keyframes wave {
-            0% {
-                transform: rotate(0deg) scale(1);
-            }
-            50% {
-                transform: rotate(180deg) scale(1.1);
-            }
-            100% {
-                transform: rotate(360deg) scale(1);
-            }
-        }
-
-        @@keyframes gradientShift {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.8;
-            }
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            line-height: 1.2;
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 30px;
-            opacity: 0.95;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn-hero {
-            padding: 14px 35px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 8px;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-            min-width: 150px;
-        }
-
-        .btn-hero-primary {
-            background: white;
-            color: #0891b2;
-            border: none;
-        }
-
-        .btn-hero-primary:hover {
-            background: #f0f4ff;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-hero-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn-hero-secondary:hover {
-            background: white;
-            color: #0891b2;
-        }
-
-        /* Features Section */
-        .features {
-            padding: 80px 0;
-            background: #f8fafc;
-        }
-
-        .section-title {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-title h2 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #1e293b;
-        }
-
-        .section-title p {
-            font-size: 1.1rem;
-            color: #64748b;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-        }
-
+        /* ── FEATURES ── */
+        .features { padding: 90px 0; background: #fff; }
+        .section-label { font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: .5rem; }
+        .section-title { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; color: var(--primary); margin-bottom: .75rem; }
+        .section-sub { color: #64748b; font-size: 1.05rem; }
         .feature-card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 2rem 1.6rem;
+            height: 100%;
+            transition: all .3s;
         }
+        .feature-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(8,145,178,.12); border-color: var(--accent); }
+        .feature-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #e0f7fa, #b2ebf2); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.1rem; }
+        .feature-icon i { font-size: 1.5rem; color: var(--accent); }
+        .feature-card h5 { font-weight: 700; color: var(--primary); margin-bottom: .5rem; }
+        .feature-card p { color: #64748b; font-size: .92rem; line-height: 1.6; margin: 0; }
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        /* ── HOW IT WORKS ── */
+        .how-it-works { padding: 90px 0; background: #f1f5f9; }
+        .step-item { text-align: center; position: relative; }
+        .step-number {
+            width: 60px; height: 60px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 800;
+            margin: 0 auto 1rem;
+            position: relative; z-index: 1;
         }
-
-        .feature-icon {
-            font-size: 3rem;
-            color: #0891b2;
-            margin-bottom: 20px;
+        .step-connector {
+            position: absolute;
+            top: 30px; left: calc(50% + 30px);
+            width: calc(100% - 60px);
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--highlight));
+            z-index: 0;
         }
+        .step-icon { font-size: 1.6rem; color: var(--accent); margin-bottom: .6rem; }
+        .step-item h6 { font-weight: 700; color: var(--primary); margin-bottom: .4rem; }
+        .step-item p { color: #64748b; font-size: .88rem; }
 
-        .feature-card h3 {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        .feature-card p {
-            color: #64748b;
-            line-height: 1.6;
-        }
-
-        /* Stats Section */
-        .stats {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            color: white;
-            padding: 60px 0;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            text-align: center;
-        }
-
-        .stat-item h3 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .stat-item p {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-
-        /* CTA Section */
-        .cta {
-            padding: 80px 0;
-            text-align: center;
-            background: white;
-        }
-
-        .cta h2 {
-            font-size: 2.3rem;
-            margin-bottom: 20px;
-            color: #1e293b;
-        }
-
-        .cta p {
-            font-size: 1.1rem;
-            color: #64748b;
-            margin-bottom: 40px;
-        }
-
-        /* Footer */
-        footer {
-            background: #1e293b;
-            color: white;
-            padding: 40px 0;
-            text-align: center;
-            border-top: 1px solid #334155;
-        }
-
-        footer p {
-            margin: 0;
-            opacity: 0.8;
-        }
-
-        /* Responsive */
-        @@media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.2rem;
-            }
-
-            .hero p {
-                font-size: 1rem;
-            }
-
-            .section-title h2 {
-                font-size: 1.8rem;
-            }
-
-            .hero-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn-hero {
-                width: 200px;
-            }
-
-            .stats-grid {
-                gap: 20px;
-            }
-        }
-
-        /* Hero Image Animation */
-        .hero-image {
+        /* ── PRICING ── */
+        .pricing { padding: 90px 0; background: #fff; }
+        .plan-card {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 2rem 1.6rem;
+            height: 100%;
             position: relative;
-            z-index: 2;
-            margin-top: 30px;
+            transition: all .3s;
         }
+        .plan-card:hover { box-shadow: 0 16px 40px rgba(8,145,178,.12); border-color: var(--accent); }
+        .plan-card.popular { border-color: var(--accent); box-shadow: 0 8px 32px rgba(8,145,178,.18); }
+        .popular-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; padding: .25rem .9rem; border-radius: 50px; white-space: nowrap; }
+        .plan-name { font-size: 1rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .4rem; }
+        .plan-price { font-size: 2.2rem; font-weight: 800; color: var(--primary); line-height: 1; }
+        .plan-price span { font-size: .95rem; font-weight: 500; color: #64748b; }
+        .plan-features { list-style: none; padding: 0; margin: 1.2rem 0 1.6rem; }
+        .plan-features li { padding: .35rem 0; font-size: .9rem; color: #475569; display: flex; align-items: center; gap: .5rem; }
+        .plan-features li i { color: var(--accent); flex-shrink: 0; }
+        .btn-plan { display: block; text-align: center; background: var(--accent); color: #fff; font-weight: 700; border-radius: 8px; padding: .7rem; text-decoration: none; transition: all .25s; }
+        .btn-plan:hover { background: #0e7490; color: #fff; }
+        .plan-card.popular .btn-plan { background: var(--primary); }
+        .plan-card.popular .btn-plan:hover { background: #1e3a5f; }
 
-        .hero-image img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+        /* ── CTA ── */
+        .cta-section { background: linear-gradient(135deg, var(--primary) 0%, var(--mid) 100%); padding: 80px 0; text-align: center; color: #fff; }
+        .cta-section h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; margin-bottom: 1rem; }
+        .cta-section p { opacity: .85; font-size: 1.05rem; margin-bottom: 2rem; }
+        .btn-cta { background: var(--highlight); color: var(--primary); font-weight: 800; border-radius: 8px; padding: .85rem 2.2rem; text-decoration: none; display: inline-block; transition: all .25s; font-size: 1.05rem; }
+        .btn-cta:hover { background: #67e8f9; color: var(--primary); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.25); }
+
+        /* ── FOOTER ── */
+        footer { background: var(--primary); color: rgba(255,255,255,.7); padding: 40px 0; }
+        footer .brand { color: #fff; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 6px; }
+        footer .brand i { color: var(--highlight); }
+        footer a { color: rgba(255,255,255,.6); text-decoration: none; font-size: .88rem; }
+        footer a:hover { color: var(--highlight); }
+        footer .footer-links { display: flex; gap: 1.4rem; flex-wrap: wrap; }
+
+        /* ── KIOSK FAB ── */
+        .kiosk-fab {
+            position: fixed; bottom: 28px; right: 28px; z-index: 1050;
+            width: 58px; height: 58px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 6px 24px rgba(8,145,178,.45);
+            text-decoration: none;
+            transition: all .25s;
+        }
+        .kiosk-fab:hover { background: #0e7490; color: #fff; transform: scale(1.1); }
+        .kiosk-fab-label {
+            position: fixed; bottom: 36px; right: 96px; z-index: 1050;
+            background: var(--primary); color: #fff;
+            font-size: .78rem; font-weight: 600;
+            padding: .3rem .75rem; border-radius: 6px;
+            white-space: nowrap; pointer-events: none;
+            opacity: 0; transition: opacity .2s;
+        }
+        .kiosk-fab:hover + .kiosk-fab-label { opacity: 1; }
+
+        @@media (max-width: 768px) {
+            .hero { padding: 70px 0 60px; }
+            .step-connector { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
-        <div class="container-lg">
-            <a class="navbar-brand" href="#home">
-                <img src="/images/logo.png" alt="PayroTech"
-                     style="height:40px;width:auto;object-fit:contain;"
-                     onerror="this.style.display='none';document.getElementById('navLogoFallback').style.display='flex'" />
-                <span id="navLogoFallback" style="display:none;align-items:center;gap:8px;">
-                    <i class="bi bi-box-seam" style="color:#0891b2;font-size:1.8rem;"></i>
-                    <span>PayroTech</span>
-                </span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/Kiosk" style="color: #0891b2; font-weight: 600;">
-                            <i class="bi bi-clock-history"></i> Kiosk
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="animated-bg">
-            <div class="wave"></div>
-            <div class="wave"></div>
-            <div class="wave"></div>
+<!-- ── NAVBAR ── -->
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <img src="/images/logo.png" alt="PayroTech" style="height:36px;width:auto;object-fit:contain;"
+                 onerror="this.style.display='none';document.getElementById('navIcon').style.display='inline-block'" />
+            <i class="bi bi-box-seam" id="navIcon" style="display:none;"></i>
+            PayroTech
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
+                <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="#pricing">Pricing</a></li>
+                <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                <li class="nav-item ms-2"><a class="nav-link btn-signin" href="/Auth/Login">Sign In</a></li>
+                <li class="nav-item ms-1"><a class="nav-link btn-getstarted" href="/Register/Online">Get Started</a></li>
+            </ul>
         </div>
-        <div class="container-lg">
-            <div class="hero-content">
-                <div style="margin-bottom:24px;">
-                    <img src="/images/logo.png" alt="PayroTech"
-                         style="height:90px;width:auto;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));"
-                         onerror="this.style.display='none'" />
-                </div>
-                <h1>Enterprise Payroll & HR Management</h1>
-                <p>Streamline your workforce management with our comprehensive, cloud-based ERP solution</p>
-                <div class="hero-buttons">
-                    <a href="/Auth/Login" class="btn btn-hero btn-hero-primary">Sign In</a>
-                    <a href="#features" class="btn btn-hero btn-hero-secondary">Learn More</a>
-                    <a href="/Kiosk" class="btn btn-hero btn-hero-secondary" style="border-color: rgba(255,255,255,0.7);">
-                        <i class="bi bi-clock-history"></i> Kiosk Mode
-                    </a>
-                </div>
-                <div class="hero-image">
-                    <div style="background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%); border-radius: 12px; padding: 40px; text-align: center; border: 2px solid rgba(255,255,255,0.1);">
-                        <i class="bi bi-graph-up" style="font-size: 4rem; opacity: 0.3;"></i>
-                        <p style="margin-top: 20px; opacity: 0.8;">Dashboard Preview</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    </div>
+</nav>
 
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <div class="container-lg">
-            <div class="section-title">
-                <h2>Powerful Features</h2>
-                <p>Everything you need to manage your workforce efficiently</p>
+<!-- ── HERO ── -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 hero-content">
+                <h1>Smart Payroll & HR for <span>Philippine Businesses</span></h1>
+                <p class="lead">Automate attendance, payroll, and compliance — built for the Philippine labor code.</p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/Register/Online" class="btn-hero-white">Start Free Trial</a>
+                    <a href="/Auth/Login" class="btn-hero-outline">Sign In</a>
+                </div>
+                <div class="stat-badges">
+                    <span class="stat-badge"><i class="bi bi-check-circle-fill"></i> SSS/PhilHealth/Pag-IBIG Compliant</span>
+                    <span class="stat-badge"><i class="bi bi-check-circle-fill"></i> Kiosk Attendance</span>
+                    <span class="stat-badge"><i class="bi bi-check-circle-fill"></i> Automated Payroll</span>
+                    <span class="stat-badge"><i class="bi bi-check-circle-fill"></i> DOLE Labor Code Ready</span>
+                </div>
             </div>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-people"></i>
+            <div class="col-lg-6 hero-visual">
+                <div class="hero-card">
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="metric">500+</div>
+                            <div class="metric-label">Companies Onboarded</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric">10K+</div>
+                            <div class="metric-label">Employees Managed</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric">99.9%</div>
+                            <div class="metric-label">System Uptime</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric">24/7</div>
+                            <div class="metric-label">Support Available</div>
+                        </div>
                     </div>
-                    <h3>Employee Management</h3>
-                    <p>Centralized employee database with detailed profiles, documents, and history tracking</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-clock"></i>
+                    <hr style="border-color:rgba(255,255,255,.15);margin:1.2rem 0;">
+                    <div class="d-flex align-items-center gap-2" style="color:rgba(255,255,255,.8);font-size:.88rem;">
+                        <i class="bi bi-shield-check" style="color:var(--highlight);font-size:1.1rem;"></i>
+                        Fully compliant with Philippine labor regulations
                     </div>
-                    <h3>Time & Attendance</h3>
-                    <p>Real-time tracking, time-in/out logs, overtime management, and attendance reports</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-cash-stack"></i>
-                    </div>
-                    <h3>Payroll Management</h3>
-                    <p>Automated payroll processing, salary calculations, deductions, and payment tracking</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-calendar-check"></i>
-                    </div>
-                    <h3>Leave Management</h3>
-                    <p>Comprehensive leave tracking, approval workflow, and balance management</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-diagram-3"></i>
-                    </div>
-                    <h3>Department Organization</h3>
-                    <p>Organize employees by departments with clear hierarchies and reporting structures</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-bar-chart-line"></i>
-                    </div>
-                    <h3>Advanced Analytics</h3>
-                    <p>Comprehensive reports and insights on payroll, attendance, and workforce metrics</p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Stats Section -->
-    <section class="stats" id="about">
-        <div class="container-lg">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <h3>10K+</h3>
-                    <p>Employees Managed</p>
+<!-- ── FEATURES ── -->
+<section class="features" id="features">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-label">What We Offer</div>
+            <h2 class="section-title">Everything Your Business Needs</h2>
+            <p class="section-sub">A complete HR & payroll platform built for Philippine companies of all sizes.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-qr-code"></i></div>
+                    <h5>Kiosk Attendance</h5>
+                    <p>QR-code and PIN-based kiosk time-in/out system. Works on any tablet or touchscreen device.</p>
                 </div>
-                <div class="stat-item">
-                    <h3>500+</h3>
-                    <p>Companies Using</p>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-cash-stack"></i></div>
+                    <h5>Automated Payroll</h5>
+                    <p>Auto-compute salaries, deductions, overtime, and 13th month pay based on actual attendance data.</p>
                 </div>
-                <div class="stat-item">
-                    <h3>99.9%</h3>
-                    <p>System Uptime</p>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-calendar-x"></i></div>
+                    <h5>Leave Management</h5>
+                    <p>Streamlined leave requests, approvals, and balance tracking for all leave types.</p>
                 </div>
-                <div class="stat-item">
-                    <h3>24/7</h3>
-                    <p>Support Available</p>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
+                    <h5>Overtime Tracking</h5>
+                    <p>Automatic overtime detection, approval workflows, and DOLE-compliant rate calculations.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-bank"></i></div>
+                    <h5>Government Compliance</h5>
+                    <p>Built-in SSS, PhilHealth, Pag-IBIG, and BIR contribution tables. Always up to date.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
+                    <h5>Financial Reports</h5>
+                    <p>Payroll summaries, payslips, government remittance reports, and audit-ready exports.</p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- About Section -->
-    <section class="features">
-        <div class="container-lg">
-            <div class="section-title">
-                <h2>Why Choose PayroTech?</h2>
-                <p>Industry-leading solution for modern workforce management</p>
+<!-- ── HOW IT WORKS ── -->
+<section class="how-it-works" id="about">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-label">Simple Setup</div>
+            <h2 class="section-title">Up and Running in Minutes</h2>
+            <p class="section-sub">Four easy steps to get your company fully operational on PayroTech.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-icon"><i class="bi bi-building"></i></div>
+                    <h6>Register Company</h6>
+                    <p>Create your company account and configure your business profile online.</p>
+                </div>
             </div>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-cloud"></i>
-                    </div>
-                    <h3>Cloud-Based</h3>
-                    <p>Access your data anytime, anywhere with our secure cloud infrastructure</p>
+            <div class="col-6 col-md-3">
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-icon"><i class="bi bi-people"></i></div>
+                    <h6>Set Up Team</h6>
+                    <p>Add employees, assign departments, shifts, and roles in minutes.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-shield-check"></i>
-                    </div>
-                    <h3>Secure & Compliant</h3>
-                    <p>Enterprise-grade security with compliance to international standards</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-icon"><i class="bi bi-qr-code-scan"></i></div>
+                    <h6>Track Attendance</h6>
+                    <p>Deploy kiosk mode on any device. Employees clock in with QR or PIN.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-lightning-fill"></i>
-                    </div>
-                    <h3>Lightning Fast</h3>
-                    <p>Optimized performance for smooth user experience and quick data processing</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-puzzle"></i>
-                    </div>
-                    <h3>Fully Customizable</h3>
-                    <p>Tailor the system to match your organization's unique requirements</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-person-check"></i>
-                    </div>
-                    <h3>Role-Based Access</h3>
-                    <p>Control user permissions with fine-grained role and department-level access</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-arrow-repeat"></i>
-                    </div>
-                    <h3>Continuous Support</h3>
-                    <p>Dedicated support team and regular system updates with new features</p>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-icon"><i class="bi bi-cash-coin"></i></div>
+                    <h6>Process Payroll</h6>
+                    <p>One-click payroll processing with automatic deductions and payslip generation.</p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- CTA Section -->
-    <section class="cta" id="contact">
-        <div class="container-lg">
-            <h2>Ready to Transform Your Workforce Management?</h2>
-            <p>Join hundreds of companies that trust PayroTech for their HR and payroll needs</p>
-            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-                <a href="/Auth/Login" class="btn btn-hero btn-hero-primary" style="background: #0891b2; color: white; border: none;">Sign In Now</a>
-                <a href="#home" class="btn btn-hero btn-hero-secondary" style="background: transparent; color: #0891b2; border: 2px solid #0891b2;">Contact Us</a>
+<!-- ── PRICING ── -->
+<section class="pricing" id="pricing">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-label">Transparent Pricing</div>
+            <h2 class="section-title">Plans for Every Business Size</h2>
+            <p class="section-sub">No hidden fees. Cancel anytime. All plans include free onboarding support.</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            <!-- Basic -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="plan-card">
+                    <div class="plan-name">Basic</div>
+                    <div class="plan-price">&#8369;2,999 <span>/ mo</span></div>
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill"></i> Up to 25 employees</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 1 Kiosk device</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Attendance tracking</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Basic payroll</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Leave management</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Email support</li>
+                    </ul>
+                    <a href="/Register/Online" class="btn-plan">Get Started</a>
+                </div>
+            </div>
+            <!-- Standard (Popular) -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="plan-card popular">
+                    <div class="popular-badge">&#11088; Most Popular</div>
+                    <div class="plan-name">Standard</div>
+                    <div class="plan-price">&#8369;4,999 <span>/ mo</span></div>
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill"></i> Up to 75 employees</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 3 Kiosk devices</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Full attendance suite</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Automated payroll</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Overtime tracking</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Gov't compliance</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Priority support</li>
+                    </ul>
+                    <a href="/Register/Online" class="btn-plan">Get Started</a>
+                </div>
+            </div>
+            <!-- Professional -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="plan-card">
+                    <div class="plan-name">Professional</div>
+                    <div class="plan-price">&#8369;7,999 <span>/ mo</span></div>
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill"></i> Up to 200 employees</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 8 Kiosk devices</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Multi-branch support</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Advanced reports</li>
+                        <li><i class="bi bi-check-circle-fill"></i> API access</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Dedicated account mgr</li>
+                    </ul>
+                    <a href="/Register/Online" class="btn-plan">Get Started</a>
+                </div>
+            </div>
+            <!-- Enterprise -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="plan-card">
+                    <div class="plan-name">Enterprise</div>
+                    <div class="plan-price">&#8369;12,999 <span>/ mo</span></div>
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill"></i> Unlimited employees</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Unlimited kiosks</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Custom integrations</li>
+                        <li><i class="bi bi-check-circle-fill"></i> SLA guarantee</li>
+                        <li><i class="bi bi-check-circle-fill"></i> On-site training</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 24/7 phone support</li>
+                    </ul>
+                    <a href="/Register/Online" class="btn-plan">Get Started</a>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container-lg">
-            <p>&copy; 2026 PayroTech ERP System. All rights reserved.</p>
-            <p style="margin-top: 10px; font-size: 0.9rem;">Enterprise Payroll & HR Management Solution</p>
+<!-- ── CTA ── -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to modernize your payroll?</h2>
+        <p>Join hundreds of Philippine businesses already using PayroTech.</p>
+        <a href="/Register/Online" class="btn-cta">Register Your Company Online</a>
+    </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+            <div class="brand">
+                <i class="bi bi-box-seam"></i> PayroTech
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact</a>
+            </div>
+            <div style="font-size:.85rem;">&copy; 2026 PayroTech. All rights reserved.</div>
         </div>
-    </footer>
+    </div>
+</footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- ── KIOSK FAB ── -->
+<a href="/Kiosk" class="kiosk-fab" title="Kiosk Mode">
+    <i class="bi bi-clock-history"></i>
+</a>
+<div class="kiosk-fab-label">Kiosk Mode</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
