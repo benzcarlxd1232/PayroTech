@@ -19,10 +19,15 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1">Attendance Monitoring</h4>
-        <p class="text-muted mb-0">Track your team's attendance in real-time</p>
+        <p class="text-muted mb-0">Track and manage your team's attendance</p>
     </div>
     <div class="d-flex gap-2">
-        <input type="date" class="form-control" value="@selectedDate.ToString("yyyy-MM-dd")" style="width: 180px;" onchange="window.location.href='/HR/Attendance?date=' + this.value">
+        <input type="date" class="form-control" value="@selectedDate.ToString("yyyy-MM-dd")"
+               style="width: 180px;"
+               onchange="window.location.href='/HR/Attendance?date=' + this.value">
+        <button class="pt-btn pt-btn-primary" onclick="openAddModal()">
+            <i class="bi bi-plus-lg me-2"></i>Add / Edit Entry
+        </button>
         <button class="pt-btn pt-btn-ghost" onclick="exportData('csv', '#attendanceTable')">
             <i class="bi bi-download me-2"></i>Export
         </button>
@@ -192,6 +197,7 @@
                         <th>Hours Worked</th>
                         <th>OT Hours</th>
                         <th>Status</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -297,6 +303,23 @@
                                         <span class="pt-badge pt-badge-danger">Absent</span>
                                     }
                                 </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary me-1"
+                                            onclick="openEditModal(@employee.Id, '@(employee.User?.FirstName) @(employee.User?.LastName)',
+                                                '@(attendance?.TimeIn?.ToString("HH:mm") ?? "")',
+                                                '@(attendance?.TimeOut?.ToString("HH:mm") ?? "")',
+                                                '@(attendance?.Status.ToString() ?? "Present")',
+                                                '@(attendance?.Remarks ?? "")')">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    @if (attendance != null)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                onclick="deleteAttendance(@employee.Id, '@selectedDate.ToString("yyyy-MM-dd")', '@(employee.User?.FirstName) @(employee.User?.LastName)')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </td>
                             </tr>
                         }
                     }
@@ -321,24 +344,170 @@
     </div>
 </div>
 
+<style>
+    .table-warning { background-color: rgba(245, 158, 11, 0.1) !important; }
+    .table-danger  { background-color: rgba(239, 68, 68, 0.1) !important; }
+</style>
+
+@Html.AntiForgeryToken()
+
+<!-- Manual Attendance Entry / Edit Modal -->
+<div class="modal fade" id="attendanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalTitle">
+                    <i class="bi bi-pencil-square me-2"></i>Attendance Entry
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="attEmployeeId">
+                <input type="hidden" id="attDate" value="@selectedDate.ToString("yyyy-MM-dd")">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Employee</label>
+                    <select class="form-select" id="attEmployeeSelect">
+                        <option value="">— Select Employee —</option>
+                        @foreach (var emp in allEmployees)
+                        {
+                            <option value="@emp.Id">@emp.User?.FirstName @emp.User?.LastName</option>
+                        }
+                    </select>
+                    <div id="attEmployeeName" class="fw-semibold mt-1 text-primary" style="display:none;"></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label fw-semibold">Time In</label>
+                        <input type="time" class="form-control" id="attTimeIn">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label fw-semibold">Time Out</label>
+                        <input type="time" class="form-control" id="attTimeOut">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Status</label>
+                    <select class="form-select" id="attStatus">
+                        <option value="Present">Present</option>
+                        <option value="Late">Late</option>
+                        <option value="Absent">Absent</option>
+                        <option value="OnLeave">On Leave</option>
+                        <option value="HalfDay">Half Day</option>
+                        <option value="Holiday">Holiday</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Remarks (Optional)</label>
+                    <input type="text" class="form-control" id="attRemarks"
+                           placeholder="e.g. Kiosk malfunction, manual entry">
+                </div>
+
+                <div class="alert alert-info small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Late minutes and overtime will be <strong>auto-recalculated</strong> based on the employee's shift schedule.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveAttendance()">
+                    <i class="bi bi-save me-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
 <script>
-    // Search functionality
+    function getToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    function showToast(msg, type) {
+        try { PT.Toast[type](msg); } catch { alert(msg); }
+    }
+
+    function openAddModal() {
+        document.getElementById('attendanceModalTitle').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Add Attendance Entry';
+        document.getElementById('attEmployeeId').value = '';
+        document.getElementById('attEmployeeSelect').style.display = 'block';
+        document.getElementById('attEmployeeSelect').value = '';
+        document.getElementById('attEmployeeName').style.display = 'none';
+        document.getElementById('attTimeIn').value = '';
+        document.getElementById('attTimeOut').value = '';
+        document.getElementById('attStatus').value = 'Present';
+        document.getElementById('attRemarks').value = '';
+        new bootstrap.Modal(document.getElementById('attendanceModal')).show();
+    }
+
+    function openEditModal(empId, empName, timeIn, timeOut, status, remarks) {
+        document.getElementById('attendanceModalTitle').innerHTML = '<i class="bi bi-pencil me-2"></i>Edit Attendance';
+        document.getElementById('attEmployeeId').value = empId;
+        document.getElementById('attEmployeeSelect').style.display = 'none';
+        document.getElementById('attEmployeeName').textContent = empName;
+        document.getElementById('attEmployeeName').style.display = 'block';
+        document.getElementById('attTimeIn').value  = timeIn;
+        document.getElementById('attTimeOut').value = timeOut;
+        document.getElementById('attStatus').value  = status || 'Present';
+        document.getElementById('attRemarks').value = remarks;
+        new bootstrap.Modal(document.getElementById('attendanceModal')).show();
+    }
+
+    async function saveAttendance() {
+        const empId = document.getElementById('attEmployeeId').value
+                   || document.getElementById('attEmployeeSelect').value;
+        if (!empId) { showToast('Please select an employee.', 'error'); return; }
+
+        const fd = new FormData();
+        fd.append('employeeId', empId);
+        fd.append('date',       document.getElementById('attDate').value);
+        fd.append('timeIn',     document.getElementById('attTimeIn').value);
+        fd.append('timeOut',    document.getElementById('attTimeOut').value);
+        fd.append('status',     document.getElementById('attStatus').value);
+        fd.append('remarks',    document.getElementById('attRemarks').value);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r    = await fetch('/HR/SaveAttendance', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('attendanceModal')).hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message, 'error');
+        }
+    }
+
+    async function deleteAttendance(empId, date, empName) {
+        if (!confirm(`Delete attendance record for ${empName} on ${date}?`)) return;
+
+        const fd = new FormData();
+        fd.append('employeeId', empId);
+        fd.append('date',       date);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r    = await fetch('/HR/DeleteAttendance', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(data.message, 'error');
+        }
+    }
+
+    // Search
     document.getElementById('attendanceSearch')?.addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('#attendanceTable tbody tr');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        const q = e.target.value.toLowerCase();
+        document.querySelectorAll('#attendanceTable tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
     });
 </script>
-
-<style>
-    .table-warning {
-        background-color: rgba(245, 158, 11, 0.1) !important;
-    }
-    .table-danger {
-        background-color: rgba(239, 68, 68, 0.1) !important;
-    }
-</style>
+}

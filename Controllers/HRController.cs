@@ -281,23 +281,25 @@ public class HRController : Controller
     }
 
     // GET: /HR/Attendance  →  Views/HR/Attendance.cshtml
-    public async Task<IActionResult> Attendance()
+    public async Task<IActionResult> Attendance(string? date = null)
     {
         var user = await GetHRUser();
         if (user == null) return RedirectToAction("Index", "Home");
 
-        var today  = DateTime.Today;
+        var selectedDate = date != null && DateTime.TryParse(date, out var parsed)
+            ? parsed.Date : DateTime.Today;
+
         var deptId = user.DepartmentId;
 
         var attendanceRecords = await _context.Attendances
             .Include(a => a.Employee).ThenInclude(e => e.User)
             .Include(a => a.Employee.Department)
-            .Where(a => a.Employee.CompanyId == user.CompanyId && a.Date.Date == today
+            .Where(a => a.Employee.CompanyId == user.CompanyId && a.Date.Date == selectedDate
                      && (deptId == null || a.Employee.DepartmentId == deptId))
             .OrderBy(a => a.Employee.LastName).ToListAsync();
 
         var allEmployees = await _context.Employees
-            .Include(e => e.User).Include(e => e.Department)
+            .Include(e => e.User).Include(e => e.Department).Include(e => e.Shift)
             .Where(e => e.CompanyId == user.CompanyId && e.IsActive
                      && (deptId == null || e.DepartmentId == deptId)).ToListAsync();
 
@@ -305,9 +307,12 @@ public class HRController : Controller
             .Include(l => l.Employee).ThenInclude(e => e.User)
             .Where(l => l.Employee.CompanyId == user.CompanyId &&
                         l.Status == LeaveStatus.Approved &&
-                        l.StartDate <= today && l.EndDate >= today
+                        l.StartDate <= selectedDate && l.EndDate >= selectedDate
                      && (deptId == null || l.Employee.DepartmentId == deptId))
             .ToListAsync();
+
+        var shifts = await _context.Shifts
+            .Where(s => s.CompanyId == user.CompanyId && s.IsActive).ToListAsync();
 
         ViewBag.AttendanceRecords = attendanceRecords;
         ViewBag.AllEmployees      = allEmployees;
@@ -316,9 +321,149 @@ public class HRController : Controller
         ViewBag.AbsentCount       = allEmployees.Count - attendanceRecords.Count(a => a.TimeIn != null);
         ViewBag.OnLeaveCount      = onLeaveToday.Count;
         ViewBag.OnLeaveToday      = onLeaveToday;
-        ViewBag.SelectedDate      = today;
+        ViewBag.SelectedDate      = selectedDate;
+        ViewBag.Shifts            = shifts;
 
         return View();
+    }
+
+    // POST: /HR/SaveAttendance — manual add or edit a single attendance record
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveAttendance(
+        int employeeId, string date,
+        string? timeIn, string? timeOut,
+        string status, string? remarks)
+    {
+        var user = await GetHRUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        if (!DateTime.TryParse(date, out var attendanceDate))
+            return Json(new { success = false, message = "Invalid date." });
+
+        // Verify employee belongs to HR's company (and team if scoped)
+        var employee = await _context.Employees
+            .Include(e => e.Shift)
+            .FirstOrDefaultAsync(e => e.Id == employeeId && e.CompanyId == user.CompanyId
+                && (user.DepartmentId == null || e.DepartmentId == user.DepartmentId));
+
+        if (employee == null)
+            return Json(new { success = false, message = "Employee not found." });
+
+        var attendance = await _context.Attendances
+            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date.Date == attendanceDate.Date);
+
+        var isNew = attendance == null;
+        attendance ??= new Attendance { EmployeeId = employeeId, Date = attendanceDate.Date };
+
+        // Parse times
+        DateTime? parsedTimeIn  = null;
+        DateTime? parsedTimeOut = null;
+
+        if (!string.IsNullOrWhiteSpace(timeIn) && TimeSpan.TryParse(timeIn, out var tin))
+            parsedTimeIn = attendanceDate.Date.Add(tin);
+        if (!string.IsNullOrWhiteSpace(timeOut) && TimeSpan.TryParse(timeOut, out var tout))
+            parsedTimeOut = attendanceDate.Date.Add(tout);
+
+        attendance.TimeIn  = parsedTimeIn;
+        attendance.TimeOut = parsedTimeOut;
+        attendance.Remarks = remarks;
+        attendance.IsApproved = true;
+
+        // Parse status
+        attendance.Status = status switch
+        {
+            "Present"  => AttendanceStatus.Present,
+            "Late"     => AttendanceStatus.Late,
+            "Absent"   => AttendanceStatus.Absent,
+            "OnLeave"  => AttendanceStatus.OnLeave,
+            "HalfDay"  => AttendanceStatus.HalfDay,
+            "Holiday"  => AttendanceStatus.Holiday,
+            _          => AttendanceStatus.Present
+        };
+
+        // Recalculate late minutes
+        attendance.LateMinutes = 0;
+        attendance.LateDeductionAmount = 0;
+        if (parsedTimeIn != null && employee.Shift != null)
+        {
+            var shiftStart = attendanceDate.Date.Add(employee.Shift.StartTime);
+            var graceEnd   = shiftStart.AddMinutes(employee.Shift.GracePeriodMinutes);
+            if (parsedTimeIn > graceEnd)
+            {
+                attendance.LateMinutes = (int)(parsedTimeIn.Value - shiftStart).TotalMinutes;
+                attendance.Status      = AttendanceStatus.Late;
+                var minuteRate = (employee.DailyRate ?? 0) / (8m * 60m);
+                attendance.LateDeductionAmount = Math.Round(minuteRate * attendance.LateMinutes, 2);
+            }
+        }
+
+        // Recalculate worked minutes
+        attendance.WorkedMinutes = 0;
+        if (parsedTimeIn != null && parsedTimeOut != null)
+            attendance.WorkedMinutes = (int)(parsedTimeOut.Value - parsedTimeIn.Value).TotalMinutes;
+
+        // Recalculate overtime minutes
+        attendance.OvertimeMinutes = 0;
+        attendance.OvertimeAmount  = 0;
+        if (parsedTimeOut != null && employee.Shift != null)
+        {
+            var shiftEnd = attendanceDate.Date.Add(employee.Shift.EndTime);
+            if (employee.Shift.IsNightShift && shiftEnd < attendanceDate.Date.Add(employee.Shift.StartTime))
+                shiftEnd = shiftEnd.AddDays(1);
+            if (parsedTimeOut > shiftEnd)
+            {
+                attendance.OvertimeMinutes = (int)(parsedTimeOut.Value - shiftEnd).TotalMinutes;
+                var hourlyRate = employee.HourlyRate ?? ((employee.DailyRate ?? 0) / 8m);
+                attendance.OvertimeAmount = Math.Round(hourlyRate * 0.25m * (attendance.OvertimeMinutes / 60m), 2);
+            }
+        }
+
+        if (isNew)
+            _context.Attendances.Add(attendance);
+
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id,
+            isNew ? "Manual Attendance Entry" : "Attendance Correction",
+            "Attendance", attendance.Id.ToString(), null,
+            new { EmployeeId = employeeId, Date = date, TimeIn = timeIn, TimeOut = timeOut, Status = status },
+            user.CompanyId);
+
+        return Json(new
+        {
+            success    = true,
+            message    = isNew ? "Attendance record added." : "Attendance record updated.",
+            lateMinutes = attendance.LateMinutes,
+            otMinutes  = attendance.OvertimeMinutes,
+            workedMinutes = attendance.WorkedMinutes
+        });
+    }
+
+    // POST: /HR/DeleteAttendance — remove an attendance record
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAttendance(int employeeId, string date)
+    {
+        var user = await GetHRUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        if (!DateTime.TryParse(date, out var attendanceDate))
+            return Json(new { success = false, message = "Invalid date." });
+
+        var attendance = await _context.Attendances
+            .Include(a => a.Employee)
+            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId
+                && a.Date.Date == attendanceDate.Date
+                && a.Employee.CompanyId == user.CompanyId);
+
+        if (attendance == null)
+            return Json(new { success = false, message = "Record not found." });
+
+        _context.Attendances.Remove(attendance);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Attendance record deleted." });
     }
 
     // GET: /HR/Leaves  →  Views/HR/Leaves.cshtml
@@ -404,6 +549,7 @@ public class HRController : Controller
         // Get employees in HR's team
         var employees = await _context.Employees
             .Include(e => e.User)
+            .Include(e => e.Shift)
             .Where(e => e.CompanyId == companyId && e.IsActive
                      && (deptId == null || e.DepartmentId == deptId))
             .ToListAsync();
@@ -415,47 +561,87 @@ public class HRController : Controller
                      && (deptId == null || a.Employee.DepartmentId == deptId))
             .ToListAsync();
 
-        var company = await _context.Companies.FindAsync(companyId);
+        var company   = await _context.Companies.FindAsync(companyId);
+        var holidays  = await _context.Holidays
+            .Where(h => h.CompanyId == companyId && h.Date >= periodStart && h.Date <= periodEnd)
+            .ToListAsync();
+        var holidayDates = holidays.Select(h => h.Date.Date).ToHashSet();
+
+        var approvedLeaves = await _context.Leaves
+            .Where(l => l.Employee.CompanyId == companyId
+                     && l.Status == LeaveStatus.Approved
+                     && l.StartDate <= periodEnd && l.EndDate >= periodStart
+                     && (deptId == null || l.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        var workDaysInPeriod = Enumerable.Range(0, (today - periodStart).Days + 1)
+            .Select(d => periodStart.AddDays(d))
+            .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+            .ToList();
+        var totalWorkDays = workDaysInPeriod.Count;
 
         // Build payroll preview per employee
         var payrollItems = employees.Select(emp =>
         {
             var empAtt      = attendance.Where(a => a.EmployeeId == emp.Id).ToList();
-            var daysWorked  = empAtt.Count(a => a.TimeIn != null);
+            var dailyRate   = emp.DailyRate  ?? company?.DefaultDailyRate ?? 500m;
+            var hourlyRate  = emp.HourlyRate ?? (dailyRate / 8m);
+            var daysWorked  = (decimal)empAtt.Count(a => a.TimeIn != null);
             var lateMinutes = empAtt.Sum(a => a.LateMinutes);
             var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
-            var dailyRate   = emp.DailyRate ?? company?.DefaultDailyRate ?? 500m;
-            var hourlyRate  = emp.HourlyRate ?? (dailyRate / 8m);
+            var undertimeMinutes = empAtt
+                .Where(a => a.TimeIn != null && a.TimeOut != null && a.WorkedMinutes > 0)
+                .Sum(a => Math.Max(0, (8 * 60) - a.WorkedMinutes));
 
-            var basicPay    = dailyRate * daysWorked;
-            var otPay       = (hourlyRate * 1.25m) * (otMinutes / 60m);
-            var lateDeduct  = (hourlyRate / 60m) * lateMinutes;
-            var gross       = basicPay + otPay;
-            var sss         = Math.Min(gross * 0.045m, 900m);
-            var philhealth  = Math.Min(gross * 0.025m, 625m);
-            var pagibig     = Math.Min(gross * 0.02m, 200m);
-            var taxable     = gross - sss - philhealth - pagibig;
-            var tax         = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
-            var totalDeduct = lateDeduct + sss + philhealth + pagibig + tax;
-            var netPay      = gross - totalDeduct;
+            var empLeaveDays = approvedLeaves
+                .Where(l => l.EmployeeId == emp.Id && l.LeaveType != LeaveType.Unpaid)
+                .Sum(l => l.TotalDays > 0 ? l.TotalDays
+                    : (decimal)(Math.Min((l.EndDate - l.StartDate).Days + 1,
+                        workDaysInPeriod.Count(d => d >= l.StartDate && d <= l.EndDate))));
+            var absentDays = Math.Max(0, totalWorkDays - daysWorked - empLeaveDays);
+
+            var holidayDaysWorked = empAtt.Where(a => a.TimeIn != null && holidayDates.Contains(a.Date.Date)).ToList();
+            var regularHolidayDays = holidayDaysWorked.Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Regular));
+            var specialHolidayDays = holidayDaysWorked.Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Special));
+            var holidayPayRate = company?.HolidayPayRate ?? 200;
+            var holidayPay = dailyRate * (holidayPayRate / 100m - 1m) * regularHolidayDays
+                           + dailyRate * 0.30m * specialHolidayDays;
+
+            var basicPay        = dailyRate * daysWorked;
+            var otPay           = (hourlyRate * 1.25m) * (otMinutes / 60m);
+            var gross           = basicPay + otPay + holidayPay;
+            var lateDeduct      = (hourlyRate / 60m) * lateMinutes;
+            var undertimeDeduct = (hourlyRate / 60m) * undertimeMinutes;
+            var absenceDeduct   = dailyRate * absentDays;
+            var sss             = Math.Min(gross * 0.045m, 900m);
+            var philhealth      = Math.Min(gross * 0.025m, 625m);
+            var pagibig         = Math.Min(gross * 0.02m, 200m);
+            var taxable         = gross - sss - philhealth - pagibig;
+            var tax             = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
+            var totalDeduct     = lateDeduct + undertimeDeduct + absenceDeduct + sss + philhealth + pagibig + tax;
 
             return new
             {
-                EmployeeId   = emp.Id,
-                FullName     = emp.FullName,
-                DaysWorked   = daysWorked,
-                OtHours      = Math.Round(otMinutes / 60m, 1),
-                LateMinutes  = lateMinutes,
-                BasicPay     = basicPay,
-                OtPay        = otPay,
-                LateDeduct   = lateDeduct,
-                Sss          = sss,
-                PhilHealth   = philhealth,
-                PagIbig      = pagibig,
-                Tax          = tax,
-                TotalDeduct  = totalDeduct,
-                NetPay       = netPay,
-                GrossPay     = gross
+                EmployeeId      = emp.Id,
+                FullName        = emp.FullName,
+                DaysWorked      = daysWorked,
+                OtHours         = Math.Round(otMinutes / 60m, 1),
+                LateMinutes     = lateMinutes,
+                UndertimeMinutes = undertimeMinutes,
+                AbsentDays      = absentDays,
+                HolidayPay      = Math.Round(holidayPay, 2),
+                BasicPay        = Math.Round(basicPay, 2),
+                OtPay           = Math.Round(otPay, 2),
+                LateDeduct      = Math.Round(lateDeduct, 2),
+                UndertimeDeduct = Math.Round(undertimeDeduct, 2),
+                AbsenceDeduct   = Math.Round(absenceDeduct, 2),
+                Sss             = Math.Round(sss, 2),
+                PhilHealth      = Math.Round(philhealth, 2),
+                PagIbig         = Math.Round(pagibig, 2),
+                Tax             = Math.Round(tax, 2),
+                TotalDeduct     = Math.Round(totalDeduct, 2),
+                NetPay          = Math.Round(gross - totalDeduct, 2),
+                GrossPay        = Math.Round(gross, 2)
             };
         }).ToList();
 
@@ -502,7 +688,10 @@ public class HRController : Controller
             return RedirectToAction(nameof(Payroll));
         }
 
-        var company = await _context.Companies.FindAsync(companyId);
+        var company   = await _context.Companies.FindAsync(companyId);
+        var holidays  = await _context.Holidays
+            .Where(h => h.CompanyId == companyId && h.Date >= periodStart && h.Date <= periodEnd)
+            .ToListAsync();
 
         // Create PayrollPeriod
         var period = new PayrollPeriod
@@ -512,62 +701,122 @@ public class HRController : Controller
             StartDate  = periodStart,
             EndDate    = periodEnd,
             PayDate    = periodEnd.AddDays(5),
-            Status     = PayrollStatus.Processed  // Submitted to manager for approval
+            Status     = PayrollStatus.Processed
         };
         _context.PayrollPeriods.Add(period);
         await _context.SaveChangesAsync();
 
         // Get employees
         var employees = await _context.Employees
+            .Include(e => e.Shift)
             .Where(e => e.CompanyId == companyId && e.IsActive
                      && (deptId == null || e.DepartmentId == deptId))
             .ToListAsync();
 
-        // Get attendance
+        // Get attendance for the period
         var attendance = await _context.Attendances
             .Where(a => a.Employee.CompanyId == companyId
                      && a.Date >= periodStart && a.Date <= today
                      && (deptId == null || a.Employee.DepartmentId == deptId))
             .ToListAsync();
 
+        // Get approved leaves for the period
+        var approvedLeaves = await _context.Leaves
+            .Where(l => l.Employee.CompanyId == companyId
+                     && l.Status == LeaveStatus.Approved
+                     && l.StartDate <= periodEnd && l.EndDate >= periodStart
+                     && (deptId == null || l.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        // Build set of working days in the period (Mon–Fri, excluding holidays)
+        var holidayDates = holidays.Select(h => h.Date.Date).ToHashSet();
+        var workDaysInPeriod = Enumerable.Range(0, (today - periodStart).Days + 1)
+            .Select(d => periodStart.AddDays(d))
+            .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+            .ToList();
+        var totalWorkDays = workDaysInPeriod.Count;
+
         // Create Payroll records for each employee
         foreach (var emp in employees)
         {
             var empAtt      = attendance.Where(a => a.EmployeeId == emp.Id).ToList();
-            var daysWorked  = (decimal)empAtt.Count(a => a.TimeIn != null);
-            var lateMinutes = empAtt.Sum(a => a.LateMinutes);
-            var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
-            var dailyRate   = emp.DailyRate ?? company?.DefaultDailyRate ?? 500m;
+            var dailyRate   = emp.DailyRate  ?? company?.DefaultDailyRate ?? 500m;
             var hourlyRate  = emp.HourlyRate ?? (dailyRate / 8m);
 
-            var basicPay    = dailyRate * daysWorked;
-            var otPay       = (hourlyRate * 1.25m) * (otMinutes / 60m);
-            var lateDeduct  = (hourlyRate / 60m) * lateMinutes;
-            var gross       = basicPay + otPay;
-            var sss         = Math.Min(gross * 0.045m, 900m);
-            var philhealth  = Math.Min(gross * 0.025m, 625m);
-            var pagibig     = Math.Min(gross * 0.02m, 200m);
-            var taxable     = gross - sss - philhealth - pagibig;
-            var tax         = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
-            var totalDeduct = lateDeduct + sss + philhealth + pagibig + tax;
+            // Days actually worked (TimeIn recorded)
+            var daysWorked  = (decimal)empAtt.Count(a => a.TimeIn != null);
+
+            // Late & overtime from attendance
+            var lateMinutes = empAtt.Sum(a => a.LateMinutes);
+            var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
+
+            // Undertime: employee clocked out early (worked < 8h on days they came in)
+            var undertimeMinutes = empAtt
+                .Where(a => a.TimeIn != null && a.TimeOut != null && a.WorkedMinutes > 0)
+                .Sum(a => Math.Max(0, (8 * 60) - a.WorkedMinutes));
+
+            // Absent days = total work days - days worked - approved leave days
+            var empLeaveDays = approvedLeaves
+                .Where(l => l.EmployeeId == emp.Id && l.LeaveType != LeaveType.Unpaid)
+                .Sum(l => l.TotalDays > 0 ? l.TotalDays
+                    : (decimal)(Math.Min((l.EndDate - l.StartDate).Days + 1,
+                        workDaysInPeriod.Count(d => d >= l.StartDate && d <= l.EndDate))));
+            var absentDays = Math.Max(0, totalWorkDays - daysWorked - empLeaveDays);
+
+            // Holiday pay: days worked on a holiday
+            var holidayDaysWorked = empAtt
+                .Where(a => a.TimeIn != null && holidayDates.Contains(a.Date.Date))
+                .ToList();
+            var regularHolidayDays = holidayDaysWorked
+                .Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Regular));
+            var specialHolidayDays = holidayDaysWorked
+                .Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Special));
+
+            // Holiday pay = extra pay on top of regular daily rate
+            // Regular holiday: 200% total = 100% extra; Special: 130% total = 30% extra
+            var holidayPayRate = company?.HolidayPayRate ?? 200;
+            var regularHolidayExtra = dailyRate * (holidayPayRate / 100m - 1m) * regularHolidayDays;
+            var specialHolidayExtra = dailyRate * 0.30m * specialHolidayDays;
+            var holidayPay = regularHolidayExtra + specialHolidayExtra;
+
+            // Earnings
+            var basicPay       = dailyRate * daysWorked;
+            var otPay          = (hourlyRate * 1.25m) * (otMinutes / 60m);
+            var gross          = basicPay + otPay + holidayPay;
+
+            // Deductions
+            var lateDeduct     = (hourlyRate / 60m) * lateMinutes;
+            var undertimeDeduct = (hourlyRate / 60m) * undertimeMinutes;
+            var absenceDeduct  = dailyRate * absentDays;
+            var sss            = Math.Min(gross * 0.045m, 900m);
+            var philhealth     = Math.Min(gross * 0.025m, 625m);
+            var pagibig        = Math.Min(gross * 0.02m, 200m);
+            var taxable        = gross - sss - philhealth - pagibig;
+            var tax            = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
+            var totalDeduct    = lateDeduct + undertimeDeduct + absenceDeduct + sss + philhealth + pagibig + tax;
 
             _context.Payrolls.Add(new Payroll
             {
                 EmployeeId             = emp.Id,
                 PayrollPeriodId        = period.Id,
-                BasicPay               = basicPay,
-                OvertimePay            = otPay,
-                GrossPay               = gross,
-                LateDeduction          = lateDeduct,
-                SSSContribution        = sss,
-                PhilHealthContribution = philhealth,
-                PagIbigContribution    = pagibig,
-                WithholdingTax         = tax,
-                TotalDeductions        = totalDeduct,
-                NetPay                 = gross - totalDeduct,
+                BasicPay               = Math.Round(basicPay, 2),
+                OvertimePay            = Math.Round(otPay, 2),
+                HolidayPay             = Math.Round(holidayPay, 2),
+                GrossPay               = Math.Round(gross, 2),
+                LateDeduction          = Math.Round(lateDeduct, 2),
+                UndertimeDeduction     = Math.Round(undertimeDeduct, 2),
+                AbsenceDeduction       = Math.Round(absenceDeduct, 2),
+                SSSContribution        = Math.Round(sss, 2),
+                PhilHealthContribution = Math.Round(philhealth, 2),
+                PagIbigContribution    = Math.Round(pagibig, 2),
+                WithholdingTax         = Math.Round(tax, 2),
+                TotalDeductions        = Math.Round(totalDeduct, 2),
+                NetPay                 = Math.Round(gross - totalDeduct, 2),
                 DaysWorked             = daysWorked,
-                OvertimeHours          = otMinutes / 60m,
-                LateHours              = lateMinutes / 60m,
+                OvertimeHours          = Math.Round(otMinutes / 60m, 2),
+                LateHours              = Math.Round(lateMinutes / 60m, 2),
+                UndertimeHours         = Math.Round(undertimeMinutes / 60m, 2),
+                AbsentDays             = absentDays,
                 Status                 = PayrollStatus.Processed
             });
         }
@@ -662,18 +911,52 @@ public class HRController : Controller
         if (leave.Status != LeaveStatus.Pending)
             return Json(new { success = false, message = "Leave request already processed" });
 
-        leave.Status      = LeaveStatus.Approved;
-        leave.ApprovedAt  = DateTime.UtcNow;
-        leave.UpdatedAt   = DateTime.UtcNow;
+        leave.Status     = LeaveStatus.Approved;
+        leave.ApprovedAt = DateTime.UtcNow;
+        leave.UpdatedAt  = DateTime.UtcNow;
+
+        // ── Auto-deduct leave balance ──────────────────────────────────────
+        var balance = await _context.LeaveBalances
+            .FirstOrDefaultAsync(b => b.EmployeeId == leave.EmployeeId && b.Year == DateTime.Today.Year);
+
+        if (balance == null)
+        {
+            // Create balance record if missing (15 days each by default)
+            balance = new LeaveBalance
+            {
+                EmployeeId             = leave.EmployeeId,
+                Year                   = DateTime.Today.Year,
+                VacationLeaveBalance   = 15,
+                SickLeaveBalance       = 15,
+                VacationLeaveUsed      = 0,
+                SickLeaveUsed          = 0
+            };
+            _context.LeaveBalances.Add(balance);
+        }
+
+        var days = leave.TotalDays > 0 ? leave.TotalDays
+                   : (decimal)(leave.EndDate - leave.StartDate).TotalDays + 1;
+
+        if (leave.LeaveType == LeaveType.Vacation || leave.LeaveType == LeaveType.Emergency)
+        {
+            balance.VacationLeaveBalance = Math.Max(0, balance.VacationLeaveBalance - days);
+            balance.VacationLeaveUsed   += days;
+        }
+        else if (leave.LeaveType == LeaveType.Sick)
+        {
+            balance.SickLeaveBalance = Math.Max(0, balance.SickLeaveBalance - days);
+            balance.SickLeaveUsed   += days;
+        }
+        // Unpaid/Maternity/Paternity — no balance deduction
 
         await _context.SaveChangesAsync();
 
         await _auditLogService.LogAsync(user.Id, "Approved Leave Request", "Leave",
             leave.Id.ToString(), null,
-            new { LeaveId = leave.Id, EmployeeId = leave.EmployeeId, LeaveType = leave.LeaveType.ToString() },
+            new { LeaveId = leave.Id, EmployeeId = leave.EmployeeId, LeaveType = leave.LeaveType.ToString(), Days = days },
             user.CompanyId);
 
-        return Json(new { success = true, message = "Leave approved" });
+        return Json(new { success = true, message = $"Leave approved. {days} day(s) deducted from balance." });
     }
 
     [HttpPost]
