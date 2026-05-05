@@ -512,6 +512,123 @@ public class HRController : Controller
     {
         var user = await GetHRUser();
         if (user == null) return RedirectToAction("Index", "Home");
+
+        var today      = DateTime.Today;
+        var deptId     = user.DepartmentId;
+        var companyId  = user.CompanyId ?? 0;
+        var periodStart = new DateTime(today.Year, today.Month, 1);
+        var periodEnd   = periodStart.AddMonths(1).AddDays(-1);
+
+        // Check if already submitted
+        var existing = await _context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.CompanyId == companyId
+                                   && p.StartDate == periodStart
+                                   && p.Status != PayrollStatus.Draft);
+        ViewBag.AlreadySubmitted = existing != null;
+        ViewBag.ExistingStatus   = existing?.Status.ToString();
+        ViewBag.PeriodLabel      = periodStart.ToString("MMMM yyyy");
+
+        // Get submitted periods for history
+        var periods = await _context.PayrollPeriods
+            .Where(p => p.CompanyId == companyId)
+            .OrderByDescending(p => p.StartDate).Take(6).ToListAsync();
+        ViewBag.Periods = periods;
+
+        // Build preview from attendance (same logic as SubmitPayroll GET)
+        var company   = await _context.Companies.FindAsync(companyId);
+        var holidays  = await _context.Holidays
+            .Where(h => h.CompanyId == companyId && h.Date >= periodStart && h.Date <= periodEnd)
+            .ToListAsync();
+        var holidayDates = holidays.Select(h => h.Date.Date).ToHashSet();
+
+        var employees = await _context.Employees
+            .Include(e => e.User).Include(e => e.Shift)
+            .Where(e => e.CompanyId == companyId && e.IsActive
+                     && (deptId == null || e.DepartmentId == deptId))
+            .ToListAsync();
+
+        var attendance = await _context.Attendances
+            .Where(a => a.Employee.CompanyId == companyId
+                     && a.Date >= periodStart && a.Date <= today
+                     && (deptId == null || a.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        var approvedLeaves = await _context.Leaves
+            .Where(l => l.Employee.CompanyId == companyId
+                     && l.Status == LeaveStatus.Approved
+                     && l.StartDate <= periodEnd && l.EndDate >= periodStart
+                     && (deptId == null || l.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        var workDaysInPeriod = Enumerable.Range(0, (today - periodStart).Days + 1)
+            .Select(d => periodStart.AddDays(d))
+            .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+            .ToList();
+        var totalWorkDays = workDaysInPeriod.Count;
+
+        var payrollItems = employees.Select(emp =>
+        {
+            var empAtt      = attendance.Where(a => a.EmployeeId == emp.Id).ToList();
+            var dailyRate   = emp.DailyRate  ?? company?.DefaultDailyRate ?? 500m;
+            var hourlyRate  = emp.HourlyRate ?? (dailyRate / 8m);
+            var daysWorked  = (decimal)empAtt.Count(a => a.TimeIn != null);
+            var lateMinutes = empAtt.Sum(a => a.LateMinutes);
+            var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
+            var undertimeMinutes = empAtt
+                .Where(a => a.TimeIn != null && a.TimeOut != null && a.WorkedMinutes > 0)
+                .Sum(a => Math.Max(0, (8 * 60) - a.WorkedMinutes));
+            var empLeaveDays = approvedLeaves
+                .Where(l => l.EmployeeId == emp.Id && l.LeaveType != LeaveType.Unpaid)
+                .Sum(l => l.TotalDays > 0 ? l.TotalDays
+                    : (decimal)(Math.Min((l.EndDate - l.StartDate).Days + 1,
+                        workDaysInPeriod.Count(d => d >= l.StartDate && d <= l.EndDate))));
+            var absentDays = Math.Max(0, totalWorkDays - daysWorked - empLeaveDays);
+            var holidayDaysWorked = empAtt.Where(a => a.TimeIn != null && holidayDates.Contains(a.Date.Date)).ToList();
+            var regularHolidayDays = holidayDaysWorked.Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Regular));
+            var specialHolidayDays = holidayDaysWorked.Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Special));
+            var holidayPayRate = company?.HolidayPayRate ?? 200;
+            var holidayPay = dailyRate * (holidayPayRate / 100m - 1m) * regularHolidayDays + dailyRate * 0.30m * specialHolidayDays;
+            var basicPay        = dailyRate * daysWorked;
+            var otPay           = (hourlyRate * 1.25m) * (otMinutes / 60m);
+            var gross           = basicPay + otPay + holidayPay;
+            var lateDeduct      = (hourlyRate / 60m) * lateMinutes;
+            var undertimeDeduct = (hourlyRate / 60m) * undertimeMinutes;
+            var absenceDeduct   = dailyRate * absentDays;
+            var sss             = Math.Min(gross * 0.045m, 900m);
+            var philhealth      = Math.Min(gross * 0.025m, 625m);
+            var pagibig         = Math.Min(gross * 0.02m, 200m);
+            var taxable         = gross - sss - philhealth - pagibig;
+            var tax             = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
+            var totalDeduct     = lateDeduct + undertimeDeduct + absenceDeduct + sss + philhealth + pagibig + tax;
+            return new
+            {
+                EmployeeId      = emp.Id,
+                FullName        = emp.FullName,
+                DaysWorked      = daysWorked,
+                OtHours         = Math.Round(otMinutes / 60m, 1),
+                LateMinutes     = lateMinutes,
+                AbsentDays      = absentDays,
+                BasicPay        = Math.Round(basicPay, 2),
+                OtPay           = Math.Round(otPay, 2),
+                LateDeduct      = Math.Round(lateDeduct, 2),
+                UndertimeDeduct = Math.Round(undertimeDeduct, 2),
+                AbsenceDeduct   = Math.Round(absenceDeduct, 2),
+                TotalDeduct     = Math.Round(totalDeduct, 2),
+                NetPay          = Math.Round(gross - totalDeduct, 2),
+                GrossPay        = Math.Round(gross, 2)
+            };
+        }).ToList();
+
+        ViewBag.PayrollItems    = payrollItems;
+        ViewBag.TotalBasicPay   = payrollItems.Sum(p => p.BasicPay);
+        ViewBag.TotalOtPay      = payrollItems.Sum(p => p.OtPay);
+        ViewBag.TotalDeduct     = payrollItems.Sum(p => p.TotalDeduct);
+        ViewBag.TotalNetPay     = payrollItems.Sum(p => p.NetPay);
+        ViewBag.TotalSss        = payrollItems.Sum(p => (decimal)p.LateDeduct); // placeholder — real SSS in submit
+        ViewBag.TotalPhilHealth = 0m;
+        ViewBag.TotalPagIbig    = 0m;
+        ViewBag.TotalTax        = 0m;
+
         return View();
     }
 
@@ -521,6 +638,100 @@ public class HRController : Controller
         var user = await GetHRUser();
         if (user == null) return RedirectToAction("Index", "Home");
         return View();
+    }
+
+    // GET: /HR/OvertimeApproval — list pending overtime records for HR's team
+    [HttpGet]
+    public async Task<IActionResult> OvertimeApproval()
+    {
+        var user = await GetHRUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var deptId = user.DepartmentId;
+
+        var pending = await _context.Overtimes
+            .Include(o => o.Employee).ThenInclude(e => e.User)
+            .Include(o => o.Employee.Department)
+            .Where(o => o.Employee.CompanyId == user.CompanyId
+                     && o.Status == LeaveStatus.Pending
+                     && (deptId == null || o.Employee.DepartmentId == deptId))
+            .OrderByDescending(o => o.Date)
+            .ToListAsync();
+
+        var recent = await _context.Overtimes
+            .Include(o => o.Employee).ThenInclude(e => e.User)
+            .Where(o => o.Employee.CompanyId == user.CompanyId
+                     && (o.Status == LeaveStatus.Approved || o.Status == LeaveStatus.Rejected)
+                     && (deptId == null || o.Employee.DepartmentId == deptId))
+            .OrderByDescending(o => o.ApprovedAt ?? o.CreatedAt)
+            .Take(20)
+            .ToListAsync();
+
+        ViewBag.PendingOvertimes = pending;
+        ViewBag.RecentOvertimes  = recent;
+        return View();
+    }
+
+    // POST: /HR/ApproveOvertime
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveOvertime(int id)
+    {
+        var user = await GetHRUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var ot = await _context.Overtimes
+            .Include(o => o.Employee)
+            .FirstOrDefaultAsync(o => o.Id == id && o.Employee.CompanyId == user.CompanyId);
+
+        if (ot == null) return Json(new { success = false, message = "Overtime record not found." });
+        if (ot.Status != LeaveStatus.Pending) return Json(new { success = false, message = "Already processed." });
+
+        ot.Status     = LeaveStatus.Approved;
+        ot.ApprovedAt = DateTime.UtcNow;
+
+        // Sync back to Attendance record so payroll picks it up
+        var att = await _context.Attendances
+            .FirstOrDefaultAsync(a => a.EmployeeId == ot.EmployeeId && a.Date.Date == ot.Date.Date);
+        if (att != null)
+        {
+            att.OvertimeMinutes = ot.TotalMinutes;
+            var hourlyRate = ot.Employee.HourlyRate ?? ((ot.Employee.DailyRate ?? 0) / 8m);
+            att.OvertimeAmount = Math.Round(hourlyRate * 0.25m * (ot.TotalMinutes / 60m), 2);
+        }
+
+        await _context.SaveChangesAsync();
+        return Json(new { success = true, message = $"Overtime approved: {ot.TotalMinutes / 60.0:F1} hrs on {ot.Date:MMM dd}." });
+    }
+
+    // POST: /HR/RejectOvertime
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectOvertime(int id, string? reason)
+    {
+        var user = await GetHRUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var ot = await _context.Overtimes
+            .Include(o => o.Employee)
+            .FirstOrDefaultAsync(o => o.Id == id && o.Employee.CompanyId == user.CompanyId);
+
+        if (ot == null) return Json(new { success = false, message = "Overtime record not found." });
+
+        ot.Status     = LeaveStatus.Rejected;
+        ot.ApprovedAt = DateTime.UtcNow;
+
+        // Zero out attendance overtime if rejected
+        var att = await _context.Attendances
+            .FirstOrDefaultAsync(a => a.EmployeeId == ot.EmployeeId && a.Date.Date == ot.Date.Date);
+        if (att != null)
+        {
+            att.OvertimeMinutes = 0;
+            att.OvertimeAmount  = 0;
+        }
+
+        await _context.SaveChangesAsync();
+        return Json(new { success = true, message = "Overtime rejected." });
     }
 
     // GET: /HR/SubmitPayroll  →  Views/HR/SubmitPayroll.cshtml
@@ -986,6 +1197,100 @@ public class HRController : Controller
             user.CompanyId);
 
         return Json(new { success = true, message = "Leave rejected" });
+    }
+
+    // GET: /HR/Overtime — view pending overtime requests
+    public async Task<IActionResult> Overtime()
+    {
+        var user = await GetHRUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var deptId = user.DepartmentId;
+
+        var pending = await _context.Overtimes
+            .Include(o => o.Employee).ThenInclude(e => e.User)
+            .Include(o => o.Employee.Department)
+            .Where(o => o.Employee.CompanyId == user.CompanyId
+                     && o.Status == LeaveStatus.Pending
+                     && (deptId == null || o.Employee.DepartmentId == deptId))
+            .OrderByDescending(o => o.Date)
+            .ToListAsync();
+
+        var approved = await _context.Overtimes
+            .Include(o => o.Employee).ThenInclude(e => e.User)
+            .Where(o => o.Employee.CompanyId == user.CompanyId
+                     && o.Status == LeaveStatus.Approved
+                     && (deptId == null || o.Employee.DepartmentId == deptId))
+            .OrderByDescending(o => o.Date).Take(20)
+            .ToListAsync();
+
+        ViewBag.PendingOT  = pending;
+        ViewBag.ApprovedOT = approved;
+        return View();
+    }
+
+    // POST: /HR/ApproveOvertime
+    [HttpPost]
+    public async Task<IActionResult> ApproveOvertime(int id)
+    {
+        var user = await GetHRUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var ot = await _context.Overtimes.Include(o => o.Employee)
+            .FirstOrDefaultAsync(o => o.Id == id && o.Employee.CompanyId == user.CompanyId);
+
+        if (ot == null) return Json(new { success = false, message = "Overtime record not found" });
+        if (ot.Status != LeaveStatus.Pending) return Json(new { success = false, message = "Already processed" });
+
+        ot.Status      = LeaveStatus.Approved;
+        ot.ApprovedAt  = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        // Sync back to attendance record
+        var att = await _context.Attendances
+            .FirstOrDefaultAsync(a => a.EmployeeId == ot.EmployeeId && a.Date.Date == ot.Date.Date);
+        if (att != null)
+        {
+            att.OvertimeMinutes = ot.TotalMinutes;
+            var hourlyRate = ot.Employee.HourlyRate ?? ((ot.Employee.DailyRate ?? 0) / 8m);
+            att.OvertimeAmount = Math.Round(hourlyRate * 0.25m * (ot.TotalMinutes / 60m), 2);
+            await _context.SaveChangesAsync();
+        }
+
+        await _auditLogService.LogAsync(user.Id, "Approved Overtime", "Overtime",
+            ot.Id.ToString(), null,
+            new { EmployeeId = ot.EmployeeId, Date = ot.Date, Minutes = ot.TotalMinutes },
+            user.CompanyId);
+
+        return Json(new { success = true, message = $"Overtime approved: {ot.TotalMinutes} minutes on {ot.Date:MMM dd}" });
+    }
+
+    // POST: /HR/RejectOvertime
+    [HttpPost]
+    public async Task<IActionResult> RejectOvertime(int id)
+    {
+        var user = await GetHRUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var ot = await _context.Overtimes.Include(o => o.Employee)
+            .FirstOrDefaultAsync(o => o.Id == id && o.Employee.CompanyId == user.CompanyId);
+
+        if (ot == null) return Json(new { success = false, message = "Overtime record not found" });
+
+        ot.Status = LeaveStatus.Rejected;
+        await _context.SaveChangesAsync();
+
+        // Zero out attendance OT if rejected
+        var att = await _context.Attendances
+            .FirstOrDefaultAsync(a => a.EmployeeId == ot.EmployeeId && a.Date.Date == ot.Date.Date);
+        if (att != null)
+        {
+            att.OvertimeMinutes = 0;
+            att.OvertimeAmount  = 0;
+            await _context.SaveChangesAsync();
+        }
+
+        return Json(new { success = true, message = "Overtime rejected." });
     }
 
     // POST: /HR/UpdateShift — HR can update shift for employees in their own team only

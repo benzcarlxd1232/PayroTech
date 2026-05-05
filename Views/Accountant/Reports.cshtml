@@ -1,44 +1,265 @@
 @{
     ViewData["Title"] = "Financial Reports";
     Layout = "~/Views/Shared/_AccountantLayout.cshtml";
+
+    var payrolls      = ViewBag.Payrolls      as List<PayroTech.Models.Entities.Payroll> ?? new();
+    int selYear       = ViewBag.SelectedYear  ?? DateTime.Today.Year;
+    int selMonth      = ViewBag.SelectedMonth ?? DateTime.Today.Month;
+    string periodLabel = ViewBag.PeriodLabel  ?? "";
+    decimal totalGross = ViewBag.TotalGross   ?? 0m;
+    decimal totalNet   = ViewBag.TotalNet     ?? 0m;
+    decimal totalSSS   = ViewBag.TotalSSS     ?? 0m;
+    decimal totalPH    = ViewBag.TotalPhilHealth ?? 0m;
+    decimal totalPI    = ViewBag.TotalPagIbig ?? 0m;
+    decimal totalTax   = ViewBag.TotalTax     ?? 0m;
+    decimal totalLate  = ViewBag.TotalLate    ?? 0m;
+    decimal totalAbs   = ViewBag.TotalAbsence ?? 0m;
+    decimal totalOT    = ViewBag.TotalOT      ?? 0m;
+    decimal totalHol   = ViewBag.TotalHoliday ?? 0m;
+    int empCount       = ViewBag.EmployeeCount ?? 0;
+    decimal ytdNet     = ViewBag.YtdNet       ?? 0m;
+    decimal ytdSSS     = ViewBag.YtdSSS       ?? 0m;
+    decimal ytdPH      = ViewBag.YtdPhilHealth ?? 0m;
+    decimal ytdPI      = ViewBag.YtdPagIbig   ?? 0m;
+    decimal ytdTax     = ViewBag.YtdTax       ?? 0m;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Period Selector -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h4 class="mb-1">Financial Reports</h4>
-        <p class="text-muted mb-0">Payroll and financial summaries</p>
+        <p class="text-muted mb-0">Payroll summary, government contributions, and deduction reports</p>
     </div>
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <select name="month" class="form-select form-select-sm" style="width:140px;">
+            @for (int m = 1; m <= 12; m++)
+            {
+                <option value="@m" @(m == selMonth ? "selected" : "")>
+                    @new DateTime(2000, m, 1).ToString("MMMM")
+                </option>
+            }
+        </select>
+        <select name="year" class="form-select form-select-sm" style="width:100px;">
+            @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 3; y--)
+            {
+                <option value="@y" @(y == selYear ? "selected" : "")>@y</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-search me-1"></i>View
+        </button>
+    </form>
 </div>
 
-<div class="row g-3">
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-cash-stack fs-1 text-success d-block mb-3"></i>
-                <h6>Payroll Summary</h6>
-                <p class="text-muted small">Monthly and annual payroll totals by department</p>
-                <a href="/Accountant/PayrollHistory" class="btn btn-outline-success btn-sm">View Report</a>
+@if (!payrolls.Any())
+{
+    <div class="pt-card">
+        <div class="pt-card-body text-center py-5">
+            <i class="bi bi-bar-chart fs-1 text-muted d-block mb-3"></i>
+            <h6>No paid payrolls for @periodLabel</h6>
+            <p class="text-muted small">Reports will appear once payrolls are distributed for this period.</p>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="pt-stats-card success">
+                <div class="pt-stats-value" style="font-size:1.2rem;">₱@totalNet.ToString("N0")</div>
+                <div class="pt-stats-label">Total Net Pay</div>
+                <i class="bi bi-cash-stack pt-stats-icon"></i>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pt-stats-card">
+                <div class="pt-stats-value" style="font-size:1.2rem;">₱@totalGross.ToString("N0")</div>
+                <div class="pt-stats-label">Total Gross Pay</div>
+                <i class="bi bi-wallet2 pt-stats-icon"></i>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pt-stats-card warning">
+                <div class="pt-stats-value" style="font-size:1.2rem;">₱@(totalSSS + totalPH + totalPI + totalTax).ToString("N0")</div>
+                <div class="pt-stats-label">Gov't Deductions</div>
+                <i class="bi bi-bank pt-stats-icon"></i>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pt-stats-card">
+                <div class="pt-stats-value">@empCount</div>
+                <div class="pt-stats-label">Employees Paid</div>
+                <i class="bi bi-people pt-stats-icon"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-people fs-1 text-primary d-block mb-3"></i>
-                <h6>Employee Payslips</h6>
-                <p class="text-muted small">Individual payslip records for all employees</p>
-                <a href="/Accountant/Payslips" class="btn btn-outline-primary btn-sm">View Payslips</a>
+
+    <div class="row mb-4">
+        <!-- Government Contributions -->
+        <div class="col-md-5">
+            <div class="pt-card h-100">
+                <div class="pt-card-header"><i class="bi bi-bank me-2"></i>Government Contributions — @periodLabel</div>
+                <div class="pt-card-body">
+                    @{
+                        var govtItems = new[]
+                        {
+                            ("SSS", totalSSS, ytdSSS, "4.5% of gross (max ₱900/mo)"),
+                            ("PhilHealth", totalPH, ytdPH, "2.5% of gross (max ₱625/mo)"),
+                            ("Pag-IBIG", totalPI, ytdPI, "2% of gross (max ₱200/mo)"),
+                            ("Withholding Tax", totalTax, ytdTax, "BIR graduated rate")
+                        };
+                    }
+                    @foreach (var (label, monthly, ytd, note) in govtItems)
+                    {
+                        <div class="d-flex justify-content-between align-items-start py-3 border-bottom">
+                            <div>
+                                <div class="fw-semibold">@label</div>
+                                <div class="text-muted" style="font-size:.75rem;">@note</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-danger">₱@monthly.ToString("N2")</div>
+                                <div class="text-muted small">YTD: ₱@ytd.ToString("N0")</div>
+                            </div>
+                        </div>
+                    }
+                    <div class="d-flex justify-content-between pt-3">
+                        <strong>Total Gov't Deductions</strong>
+                        <strong class="text-danger">₱@(totalSSS + totalPH + totalPI + totalTax).ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings & Other Deductions -->
+        <div class="col-md-7">
+            <div class="pt-card h-100">
+                <div class="pt-card-header"><i class="bi bi-receipt me-2"></i>Earnings & Deductions Breakdown</div>
+                <div class="pt-card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="text-success mb-3"><i class="bi bi-arrow-up-circle me-1"></i>Earnings</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small">Basic Pay</span>
+                                <span>₱@payrolls.Sum(p => p.BasicPay).ToString("N2")</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small">Overtime Pay</span>
+                                <span class="text-success">₱@totalOT.ToString("N2")</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small">Holiday Pay</span>
+                                <span class="text-warning">₱@totalHol.ToString("N2")</span>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2 border-top">
+                                <strong class="small">Gross Pay</strong>
+                                <strong>₱@totalGross.ToString("N2")</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-danger mb-3"><i class="bi bi-arrow-down-circle me-1"></i>Deductions</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small">Late Deductions</span>
+                                <span class="text-danger">-₱@totalLate.ToString("N2")</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small">Absence Deductions</span>
+                                <span class="text-danger">-₱@totalAbs.ToString("N2")</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small">Gov't Contributions</span>
+                                <span class="text-danger">-₱@(totalSSS + totalPH + totalPI + totalTax).ToString("N2")</span>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2 border-top">
+                                <strong class="small">Net Pay</strong>
+                                <strong class="text-success">₱@totalNet.ToString("N2")</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-hourglass-split fs-1 text-warning d-block mb-3"></i>
-                <h6>Pending Distribution</h6>
-                <p class="text-muted small">Approved payrolls awaiting salary distribution</p>
-                <a href="/Accountant/PendingPayrolls" class="btn btn-outline-warning btn-sm">View Pending</a>
+
+    <!-- Per-Employee Report Table -->
+    <div class="pt-card mb-4">
+        <div class="pt-card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-table me-2"></i>Employee Payroll Report — @periodLabel</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>Print
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle small" id="reportTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Employee</th>
+                        <th>Dept</th>
+                        <th class="text-center">Days</th>
+                        <th class="text-end">Gross</th>
+                        <th class="text-end text-danger">SSS</th>
+                        <th class="text-end text-danger">PhilHealth</th>
+                        <th class="text-end text-danger">Pag-IBIG</th>
+                        <th class="text-end text-danger">Tax</th>
+                        <th class="text-end text-danger">Late/Abs</th>
+                        <th class="text-end fw-bold text-success">Net Pay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in payrolls)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-medium">@p.Employee?.FullName</td>
+                            <td class="text-muted">@(p.Employee?.Department?.DepartmentName ?? "—")</td>
+                            <td class="text-center">@p.DaysWorked.ToString("N1")</td>
+                            <td class="text-end">₱@p.GrossPay.ToString("N2")</td>
+                            <td class="text-end text-danger">₱@p.SSSContribution.ToString("N2")</td>
+                            <td class="text-end text-danger">₱@p.PhilHealthContribution.ToString("N2")</td>
+                            <td class="text-end text-danger">₱@p.PagIbigContribution.ToString("N2")</td>
+                            <td class="text-end text-danger">₱@p.WithholdingTax.ToString("N2")</td>
+                            <td class="text-end text-danger">₱@(p.LateDeduction + p.AbsenceDeduction).ToString("N2")</td>
+                            <td class="text-end fw-bold text-success">₱@p.NetPay.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="3" class="ps-3">TOTAL (@empCount employees)</td>
+                        <td class="text-end">₱@totalGross.ToString("N2")</td>
+                        <td class="text-end text-danger">₱@totalSSS.ToString("N2")</td>
+                        <td class="text-end text-danger">₱@totalPH.ToString("N2")</td>
+                        <td class="text-end text-danger">₱@totalPI.ToString("N2")</td>
+                        <td class="text-end text-danger">₱@totalTax.ToString("N2")</td>
+                        <td class="text-end text-danger">₱@(totalLate + totalAbs).ToString("N2")</td>
+                        <td class="text-end text-success">₱@totalNet.ToString("N2")</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- YTD Summary -->
+    <div class="pt-card">
+        <div class="pt-card-header"><i class="bi bi-calendar-range me-2"></i>Year-to-Date Summary — @selYear</div>
+        <div class="pt-card-body">
+            <div class="row text-center">
+                <div class="col-md-3 border-end">
+                    <div class="text-muted small mb-1">YTD Net Pay</div>
+                    <h5 class="text-success">₱@ytdNet.ToString("N2")</h5>
+                </div>
+                <div class="col-md-3 border-end">
+                    <div class="text-muted small mb-1">YTD SSS</div>
+                    <h5 class="text-danger">₱@ytdSSS.ToString("N2")</h5>
+                </div>
+                <div class="col-md-3 border-end">
+                    <div class="text-muted small mb-1">YTD PhilHealth</div>
+                    <h5 class="text-danger">₱@ytdPH.ToString("N2")</h5>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small mb-1">YTD Tax Withheld</div>
+                    <h5 class="text-danger">₱@ytdTax.ToString("N2")</h5>
+                </div>
             </div>
         </div>
     </div>
-</div>
+}

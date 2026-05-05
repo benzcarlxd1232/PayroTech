@@ -79,6 +79,7 @@
                         <th class="text-end">Deductions</th>
                         <th class="text-end">Net Pay</th>
                         <th class="text-center">Status</th>
+                        <th class="text-center">Detail</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,6 +106,11 @@
                             <td class="text-center">
                                 <span class="badge @statusBadge">@p.Status</span>
                             </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewPayslip(@p.Id)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -112,3 +118,74 @@
         </div>
     }
 </div>
+
+<!-- Payslip Detail Modal -->
+<div class="modal fade" id="payslipModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#2563eb,#60a5fa);color:white;">
+                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Payslip Detail</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="payslipBody">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function viewPayslip(id) {
+        document.getElementById('payslipBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        new bootstrap.Modal(document.getElementById('payslipModal')).show();
+
+        const r    = await fetch(`/MyPortal/GetPayslip?id=${id}`);
+        const d    = await r.json();
+        const fmt  = v => '₱' + Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+        document.getElementById('payslipBody').innerHTML = `
+            <div class="row mb-3">
+                <div class="col-6">
+                    <div class="text-muted small">Employee</div>
+                    <div class="fw-bold">${d.employeeName}</div>
+                    <div class="text-muted small">${d.employeeNumber} · ${d.department}</div>
+                </div>
+                <div class="col-6 text-end">
+                    <div class="text-muted small">Period</div>
+                    <div class="fw-bold">${d.period}</div>
+                    <div class="text-muted small">Pay Date: ${d.payDate}</div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-success mb-3">Earnings</h6>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">Basic Pay (${d.daysWorked} days)</span><span>${fmt(d.basicPay)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">Overtime (${d.otHours}h)</span><span class="text-success">${fmt(d.overtimePay)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">Holiday Pay</span><span class="text-warning">${fmt(d.holidayPay)}</span></div>
+                    <div class="d-flex justify-content-between pt-2 border-top mt-2"><strong>Gross Pay</strong><strong>${fmt(d.grossPay)}</strong></div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-danger mb-3">Deductions</h6>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">Late (${d.lateHours}h)</span><span class="text-danger">-${fmt(d.lateDeduction)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">Absent (${d.absentDays} days)</span><span class="text-danger">-${fmt(d.absenceDeduction)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">SSS</span><span class="text-danger">-${fmt(d.sss)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">PhilHealth</span><span class="text-danger">-${fmt(d.philhealth)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">Pag-IBIG</span><span class="text-danger">-${fmt(d.pagibig)}</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span class="text-muted small">Withholding Tax</span><span class="text-danger">-${fmt(d.tax)}</span></div>
+                    <div class="d-flex justify-content-between pt-2 border-top mt-2"><strong>Total Deductions</strong><strong class="text-danger">-${fmt(d.totalDeductions)}</strong></div>
+                </div>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+                <h5 class="mb-0 text-success">NET PAY</h5>
+                <h4 class="mb-0 text-success fw-bold">${fmt(d.netPay)}</h4>
+            </div>`;
+    }
+</script>

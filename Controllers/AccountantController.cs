@@ -102,9 +102,55 @@ public class AccountantController : Controller
     }
 
     // GET: /Accountant/ProcessPayroll  →  Views/Accountant/ProcessPayroll.cshtml
-    public async Task<IActionResult> ProcessPayroll()
+    public async Task<IActionResult> ProcessPayroll(int? periodId)
     {
-        if (await GetAccountantUser() == null) return RedirectToAction("Index", "Home");
+        var user = await GetAccountantUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        // Get all periods that are Approved (ready for accountant review before paying)
+        var periods = await _context.PayrollPeriods
+            .Where(p => p.CompanyId == user.CompanyId
+                     && (p.Status == PayrollStatus.Approved || p.Status == PayrollStatus.Processed))
+            .OrderByDescending(p => p.StartDate)
+            .ToListAsync();
+
+        PayrollPeriod? selectedPeriod = null;
+        List<Payroll> payrolls = new();
+
+        if (periodId.HasValue)
+        {
+            selectedPeriod = periods.FirstOrDefault(p => p.Id == periodId.Value);
+        }
+        else if (periods.Any())
+        {
+            selectedPeriod = periods.First();
+        }
+
+        if (selectedPeriod != null)
+        {
+            payrolls = await _context.Payrolls
+                .Include(p => p.Employee).ThenInclude(e => e.Department)
+                .Include(p => p.PayrollPeriod)
+                .Where(p => p.PayrollPeriodId == selectedPeriod.Id)
+                .OrderBy(p => p.Employee.LastName)
+                .ToListAsync();
+        }
+
+        ViewBag.Periods        = periods;
+        ViewBag.SelectedPeriod = selectedPeriod;
+        ViewBag.Payrolls       = payrolls;
+        ViewBag.TotalGross     = payrolls.Sum(p => p.GrossPay);
+        ViewBag.TotalDeduct    = payrolls.Sum(p => p.TotalDeductions);
+        ViewBag.TotalNet       = payrolls.Sum(p => p.NetPay);
+        ViewBag.TotalSSS       = payrolls.Sum(p => p.SSSContribution);
+        ViewBag.TotalPhilHealth = payrolls.Sum(p => p.PhilHealthContribution);
+        ViewBag.TotalPagIbig   = payrolls.Sum(p => p.PagIbigContribution);
+        ViewBag.TotalTax       = payrolls.Sum(p => p.WithholdingTax);
+        ViewBag.TotalLate      = payrolls.Sum(p => p.LateDeduction);
+        ViewBag.TotalAbsence   = payrolls.Sum(p => p.AbsenceDeduction);
+        ViewBag.TotalOT        = payrolls.Sum(p => p.OvertimePay);
+        ViewBag.TotalHoliday   = payrolls.Sum(p => p.HolidayPay);
+
         return View();
     }
 
@@ -228,10 +274,117 @@ public class AccountantController : Controller
         return Json(new { success = true, count = payrolls.Count, total = total });
     }
 
-    // GET: /Accountant/Reports  →  Views/Accountant/Reports.cshtml
-    public async Task<IActionResult> Reports()
+    // GET: /Accountant/PayslipDetail?id=X — full payslip breakdown for one employee
+    [HttpGet]
+    public async Task<IActionResult> PayslipDetail(int id)
     {
-        if (await GetAccountantUser() == null) return RedirectToAction("Index", "Home");
+        var user = await GetAccountantUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var payroll = await _context.Payrolls
+            .Include(p => p.Employee).ThenInclude(e => e.Department)
+            .Include(p => p.Employee).ThenInclude(e => e.Shift)
+            .Include(p => p.Employee).ThenInclude(e => e.Company)
+            .Include(p => p.PayrollPeriod)
+            .FirstOrDefaultAsync(p => p.Id == id && p.Employee.CompanyId == user.CompanyId);
+
+        if (payroll == null) return NotFound();
+
+        return Json(new
+        {
+            employeeName   = payroll.Employee?.FullName,
+            employeeNumber = payroll.Employee?.EmployeeNumber,
+            department     = payroll.Employee?.Department?.DepartmentName ?? "—",
+            period         = payroll.PayrollPeriod?.PeriodName,
+            payDate        = payroll.PayrollPeriod?.PayDate.ToString("MMMM dd, yyyy"),
+            daysWorked     = payroll.DaysWorked,
+            otHours        = payroll.OvertimeHours,
+            lateHours      = payroll.LateHours,
+            absentDays     = payroll.AbsentDays,
+            basicPay       = payroll.BasicPay,
+            overtimePay    = payroll.OvertimePay,
+            holidayPay     = payroll.HolidayPay,
+            grossPay       = payroll.GrossPay,
+            lateDeduction  = payroll.LateDeduction,
+            absenceDeduction = payroll.AbsenceDeduction,
+            undertimeDeduction = payroll.UndertimeDeduction,
+            sss            = payroll.SSSContribution,
+            philhealth     = payroll.PhilHealthContribution,
+            pagibig        = payroll.PagIbigContribution,
+            tax            = payroll.WithholdingTax,
+            totalDeductions = payroll.TotalDeductions,
+            netPay         = payroll.NetPay,
+            status         = payroll.Status.ToString()
+        });
+    }
+
+    // GET: /Accountant/Reports  →  Views/Accountant/Reports.cshtml
+    public async Task<IActionResult> Reports(int? year, int? month)
+    {
+        var user = await GetAccountantUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var today    = DateTime.Today;
+        var selYear  = year  ?? today.Year;
+        var selMonth = month ?? today.Month;
+
+        var periodStart = new DateTime(selYear, selMonth, 1);
+        var periodEnd   = periodStart.AddMonths(1).AddDays(-1);
+
+        // All paid payrolls for the selected month
+        var payrolls = await _context.Payrolls
+            .Include(p => p.Employee).ThenInclude(e => e.Department)
+            .Include(p => p.PayrollPeriod)
+            .Where(p => p.Employee.CompanyId == user.CompanyId
+                     && p.Status == PayrollStatus.Paid
+                     && p.PayrollPeriod.StartDate >= periodStart
+                     && p.PayrollPeriod.StartDate <= periodEnd)
+            .OrderBy(p => p.Employee.LastName)
+            .ToListAsync();
+
+        // Year-to-date totals
+        var ytdStart = new DateTime(selYear, 1, 1);
+        var ytdPayrolls = await _context.Payrolls
+            .Include(p => p.PayrollPeriod)
+            .Where(p => p.Employee.CompanyId == user.CompanyId
+                     && p.Status == PayrollStatus.Paid
+                     && p.PayrollPeriod.StartDate >= ytdStart
+                     && p.PayrollPeriod.StartDate <= periodEnd)
+            .ToListAsync();
+
+        // Monthly breakdown for chart (all months in selected year)
+        var monthlyData = await _context.Payrolls
+            .Include(p => p.PayrollPeriod)
+            .Where(p => p.Employee.CompanyId == user.CompanyId
+                     && p.Status == PayrollStatus.Paid
+                     && p.PayrollPeriod.StartDate.Year == selYear)
+            .GroupBy(p => p.PayrollPeriod.StartDate.Month)
+            .Select(g => new { Month = g.Key, NetTotal = g.Sum(p => p.NetPay), EmpCount = g.Select(p => p.EmployeeId).Distinct().Count() })
+            .OrderBy(g => g.Month)
+            .ToListAsync();
+
+        ViewBag.Payrolls       = payrolls;
+        ViewBag.SelectedYear   = selYear;
+        ViewBag.SelectedMonth  = selMonth;
+        ViewBag.PeriodLabel    = periodStart.ToString("MMMM yyyy");
+        ViewBag.TotalGross     = payrolls.Sum(p => p.GrossPay);
+        ViewBag.TotalNet       = payrolls.Sum(p => p.NetPay);
+        ViewBag.TotalSSS       = payrolls.Sum(p => p.SSSContribution);
+        ViewBag.TotalPhilHealth = payrolls.Sum(p => p.PhilHealthContribution);
+        ViewBag.TotalPagIbig   = payrolls.Sum(p => p.PagIbigContribution);
+        ViewBag.TotalTax       = payrolls.Sum(p => p.WithholdingTax);
+        ViewBag.TotalLate      = payrolls.Sum(p => p.LateDeduction);
+        ViewBag.TotalAbsence   = payrolls.Sum(p => p.AbsenceDeduction);
+        ViewBag.TotalOT        = payrolls.Sum(p => p.OvertimePay);
+        ViewBag.TotalHoliday   = payrolls.Sum(p => p.HolidayPay);
+        ViewBag.EmployeeCount  = payrolls.Select(p => p.EmployeeId).Distinct().Count();
+        ViewBag.YtdNet         = ytdPayrolls.Sum(p => p.NetPay);
+        ViewBag.YtdSSS         = ytdPayrolls.Sum(p => p.SSSContribution);
+        ViewBag.YtdPhilHealth  = ytdPayrolls.Sum(p => p.PhilHealthContribution);
+        ViewBag.YtdPagIbig     = ytdPayrolls.Sum(p => p.PagIbigContribution);
+        ViewBag.YtdTax         = ytdPayrolls.Sum(p => p.WithholdingTax);
+        ViewBag.MonthlyData    = monthlyData;
+
         return View();
     }
 

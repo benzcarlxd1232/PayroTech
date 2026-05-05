@@ -254,6 +254,55 @@ public class MyPortalController : Controller
         return View("~/Views/Employee/Payslips.cshtml");
     }
 
+    // GET: /MyPortal/GetPayslip?id=X — returns full payslip JSON for modal
+    [HttpGet]
+    public async Task<IActionResult> GetPayslip(int id)
+    {
+        var user = await GetEmployeeUser();
+        if (user == null) return Unauthorized();
+
+        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == user.Id);
+        if (employee == null) return NotFound();
+
+        var payroll = await _context.Payrolls
+            .Include(p => p.PayrollPeriod)
+            .Include(p => p.Employee).ThenInclude(e => e.Department)
+            .Include(p => p.Employee).ThenInclude(e => e.Company)
+            .FirstOrDefaultAsync(p => p.Id == id && p.EmployeeId == employee.Id);
+
+        if (payroll == null) return NotFound();
+
+        return Json(new
+        {
+            employeeName   = payroll.Employee?.FullName,
+            employeeNumber = payroll.Employee?.EmployeeNumber,
+            department     = payroll.Employee?.Department?.DepartmentName ?? "—",
+            companyName    = payroll.Employee?.Company?.CompanyName ?? "—",
+            period         = payroll.PayrollPeriod?.PeriodName,
+            startDate      = payroll.PayrollPeriod?.StartDate.ToString("MMM dd, yyyy"),
+            endDate        = payroll.PayrollPeriod?.EndDate.ToString("MMM dd, yyyy"),
+            payDate        = payroll.PayrollPeriod?.PayDate.ToString("MMMM dd, yyyy"),
+            daysWorked     = payroll.DaysWorked,
+            otHours        = payroll.OvertimeHours,
+            lateHours      = payroll.LateHours,
+            absentDays     = payroll.AbsentDays,
+            basicPay       = payroll.BasicPay,
+            overtimePay    = payroll.OvertimePay,
+            holidayPay     = payroll.HolidayPay,
+            grossPay       = payroll.GrossPay,
+            lateDeduction  = payroll.LateDeduction,
+            absenceDeduction = payroll.AbsenceDeduction,
+            undertimeDeduction = payroll.UndertimeDeduction,
+            sss            = payroll.SSSContribution,
+            philhealth     = payroll.PhilHealthContribution,
+            pagibig        = payroll.PagIbigContribution,
+            tax            = payroll.WithholdingTax,
+            totalDeductions = payroll.TotalDeductions,
+            netPay         = payroll.NetPay,
+            status         = payroll.Status.ToString()
+        });
+    }
+
     // GET: /MyPortal/SalaryBreakdown  →  Views/Employee/SalaryBreakdown.cshtml
     public async Task<IActionResult> SalaryBreakdown()
     {
@@ -264,8 +313,20 @@ public class MyPortalController : Controller
             .Include(e => e.Department)
             .FirstOrDefaultAsync(e => e.UserId == user.Id);
 
-        ViewBag.Employee = employee;
+        // Pull from last paid payroll for accurate figures
+        Payroll? lastPayroll = null;
+        if (employee != null)
+        {
+            lastPayroll = await _context.Payrolls
+                .Include(p => p.PayrollPeriod)
+                .Where(p => p.EmployeeId == employee.Id && p.Status == PayrollStatus.Paid)
+                .OrderByDescending(p => p.PayrollPeriod.PayDate)
+                .FirstOrDefaultAsync();
+        }
+
+        ViewBag.Employee    = employee;
         ViewBag.CurrentUser = user;
+        ViewBag.LastPayroll = lastPayroll;
 
         return View("~/Views/Employee/SalaryBreakdown.cshtml");
     }

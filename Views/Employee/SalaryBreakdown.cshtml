@@ -2,20 +2,13 @@
     ViewData["Title"] = "Salary Breakdown";
     Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
 
-    var employee = ViewBag.Employee    as PayroTech.Models.Entities.Employee;
-    var user     = ViewBag.CurrentUser as PayroTech.Models.Entities.ApplicationUser;
+    var employee    = ViewBag.Employee    as PayroTech.Models.Entities.Employee;
+    var user        = ViewBag.CurrentUser as PayroTech.Models.Entities.ApplicationUser;
+    var lastPayroll = ViewBag.LastPayroll as PayroTech.Models.Entities.Payroll;
 
-    var dailyRate   = employee?.DailyRate ?? user?.DailyRate ?? 0;
-    var basicSalary = employee?.BasicSalary ?? (dailyRate * 22);
-    var semiMonthly = basicSalary / 2;
-    var annual      = basicSalary * 12;
-
-    // Rough government deductions (Philippine standard)
-    var sssEmp      = Math.Min(basicSalary * 0.045m, 900m);
-    var philHealth  = basicSalary * 0.025m;
-    var pagibig     = Math.Min(basicSalary * 0.02m, 100m);
-    var totalDeduct = sssEmp + philHealth + pagibig;
-    var netMonthly  = basicSalary - totalDeduct;
+    var dailyRate   = (decimal)(employee?.DailyRate ?? user?.DailyRate ?? 0);
+    var basicSalary = employee?.BasicSalary > 0 ? employee.BasicSalary : dailyRate * 22;
+    var hasPayroll  = lastPayroll != null;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -23,9 +16,19 @@
         <h4 class="mb-1">Salary Breakdown</h4>
         <p class="text-muted mb-0">Your compensation details</p>
     </div>
+    @if (hasPayroll)
+    {
+        <span class="badge bg-success fs-6">
+            <i class="bi bi-check-circle me-1"></i>Based on @lastPayroll!.PayrollPeriod?.PeriodName
+        </span>
+    }
+    else
+    {
+        <span class="badge bg-warning text-dark">Estimated — no paid payroll yet</span>
+    }
 </div>
 
-@if (employee == null && user?.DailyRate == 0)
+@if (employee == null && dailyRate == 0)
 {
     <div class="alert alert-info">
         <i class="bi bi-info-circle me-2"></i>
@@ -34,94 +37,206 @@
 }
 else
 {
-    <!-- Overview -->
+    <!-- Overview Cards -->
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card shadow-sm text-center py-3">
                 <div class="fs-4 fw-bold text-primary">₱@basicSalary.ToString("N2")</div>
                 <div class="text-muted small">Monthly Basic Salary</div>
+                <div class="text-muted" style="font-size:.75rem;">₱@dailyRate.ToString("N2") / day</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm text-center py-3">
-                <div class="fs-4 fw-bold text-success">₱@netMonthly.ToString("N2")</div>
-                <div class="text-muted small">Estimated Net Pay</div>
+                @if (hasPayroll)
+                {
+                    <div class="fs-4 fw-bold text-success">₱@lastPayroll!.NetPay.ToString("N2")</div>
+                    <div class="text-muted small">Last Net Pay (Actual)</div>
+                    <div class="text-muted" style="font-size:.75rem;">@lastPayroll.DaysWorked days worked</div>
+                }
+                else
+                {
+                    var estNet = basicSalary - Math.Min(basicSalary * 0.045m, 900m) - basicSalary * 0.025m - Math.Min(basicSalary * 0.02m, 200m);
+                    <div class="fs-4 fw-bold text-success">₱@estNet.ToString("N2")</div>
+                    <div class="text-muted small">Estimated Net Pay</div>
+                    <div class="text-muted" style="font-size:.75rem;">Based on full month</div>
+                }
             </div>
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm text-center py-3">
-                <div class="fs-4 fw-bold text-warning">₱@dailyRate.ToString("N2")</div>
-                <div class="text-muted small">Daily Rate</div>
+                @if (hasPayroll)
+                {
+                    <div class="fs-4 fw-bold text-warning">₱@lastPayroll!.GrossPay.ToString("N2")</div>
+                    <div class="text-muted small">Last Gross Pay (Actual)</div>
+                    <div class="text-muted" style="font-size:.75rem;">Incl. OT & Holiday</div>
+                }
+                else
+                {
+                    <div class="fs-4 fw-bold text-warning">₱@dailyRate.ToString("N2")</div>
+                    <div class="text-muted small">Daily Rate</div>
+                }
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header fw-semibold text-success">
-                    <i class="bi bi-arrow-up-circle me-2"></i>Earnings
+    @if (hasPayroll)
+    {
+        <!-- Actual Last Payroll Breakdown -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold text-success">
+                        <i class="bi bi-arrow-up-circle me-2"></i>Earnings — @lastPayroll!.PayrollPeriod?.PeriodName
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <span>Basic Pay <small class="text-muted">(@lastPayroll.DaysWorked days)</small></span>
+                            <strong>₱@lastPayroll.BasicPay.ToString("N2")</strong>
+                        </div>
+                        @if (lastPayroll.OvertimePay > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                <span>Overtime Pay <small class="text-muted">(@lastPayroll.OvertimeHours.ToString("N1")h)</small></span>
+                                <strong class="text-success">₱@lastPayroll.OvertimePay.ToString("N2")</strong>
+                            </div>
+                        }
+                        @if (lastPayroll.HolidayPay > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                <span>Holiday Pay</span>
+                                <strong class="text-warning">₱@lastPayroll.HolidayPay.ToString("N2")</strong>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between pt-2 bg-success bg-opacity-10 p-2 rounded">
+                            <strong class="text-success">Gross Pay</strong>
+                            <strong class="text-success">₱@lastPayroll.GrossPay.ToString("N2")</strong>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                        <span>Basic Salary</span>
-                        <strong>₱@basicSalary.ToString("N2")</strong>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold text-danger">
+                        <i class="bi bi-arrow-down-circle me-2"></i>Deductions — @lastPayroll!.PayrollPeriod?.PeriodName
                     </div>
-                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                        <span class="text-muted small">Semi-monthly</span>
-                        <span class="text-muted small">₱@semiMonthly.ToString("N2")</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                        <span class="text-muted small">Daily Rate</span>
-                        <span class="text-muted small">₱@dailyRate.ToString("N2")</span>
-                    </div>
-                    <div class="d-flex justify-content-between pt-2 bg-success bg-opacity-10 p-2 rounded">
-                        <strong class="text-success">Annual Gross</strong>
-                        <strong class="text-success">₱@annual.ToString("N2")</strong>
+                    <div class="card-body">
+                        @if (lastPayroll.LateDeduction > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                <span>Late Deduction <small class="text-muted">(@lastPayroll.LateHours.ToString("N1")h)</small></span>
+                                <strong class="text-danger">-₱@lastPayroll.LateDeduction.ToString("N2")</strong>
+                            </div>
+                        }
+                        @if (lastPayroll.AbsenceDeduction > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                <span>Absence Deduction <small class="text-muted">(@lastPayroll.AbsentDays days)</small></span>
+                                <strong class="text-danger">-₱@lastPayroll.AbsenceDeduction.ToString("N2")</strong>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <div><span>SSS</span><div class="text-muted" style="font-size:.72rem;">4.5% of gross</div></div>
+                            <strong class="text-danger">-₱@lastPayroll.SSSContribution.ToString("N2")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <div><span>PhilHealth</span><div class="text-muted" style="font-size:.72rem;">2.5% of gross</div></div>
+                            <strong class="text-danger">-₱@lastPayroll.PhilHealthContribution.ToString("N2")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <div><span>Pag-IBIG</span><div class="text-muted" style="font-size:.72rem;">2% of gross</div></div>
+                            <strong class="text-danger">-₱@lastPayroll.PagIbigContribution.ToString("N2")</strong>
+                        </div>
+                        @if (lastPayroll.WithholdingTax > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                <div><span>Withholding Tax</span><div class="text-muted" style="font-size:.72rem;">BIR graduated rate</div></div>
+                                <strong class="text-danger">-₱@lastPayroll.WithholdingTax.ToString("N2")</strong>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between pt-2 bg-danger bg-opacity-10 p-2 rounded">
+                            <strong class="text-danger">Total Deductions</strong>
+                            <strong class="text-danger">-₱@lastPayroll.TotalDeductions.ToString("N2")</strong>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header fw-semibold text-danger">
-                    <i class="bi bi-arrow-down-circle me-2"></i>Government Deductions (Estimated)
+        <!-- Net Pay Banner -->
+        <div class="card shadow-sm mb-4" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;">
+            <div class="card-body d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h5 class="mb-0 text-success">NET PAY</h5>
+                    <small class="text-muted">@lastPayroll!.PayrollPeriod?.PeriodName · Pay Date: @lastPayroll.PayrollPeriod?.PayDate.ToString("MMM dd, yyyy")</small>
                 </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                        <div>
-                            <span>SSS Contribution</span>
-                            <div class="text-muted" style="font-size:.75rem;">Employee share (~4.5%)</div>
-                        </div>
-                        <strong class="text-danger">-₱@sssEmp.ToString("N2")</strong>
+                <h3 class="mb-0 text-success fw-bold">₱@lastPayroll!.NetPay.ToString("N2")</h3>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Estimated breakdown when no payroll yet -->
+        @{
+            var estSss      = Math.Min(basicSalary * 0.045m, 900m);
+            var estPh       = Math.Min(basicSalary * 0.025m, 625m);
+            var estPi       = Math.Min(basicSalary * 0.02m, 200m);
+            var estDeduct   = estSss + estPh + estPi;
+            var estNet      = basicSalary - estDeduct;
+        }
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold text-success">
+                        <i class="bi bi-arrow-up-circle me-2"></i>Estimated Earnings (Full Month)
                     </div>
-                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                        <div>
-                            <span>PhilHealth</span>
-                            <div class="text-muted" style="font-size:.75rem;">Employee share (2.5%)</div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <span>Basic Salary (22 days)</span>
+                            <strong>₱@basicSalary.ToString("N2")</strong>
                         </div>
-                        <strong class="text-danger">-₱@philHealth.ToString("N2")</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                        <div>
-                            <span>Pag-IBIG</span>
-                            <div class="text-muted" style="font-size:.75rem;">Employee share (2%, max ₱100)</div>
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <span class="text-muted small">Daily Rate</span>
+                            <span class="text-muted small">₱@dailyRate.ToString("N2")</span>
                         </div>
-                        <strong class="text-danger">-₱@pagibig.ToString("N2")</strong>
+                        <div class="d-flex justify-content-between pt-2 bg-success bg-opacity-10 p-2 rounded">
+                            <strong class="text-success">Annual Gross</strong>
+                            <strong class="text-success">₱@(basicSalary * 12).ToString("N2")</strong>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between pt-2 bg-danger bg-opacity-10 p-2 rounded">
-                        <strong class="text-danger">Total Deductions</strong>
-                        <strong class="text-danger">-₱@totalDeduct.ToString("N2")</strong>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold text-danger">
+                        <i class="bi bi-arrow-down-circle me-2"></i>Estimated Deductions
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <div><span>SSS</span><div class="text-muted" style="font-size:.72rem;">~4.5% (max ₱900)</div></div>
+                            <strong class="text-danger">-₱@estSss.ToString("N2")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <div><span>PhilHealth</span><div class="text-muted" style="font-size:.72rem;">2.5% (max ₱625)</div></div>
+                            <strong class="text-danger">-₱@estPh.ToString("N2")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <div><span>Pag-IBIG</span><div class="text-muted" style="font-size:.72rem;">2% (max ₱200)</div></div>
+                            <strong class="text-danger">-₱@estPi.ToString("N2")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2 bg-danger bg-opacity-10 p-2 rounded">
+                            <strong class="text-danger">Est. Total Deductions</strong>
+                            <strong class="text-danger">-₱@estDeduct.ToString("N2")</strong>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="alert alert-info small">
-        <i class="bi bi-info-circle me-2"></i>
-        Deductions shown are estimates based on standard Philippine government contribution rates.
-        Actual deductions may vary. Withholding tax is computed separately during payroll processing.
-    </div>
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle me-2"></i>
+            These are <strong>estimates</strong> based on standard Philippine government contribution rates.
+            Actual deductions will be shown here once your first payroll is processed.
+        </div>
+    }
 }
