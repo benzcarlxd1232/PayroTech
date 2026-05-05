@@ -67,10 +67,15 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="/HR/Overtime" class="nav-link @(currentAction == "Overtime" ? "active" : "")">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Overtime</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="/HR/Leaves" class="nav-link @(currentAction == "Leaves" ? "active" : "")">
                     <i class="bi bi-calendar-x"></i>
                     <span>Leave Requests</span>
-                    <span class="nav-badge">5</span>
                 </a>
             </li>
 
@@ -218,6 +223,7 @@
         </div>
 
         <!-- Page Content -->
+        @Html.AntiForgeryToken()
         @RenderBody()
     </main>
 

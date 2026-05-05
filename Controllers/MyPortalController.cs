@@ -254,6 +254,39 @@ public class MyPortalController : Controller
         return View("~/Views/Employee/Payslips.cshtml");
     }
 
+    // GET: /MyPortal/Overtime  →  Views/Employee/Overtime.cshtml
+    public async Task<IActionResult> Overtime(int? month, int? year)
+    {
+        var user = await GetEmployeeUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var today      = DateTime.Today;
+        var viewMonth  = month ?? today.Month;
+        var viewYear   = year  ?? today.Year;
+        var monthStart = new DateTime(viewYear, viewMonth, 1);
+        var monthEnd   = monthStart.AddMonths(1).AddDays(-1);
+
+        var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == user.Id);
+
+        List<Overtime> overtimes = new();
+        if (employee != null)
+        {
+            overtimes = await _context.Overtimes
+                .Where(o => o.EmployeeId == employee.Id && o.Date >= monthStart && o.Date <= monthEnd)
+                .OrderByDescending(o => o.Date).ToListAsync();
+        }
+
+        ViewBag.Overtimes  = overtimes;
+        ViewBag.Employee   = employee;
+        ViewBag.ViewMonth  = viewMonth;
+        ViewBag.ViewYear   = viewYear;
+        ViewBag.MonthName  = monthStart.ToString("MMMM yyyy");
+        ViewBag.TotalOTMin = overtimes.Where(o => o.Status == LeaveStatus.Approved).Sum(o => o.TotalMinutes);
+        ViewBag.PendingCount = overtimes.Count(o => o.Status == LeaveStatus.Pending);
+
+        return View("~/Views/Employee/Overtime.cshtml");
+    }
+
     // GET: /MyPortal/GetPayslip?id=X — returns full payslip JSON for modal
     [HttpGet]
     public async Task<IActionResult> GetPayslip(int id)

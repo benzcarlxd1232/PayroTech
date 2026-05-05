@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "Overtime Management";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+
+    var pendingOT  = ViewBag.PendingOT  as List<PayroTech.Models.Entities.Overtime> ?? new();
+    var approvedOT = ViewBag.ApprovedOT as List<PayroTech.Models.Entities.Overtime> ?? new();
+}
+
+@Html.AntiForgeryToken()
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Overtime Management</h4>
+        <p class="text-muted mb-0">Review and approve overtime records from kiosk clock-outs</p>
+    </div>
+    @if (pendingOT.Any())
+    {
+        <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+            <i class="bi bi-hourglass-split me-1"></i>@pendingOT.Count pending
+        </span>
+    }
+</div>
+
+<!-- Pending OT -->
+<div class="pt-card mb-4">
+    <div class="pt-card-header">
+        <i class="bi bi-hourglass-split text-warning me-2"></i>Pending Approval
+        @if (pendingOT.Any())
+        {
+            <span class="badge bg-warning text-dark ms-2">@pendingOT.Count</span>
+        }
+    </div>
+
+    @if (!pendingOT.Any())
+    {
+        <div class="pt-card-body text-center py-4">
+            <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-2"></i>
+            <p class="text-muted mb-0">No pending overtime requests.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th class="text-center">Date</th>
+                        <th class="text-center">OT Start</th>
+                        <th class="text-center">OT End</th>
+                        <th class="text-center">Duration</th>
+                        <th>Reason</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ot in pendingOT)
+                    {
+                        var hours   = ot.TotalMinutes / 60;
+                        var minutes = ot.TotalMinutes % 60;
+                        <tr>
+                            <td class="fw-medium">@ot.Employee?.User?.FirstName @ot.Employee?.User?.LastName</td>
+                            <td class="text-muted small">@(ot.Employee?.Department?.DepartmentName ?? "—")</td>
+                            <td class="text-center">@ot.Date.ToString("MMM dd, yyyy")</td>
+                            <td class="text-center">@ot.StartTime.ToString(@"hh\:mm")</td>
+                            <td class="text-center">@ot.EndTime.ToString(@"hh\:mm")</td>
+                            <td class="text-center fw-semibold text-warning">@hours h @minutes m</td>
+                            <td class="text-muted small">@(ot.Reason ?? "—")</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-success me-1"
+                                        onclick="approveOT(@ot.Id, '@ot.Employee?.User?.FirstName @ot.Employee?.User?.LastName', @hours, @minutes)">
+                                    <i class="bi bi-check-lg"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="rejectOT(@ot.Id, '@ot.Employee?.User?.FirstName @ot.Employee?.User?.LastName')">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Approved OT History -->
+@if (approvedOT.Any())
+{
+    <div class="pt-card">
+        <div class="pt-card-header">
+            <i class="bi bi-check-circle text-success me-2"></i>Recently Approved
+        </div>
+        <div class="table-responsive">
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th class="text-center">Date</th>
+                        <th class="text-center">Duration</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ot in approvedOT)
+                    {
+                        var h = ot.TotalMinutes / 60;
+                        var m = ot.TotalMinutes % 60;
+                        <tr>
+                            <td class="fw-medium">@ot.Employee?.User?.FirstName @ot.Employee?.User?.LastName</td>
+                            <td class="text-center text-muted">@ot.Date.ToString("MMM dd, yyyy")</td>
+                            <td class="text-center">@h h @m m</td>
+                            <td class="text-center"><span class="pt-badge pt-badge-success">Approved</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    function getToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    function showToast(msg, type) {
+        try { PT.Toast[type](msg); } catch { alert(msg); }
+    }
+
+    async function approveOT(id, name, hours, minutes) {
+        if (!confirm(`Approve ${hours}h ${minutes}m overtime for ${name}?\nThis will be included in the next payroll.`)) return;
+
+        const fd = new FormData();
+        fd.append('id', id);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r    = await fetch('/HR/ApproveOvertime', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message, 'error');
+        }
+    }
+
+    async function rejectOT(id, name) {
+        if (!confirm(`Reject overtime for ${name}? This will zero out their OT for that day.`)) return;
+
+        const fd = new FormData();
+        fd.append('id', id);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r    = await fetch('/HR/RejectOvertime', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        if (data.success) {
+            showToast(data.message, 'warning');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message, 'error');
+        }
+    }
+</script>
+}

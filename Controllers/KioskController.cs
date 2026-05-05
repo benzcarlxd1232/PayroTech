@@ -361,6 +361,26 @@ public class KioskController : Controller
                             });
                         }
                     }
+
+                    // --- Night differential (10PM–6AM = +10% of hourly rate) ---
+                    if (attendance.TimeIn != null)
+                    {
+                        var ndStart = today.Add(new TimeSpan(22, 0, 0)); // 10PM
+                        var ndEnd   = today.AddDays(1).Add(new TimeSpan(6, 0, 0)); // 6AM next day
+
+                        var workedFrom = attendance.TimeIn.Value;
+                        var workedTo   = now;
+
+                        // Overlap between worked hours and night differential window
+                        var overlapStart = workedFrom > ndStart ? workedFrom : ndStart;
+                        var overlapEnd   = workedTo < ndEnd ? workedTo : ndEnd;
+
+                        if (overlapEnd > overlapStart)
+                        {
+                            var ndMinutes = (int)(overlapEnd - overlapStart).TotalMinutes;
+                            attendance.NightDifferentialMinutes = ndMinutes;
+                        }
+                    }
                 }
 
                 message = attendance.OvertimeMinutes > 0

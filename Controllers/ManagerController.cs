@@ -410,6 +410,25 @@ public class ManagerController : Controller
                 new { Email = model.Email, Role = role.ToString(), CompanyId = user.CompanyId, EmployeeNumber = employeeNumber },
                 user.CompanyId);
 
+            // Auto-create leave balance for Employee role
+            if (role == UserRole.Employee)
+            {
+                var empRecord = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == newUser.Id);
+                if (empRecord != null)
+                {
+                    _context.LeaveBalances.Add(new LeaveBalance
+                    {
+                        EmployeeId           = empRecord.Id,
+                        Year                 = DateTime.Today.Year,
+                        VacationLeaveBalance = 15,
+                        SickLeaveBalance     = 15,
+                        VacationLeaveUsed    = 0,
+                        SickLeaveUsed        = 0
+                    });
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             TempData["Success"] = $"{role} account created for {model.FirstName} {model.LastName}. Welcome email sent to {model.Email}.";
             TempData["ShowStaffID"] = newUser.Id;
             return RedirectToAction(nameof(AllStaff));

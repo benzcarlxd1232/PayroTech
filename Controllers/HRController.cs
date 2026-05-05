@@ -263,6 +263,18 @@ public class HRController : Controller
         _context.Employees.Add(employee);
         await _context.SaveChangesAsync();
 
+        // Auto-create leave balance for the new employee
+        _context.LeaveBalances.Add(new LeaveBalance
+        {
+            EmployeeId           = employee.Id,
+            Year                 = DateTime.Today.Year,
+            VacationLeaveBalance = 15,
+            SickLeaveBalance     = 15,
+            VacationLeaveUsed    = 0,
+            SickLeaveUsed        = 0
+        });
+        await _context.SaveChangesAsync();
+
         // Send welcome email
         await _emailService.SendStaffWelcomeEmailAsync(
             model.Email,
@@ -590,7 +602,9 @@ public class HRController : Controller
             var holidayPay = dailyRate * (holidayPayRate / 100m - 1m) * regularHolidayDays + dailyRate * 0.30m * specialHolidayDays;
             var basicPay        = dailyRate * daysWorked;
             var otPay           = (hourlyRate * 1.25m) * (otMinutes / 60m);
-            var gross           = basicPay + otPay + holidayPay;
+            var ndMinutes       = empAtt.Sum(a => a.NightDifferentialMinutes);
+            var ndPay           = (hourlyRate * 0.10m) * (ndMinutes / 60m); // 10% extra per ND hour
+            var gross           = basicPay + otPay + holidayPay + ndPay;
             var lateDeduct      = (hourlyRate / 60m) * lateMinutes;
             var undertimeDeduct = (hourlyRate / 60m) * undertimeMinutes;
             var absenceDeduct   = dailyRate * absentDays;
@@ -820,7 +834,9 @@ public class HRController : Controller
 
             var basicPay        = dailyRate * daysWorked;
             var otPay           = (hourlyRate * 1.25m) * (otMinutes / 60m);
-            var gross           = basicPay + otPay + holidayPay;
+            var ndMinutes       = empAtt.Sum(a => a.NightDifferentialMinutes);
+            var ndPay           = (hourlyRate * 0.10m) * (ndMinutes / 60m);
+            var gross           = basicPay + otPay + holidayPay + ndPay;
             var lateDeduct      = (hourlyRate / 60m) * lateMinutes;
             var undertimeDeduct = (hourlyRate / 60m) * undertimeMinutes;
             var absenceDeduct   = dailyRate * absentDays;
@@ -993,7 +1009,9 @@ public class HRController : Controller
             // Earnings
             var basicPay       = dailyRate * daysWorked;
             var otPay          = (hourlyRate * 1.25m) * (otMinutes / 60m);
-            var gross          = basicPay + otPay + holidayPay;
+            var ndMinutes      = empAtt.Sum(a => a.NightDifferentialMinutes);
+            var ndPay          = (hourlyRate * 0.10m) * (ndMinutes / 60m);
+            var gross          = basicPay + otPay + holidayPay + ndPay;
 
             // Deductions
             var lateDeduct     = (hourlyRate / 60m) * lateMinutes;
@@ -1013,6 +1031,7 @@ public class HRController : Controller
                 BasicPay               = Math.Round(basicPay, 2),
                 OvertimePay            = Math.Round(otPay, 2),
                 HolidayPay             = Math.Round(holidayPay, 2),
+                NightDifferentialPay   = Math.Round(ndPay, 2),
                 GrossPay               = Math.Round(gross, 2),
                 LateDeduction          = Math.Round(lateDeduct, 2),
                 UndertimeDeduction     = Math.Round(undertimeDeduct, 2),

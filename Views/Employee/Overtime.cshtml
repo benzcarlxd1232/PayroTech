@@ -1,0 +1,144 @@
+@{
+    ViewData["Title"] = "My Overtime";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    var overtimes    = ViewBag.Overtimes    as List<PayroTech.Models.Entities.Overtime> ?? new();
+    var employee     = ViewBag.Employee     as PayroTech.Models.Entities.Employee;
+    int viewMonth    = ViewBag.ViewMonth    ?? DateTime.Today.Month;
+    int viewYear     = ViewBag.ViewYear     ?? DateTime.Today.Year;
+    string monthName = ViewBag.MonthName    ?? DateTime.Today.ToString("MMMM yyyy");
+    int totalOTMin   = ViewBag.TotalOTMin   ?? 0;
+    int pendingCount = ViewBag.PendingCount ?? 0;
+
+    var totalOTHours   = totalOTMin / 60;
+    var totalOTMinutes = totalOTMin % 60;
+}
+
+<!-- Month Navigation -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">My Overtime</h4>
+        <p class="text-muted mb-0">Overtime records for <strong>@monthName</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        @{
+            var prevMonth = new DateTime(viewYear, viewMonth, 1).AddMonths(-1);
+            var nextMonth = new DateTime(viewYear, viewMonth, 1).AddMonths(1);
+        }
+        <a href="?month=@prevMonth.Month&year=@prevMonth.Year" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        <span class="btn btn-primary btn-sm disabled">@monthName</span>
+        @if (nextMonth <= DateTime.Today)
+        {
+            <a href="?month=@nextMonth.Month&year=@nextMonth.Year" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-warning">@overtimes.Count</div>
+            <div class="text-muted small">OT Records</div>
+            <div class="text-muted" style="font-size:.75rem;">@monthName</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold text-success">@totalOTHours h @totalOTMinutes m</div>
+            <div class="text-muted small">Approved OT</div>
+            <div class="text-muted" style="font-size:.75rem;">This month</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center py-3">
+            <div class="fs-3 fw-bold @(pendingCount > 0 ? "text-warning" : "text-muted")">@pendingCount</div>
+            <div class="text-muted small">Pending Approval</div>
+            <div class="text-muted" style="font-size:.75rem;">Awaiting HR review</div>
+        </div>
+    </div>
+</div>
+
+<!-- OT Records Table -->
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-clock-history me-2"></i>Overtime Records — @monthName
+    </div>
+    @if (!overtimes.Any())
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-clock fs-1 text-muted d-block mb-3"></i>
+            <h6>No overtime records for @monthName</h6>
+            <p class="text-muted small">Overtime is automatically recorded when you clock out after your shift ends.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th class="text-center">OT Start</th>
+                        <th class="text-center">OT End</th>
+                        <th class="text-center">Duration</th>
+                        <th class="text-center">Type</th>
+                        <th>Reason</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ot in overtimes)
+                    {
+                        var h = ot.TotalMinutes / 60;
+                        var m = ot.TotalMinutes % 60;
+                        var statusBadge = ot.Status switch
+                        {
+                            PayroTech.Models.Enums.LeaveStatus.Approved => "bg-success",
+                            PayroTech.Models.Enums.LeaveStatus.Rejected => "bg-danger",
+                            _ => "bg-warning text-dark"
+                        };
+                        var statusLabel = ot.Status switch
+                        {
+                            PayroTech.Models.Enums.LeaveStatus.Approved => "Approved",
+                            PayroTech.Models.Enums.LeaveStatus.Rejected => "Rejected",
+                            _ => "Pending"
+                        };
+                        <tr>
+                            <td class="ps-4 fw-medium">@ot.Date.ToString("MMM dd, yyyy")</td>
+                            <td class="text-center text-muted">@ot.StartTime.ToString(@"hh\:mm tt")</td>
+                            <td class="text-center text-muted">@ot.EndTime.ToString(@"hh\:mm tt")</td>
+                            <td class="text-center fw-semibold @(ot.Status == PayroTech.Models.Enums.LeaveStatus.Approved ? "text-success" : "text-warning")">
+                                @h h @m m
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@ot.OvertimeType</span>
+                            </td>
+                            <td class="text-muted small">@(ot.Reason ?? "Auto-recorded from kiosk")</td>
+                            <td class="text-center">
+                                <span class="badge @statusBadge">@statusLabel</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="3" class="ps-4 fw-bold">Total Approved OT</td>
+                        <td class="text-center fw-bold text-success">@totalOTHours h @totalOTMinutes m</td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</div>
+
+<div class="alert alert-info small mt-4">
+    <i class="bi bi-info-circle me-2"></i>
+    Overtime is <strong>automatically recorded</strong> when you clock out after your scheduled shift end time.
+    Your HR officer reviews and approves overtime records before they are included in payroll.
+</div>
