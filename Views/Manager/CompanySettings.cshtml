@@ -25,7 +25,7 @@
     <!-- Work Schedule -->
     <div class="card shadow-sm mb-4">
         <div class="card-header fw-semibold">
-            <i class="bi bi-calendar-week me-2 text-primary"></i>Work Schedule
+            <i class="bi bi-calendar-week me-2 text-primary"></i>Work Schedule & Payroll Frequency
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -42,6 +42,14 @@
                     <input asp-for="WorkingDaysPerMonth" type="number" class="form-control" min="1" max="31" />
                     <div class="form-text">Auto-calculated, but you can override.</div>
                     <span asp-validation-for="WorkingDaysPerMonth" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="PayrollFrequency" class="form-label">Payroll Frequency</label>
+                    <select asp-for="PayrollFrequency" class="form-select">
+                        <option value="1">Monthly (once a month)</option>
+                        <option value="2">Semi-Monthly (1st–15th &amp; 16th–end)</option>
+                    </select>
+                    <div class="form-text">Semi-monthly splits payroll into two periods per month.</div>
                 </div>
             </div>
         </div>

@@ -34,15 +34,14 @@
         <select name="month" class="form-select form-select-sm" style="width:140px;">
             @for (int m = 1; m <= 12; m++)
             {
-                <option value="@m" @(m == selMonth ? "selected" : "")>
-                    @new DateTime(2000, m, 1).ToString("MMMM")
-                </option>
+                var monthName = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m);
+                <option value="@m" selected="@(m == selMonth)">@monthName</option>
             }
         </select>
         <select name="year" class="form-select form-select-sm" style="width:100px;">
             @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 3; y--)
             {
-                <option value="@y" @(y == selYear ? "selected" : "")>@y</option>
+                <option value="@y" selected="@(y == selYear)">@y</option>
             }
         </select>
         <button type="submit" class="btn btn-primary btn-sm">

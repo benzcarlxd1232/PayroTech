@@ -178,13 +178,10 @@ else
     else
     {
         <!-- Estimated breakdown when no payroll yet -->
-        @{
-            var estSss      = Math.Min(basicSalary * 0.045m, 900m);
-            var estPh       = Math.Min(basicSalary * 0.025m, 625m);
-            var estPi       = Math.Min(basicSalary * 0.02m, 200m);
-            var estDeduct   = estSss + estPh + estPi;
-            var estNet      = basicSalary - estDeduct;
-        }
+        var estSss    = Math.Min(basicSalary * 0.045m, 900m);
+        var estPh     = Math.Min(basicSalary * 0.025m, 625m);
+        var estPi     = Math.Min(basicSalary * 0.02m, 200m);
+        var estDeduct = estSss + estPh + estPi;
         <div class="row">
             <div class="col-md-6">
                 <div class="card shadow-sm mb-4">

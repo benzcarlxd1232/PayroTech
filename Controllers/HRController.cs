@@ -519,6 +519,38 @@ public class HRController : Controller
         return View();
     }
 
+    /// <summary>
+    /// Returns (periodStart, periodEnd, periodName) based on company payroll frequency.
+    /// Semi-monthly: 1st–15th or 16th–last day depending on today's date.
+    /// Monthly: 1st–last day of current month.
+    /// </summary>
+    private static (DateTime start, DateTime end, string name) GetCurrentPeriod(
+        DateTime today, PayrollFrequency frequency)
+    {
+        if (frequency == PayrollFrequency.SemiMonthly)
+        {
+            if (today.Day <= 15)
+            {
+                var s = new DateTime(today.Year, today.Month, 1);
+                var e = new DateTime(today.Year, today.Month, 15);
+                return (s, e, $"{s:MMMM yyyy} (1st Half)");
+            }
+            else
+            {
+                var s = new DateTime(today.Year, today.Month, 16);
+                var e = new DateTime(today.Year, today.Month,
+                    DateTime.DaysInMonth(today.Year, today.Month));
+                return (s, e, $"{s:MMMM yyyy} (2nd Half)");
+            }
+        }
+        else // Monthly
+        {
+            var s = new DateTime(today.Year, today.Month, 1);
+            var e = s.AddMonths(1).AddDays(-1);
+            return (s, e, s.ToString("MMMM yyyy") + " Payroll");
+        }
+    }
+
     // GET: /HR/Payroll  →  Views/HR/Payroll.cshtml
     public async Task<IActionResult> Payroll()
     {
@@ -528,8 +560,8 @@ public class HRController : Controller
         var today      = DateTime.Today;
         var deptId     = user.DepartmentId;
         var companyId  = user.CompanyId ?? 0;
-        var periodStart = new DateTime(today.Year, today.Month, 1);
-        var periodEnd   = periodStart.AddMonths(1).AddDays(-1);
+        var company0   = await _context.Companies.FindAsync(companyId);
+        var (periodStart, periodEnd, periodLabel0) = GetCurrentPeriod(today, company0?.PayrollFrequency ?? PayrollFrequency.Monthly);
 
         // Check if already submitted
         var existing = await _context.PayrollPeriods
@@ -538,7 +570,7 @@ public class HRController : Controller
                                    && p.Status != PayrollStatus.Draft);
         ViewBag.AlreadySubmitted = existing != null;
         ViewBag.ExistingStatus   = existing?.Status.ToString();
-        ViewBag.PeriodLabel      = periodStart.ToString("MMMM yyyy");
+        ViewBag.PeriodLabel      = periodLabel0;
 
         // Get submitted periods for history
         var periods = await _context.PayrollPeriods
@@ -758,10 +790,11 @@ public class HRController : Controller
         var deptId     = user.DepartmentId;
         var companyId  = user.CompanyId ?? 0;
 
-        // Get current month period dates
-        var periodStart = new DateTime(today.Year, today.Month, 1);
-        var periodEnd   = periodStart.AddMonths(1).AddDays(-1);
-        var payDate     = periodEnd.AddDays(5);
+        // Get current period dates based on company payroll frequency
+        var companyFreq = await _context.Companies.FindAsync(companyId);
+        var (periodStart, periodEnd, _) = GetCurrentPeriod(today,
+            companyFreq?.PayrollFrequency ?? PayrollFrequency.Monthly);
+        var payDate = periodEnd.AddDays(5);
 
         // Check if already submitted this period
         var existing = await _context.PayrollPeriods
@@ -901,8 +934,9 @@ public class HRController : Controller
         var deptId    = user.DepartmentId;
         var companyId = user.CompanyId ?? 0;
 
-        var periodStart = new DateTime(today.Year, today.Month, 1);
-        var periodEnd   = periodStart.AddMonths(1).AddDays(-1);
+        var companyFreqPost = await _context.Companies.FindAsync(companyId);
+        var (periodStart, periodEnd, periodNamePost) = GetCurrentPeriod(today,
+            companyFreqPost?.PayrollFrequency ?? PayrollFrequency.Monthly);
 
         // Prevent duplicate submission
         var existing = await _context.PayrollPeriods
@@ -924,7 +958,7 @@ public class HRController : Controller
         var period = new PayrollPeriod
         {
             CompanyId  = companyId,
-            PeriodName = $"{periodStart:MMMM yyyy} Payroll",
+            PeriodName = periodNamePost,
             StartDate  = periodStart,
             EndDate    = periodEnd,
             PayDate    = periodEnd.AddDays(5),
@@ -1246,70 +1280,6 @@ public class HRController : Controller
         ViewBag.PendingOT  = pending;
         ViewBag.ApprovedOT = approved;
         return View();
-    }
-
-    // POST: /HR/ApproveOvertime
-    [HttpPost]
-    public async Task<IActionResult> ApproveOvertime(int id)
-    {
-        var user = await GetHRUser();
-        if (user == null) return Json(new { success = false, message = "Unauthorized" });
-
-        var ot = await _context.Overtimes.Include(o => o.Employee)
-            .FirstOrDefaultAsync(o => o.Id == id && o.Employee.CompanyId == user.CompanyId);
-
-        if (ot == null) return Json(new { success = false, message = "Overtime record not found" });
-        if (ot.Status != LeaveStatus.Pending) return Json(new { success = false, message = "Already processed" });
-
-        ot.Status      = LeaveStatus.Approved;
-        ot.ApprovedAt  = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        // Sync back to attendance record
-        var att = await _context.Attendances
-            .FirstOrDefaultAsync(a => a.EmployeeId == ot.EmployeeId && a.Date.Date == ot.Date.Date);
-        if (att != null)
-        {
-            att.OvertimeMinutes = ot.TotalMinutes;
-            var hourlyRate = ot.Employee.HourlyRate ?? ((ot.Employee.DailyRate ?? 0) / 8m);
-            att.OvertimeAmount = Math.Round(hourlyRate * 0.25m * (ot.TotalMinutes / 60m), 2);
-            await _context.SaveChangesAsync();
-        }
-
-        await _auditLogService.LogAsync(user.Id, "Approved Overtime", "Overtime",
-            ot.Id.ToString(), null,
-            new { EmployeeId = ot.EmployeeId, Date = ot.Date, Minutes = ot.TotalMinutes },
-            user.CompanyId);
-
-        return Json(new { success = true, message = $"Overtime approved: {ot.TotalMinutes} minutes on {ot.Date:MMM dd}" });
-    }
-
-    // POST: /HR/RejectOvertime
-    [HttpPost]
-    public async Task<IActionResult> RejectOvertime(int id)
-    {
-        var user = await GetHRUser();
-        if (user == null) return Json(new { success = false, message = "Unauthorized" });
-
-        var ot = await _context.Overtimes.Include(o => o.Employee)
-            .FirstOrDefaultAsync(o => o.Id == id && o.Employee.CompanyId == user.CompanyId);
-
-        if (ot == null) return Json(new { success = false, message = "Overtime record not found" });
-
-        ot.Status = LeaveStatus.Rejected;
-        await _context.SaveChangesAsync();
-
-        // Zero out attendance OT if rejected
-        var att = await _context.Attendances
-            .FirstOrDefaultAsync(a => a.EmployeeId == ot.EmployeeId && a.Date.Date == ot.Date.Date);
-        if (att != null)
-        {
-            att.OvertimeMinutes = 0;
-            att.OvertimeAmount  = 0;
-            await _context.SaveChangesAsync();
-        }
-
-        return Json(new { success = true, message = "Overtime rejected." });
     }
 
     // POST: /HR/UpdateShift — HR can update shift for employees in their own team only

@@ -1,0 +1,291 @@
+@model PayroTech.Models.Entities.Payroll
+@{
+    Layout = null; // Standalone — no sidebar
+    var company  = Model.Employee?.Company;
+    var employee = Model.Employee;
+    var period   = Model.PayrollPeriod;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payslip — @(employee?.FullName) — @(period?.PeriodName)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1f2937; background: #fff; }
+
+        .payslip { max-width: 720px; margin: 0 auto; padding: 32px; }
+
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2563eb; padding-bottom: 16px; margin-bottom: 20px; }
+        .company-name { font-size: 20px; font-weight: 700; color: #2563eb; }
+        .company-sub  { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .payslip-title { text-align: right; }
+        .payslip-title h2 { font-size: 16px; font-weight: 700; color: #1f2937; }
+        .payslip-title .period { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .payslip-title .pay-date { font-size: 11px; color: #059669; font-weight: 600; margin-top: 2px; }
+
+        /* Employee Info */
+        .emp-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; }
+        .emp-info-item { display: flex; flex-direction: column; }
+        .emp-info-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
+        .emp-info-value { font-size: 12px; font-weight: 600; color: #1f2937; margin-top: 1px; }
+
+        /* Attendance Summary */
+        .att-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+        .att-card { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 10px; text-align: center; }
+        .att-card.warn { background: #fef3c7; border-color: #fde68a; }
+        .att-card.danger { background: #fee2e2; border-color: #fecaca; }
+        .att-card .val { font-size: 18px; font-weight: 700; color: #0369a1; }
+        .att-card.warn .val { color: #b45309; }
+        .att-card.danger .val { color: #dc2626; }
+        .att-card .lbl { font-size: 10px; color: #6b7280; margin-top: 2px; }
+
+        /* Earnings / Deductions */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 6px 10px; border-radius: 4px; margin-bottom: 8px; }
+        .earn-title { background: #dcfce7; color: #166534; }
+        .deduct-title { background: #fee2e2; color: #991b1b; }
+        .line-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f3f4f6; font-size: 11.5px; }
+        .line-item:last-child { border-bottom: none; }
+        .line-item .label { color: #4b5563; }
+        .line-item .amount { font-weight: 600; }
+        .line-item .amount.earn { color: #059669; }
+        .line-item .amount.deduct { color: #dc2626; }
+        .subtotal { display: flex; justify-content: space-between; padding: 6px 0; border-top: 2px solid #e5e7eb; margin-top: 4px; font-weight: 700; font-size: 12px; }
+
+        /* Net Pay Banner */
+        .net-pay { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff; border-radius: 8px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .net-pay .label { font-size: 13px; font-weight: 600; opacity: .9; }
+        .net-pay .amount { font-size: 26px; font-weight: 800; }
+        .net-pay .sub { font-size: 10px; opacity: .7; margin-top: 2px; }
+
+        /* Footer */
+        .footer { display: flex; justify-content: space-between; border-top: 1px solid #e5e7eb; padding-top: 14px; margin-top: 4px; }
+        .sig-block { text-align: center; width: 180px; }
+        .sig-line { border-top: 1px solid #374151; margin-top: 32px; padding-top: 4px; font-size: 10px; color: #6b7280; }
+        .watermark { text-align: center; font-size: 10px; color: #9ca3af; margin-top: 16px; }
+
+        /* Print controls (hidden when printing) */
+        .print-controls { text-align: center; padding: 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .print-controls button { padding: 8px 24px; margin: 0 6px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn-print { background: #2563eb; color: #fff; }
+        .btn-close-tab { background: #e5e7eb; color: #374151; }
+
+        @@media print {
+            .print-controls { display: none !important; }
+            body { background: #fff; }
+            .payslip { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="print-controls">
+    <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <button class="btn-close-tab" onclick="window.close()">✕ Close</button>
+</div>
+
+<div class="payslip">
+
+    <!-- Header -->
+    <div class="header">
+        <div>
+            <div class="company-name">💼 @(company?.CompanyName ?? "PayroTech")</div>
+            <div class="company-sub">@(company?.Address ?? "")</div>
+            <div class="company-sub">TIN: @(company?.TIN ?? "—") &nbsp;|&nbsp; SSS: @(company?.SSSEmployerNumber ?? "—")</div>
+        </div>
+        <div class="payslip-title">
+            <h2>PAYSLIP</h2>
+            <div class="period">@(period?.PeriodName ?? "—")</div>
+            <div class="period">@(period?.StartDate.ToString("MMM dd") ?? "") – @(period?.EndDate.ToString("MMM dd, yyyy") ?? "")</div>
+            <div class="pay-date">Pay Date: @(period?.PayDate.ToString("MMMM dd, yyyy") ?? "—")</div>
+        </div>
+    </div>
+
+    <!-- Employee Info -->
+    <div class="emp-info">
+        <div class="emp-info-item">
+            <span class="emp-info-label">Employee Name</span>
+            <span class="emp-info-value">@(employee?.FullName ?? "—")</span>
+        </div>
+        <div class="emp-info-item">
+            <span class="emp-info-label">Employee No.</span>
+            <span class="emp-info-value">@(employee?.EmployeeNumber ?? "—")</span>
+        </div>
+        <div class="emp-info-item">
+            <span class="emp-info-label">Department</span>
+            <span class="emp-info-value">@(employee?.Department?.DepartmentName ?? "—")</span>
+        </div>
+        <div class="emp-info-item">
+            <span class="emp-info-label">Daily Rate</span>
+            <span class="emp-info-value">₱@((employee?.DailyRate ?? 0).ToString("N2"))</span>
+        </div>
+        <div class="emp-info-item">
+            <span class="emp-info-label">SSS No.</span>
+            <span class="emp-info-value">@(employee?.SSSNumber ?? "—")</span>
+        </div>
+        <div class="emp-info-item">
+            <span class="emp-info-label">PhilHealth No.</span>
+            <span class="emp-info-value">@(employee?.PhilHealthNumber ?? "—")</span>
+        </div>
+        <div class="emp-info-item">
+            <span class="emp-info-label">Pag-IBIG No.</span>
+            <span class="emp-info-value">@(employee?.PagIbigNumber ?? "—")</span>
+        </div>
+        <div class="emp-info-item">
+            <span class="emp-info-label">TIN</span>
+            <span class="emp-info-value">@(employee?.TINNumber ?? "—")</span>
+        </div>
+    </div>
+
+    <!-- Attendance Summary -->
+    <div class="att-row">
+        <div class="att-card">
+            <div class="val">@Model.DaysWorked.ToString("N1")</div>
+            <div class="lbl">Days Worked</div>
+        </div>
+        <div class="att-card @(Model.OvertimeHours > 0 ? "warn" : "")">
+            <div class="val">@Model.OvertimeHours.ToString("N1")</div>
+            <div class="lbl">OT Hours</div>
+        </div>
+        <div class="att-card @(Model.LateHours > 0 ? "warn" : "")">
+            <div class="val">@Model.LateHours.ToString("N1")</div>
+            <div class="lbl">Late Hours</div>
+        </div>
+        <div class="att-card @(Model.AbsentDays > 0 ? "danger" : "")">
+            <div class="val">@Model.AbsentDays.ToString("N1")</div>
+            <div class="lbl">Absent Days</div>
+        </div>
+    </div>
+
+    <!-- Earnings & Deductions -->
+    <div class="two-col">
+        <!-- Earnings -->
+        <div>
+            <div class="section-title earn-title">▲ Earnings</div>
+            <div class="line-item">
+                <span class="label">Basic Pay (@Model.DaysWorked.ToString("N1") days)</span>
+                <span class="amount earn">₱@Model.BasicPay.ToString("N2")</span>
+            </div>
+            @if (Model.OvertimePay > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Overtime Pay (@Model.OvertimeHours.ToString("N1") hrs)</span>
+                    <span class="amount earn">₱@Model.OvertimePay.ToString("N2")</span>
+                </div>
+            }
+            @if (Model.HolidayPay > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Holiday Pay</span>
+                    <span class="amount earn">₱@Model.HolidayPay.ToString("N2")</span>
+                </div>
+            }
+            @if (Model.NightDifferentialPay > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Night Differential</span>
+                    <span class="amount earn">₱@Model.NightDifferentialPay.ToString("N2")</span>
+                </div>
+            }
+            @if (Model.Allowances > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Allowances</span>
+                    <span class="amount earn">₱@Model.Allowances.ToString("N2")</span>
+                </div>
+            }
+            <div class="subtotal">
+                <span>Gross Pay</span>
+                <span>₱@Model.GrossPay.ToString("N2")</span>
+            </div>
+        </div>
+
+        <!-- Deductions -->
+        <div>
+            <div class="section-title deduct-title">▼ Deductions</div>
+            @if (Model.LateDeduction > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Late Deduction (@Model.LateHours.ToString("N1") hrs)</span>
+                    <span class="amount deduct">-₱@Model.LateDeduction.ToString("N2")</span>
+                </div>
+            }
+            @if (Model.UndertimeDeduction > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Undertime Deduction</span>
+                    <span class="amount deduct">-₱@Model.UndertimeDeduction.ToString("N2")</span>
+                </div>
+            }
+            @if (Model.AbsenceDeduction > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Absence Deduction (@Model.AbsentDays.ToString("N1") days)</span>
+                    <span class="amount deduct">-₱@Model.AbsenceDeduction.ToString("N2")</span>
+                </div>
+            }
+            <div class="line-item">
+                <span class="label">SSS Contribution</span>
+                <span class="amount deduct">-₱@Model.SSSContribution.ToString("N2")</span>
+            </div>
+            <div class="line-item">
+                <span class="label">PhilHealth</span>
+                <span class="amount deduct">-₱@Model.PhilHealthContribution.ToString("N2")</span>
+            </div>
+            <div class="line-item">
+                <span class="label">Pag-IBIG</span>
+                <span class="amount deduct">-₱@Model.PagIbigContribution.ToString("N2")</span>
+            </div>
+            @if (Model.WithholdingTax > 0)
+            {
+                <div class="line-item">
+                    <span class="label">Withholding Tax</span>
+                    <span class="amount deduct">-₱@Model.WithholdingTax.ToString("N2")</span>
+                </div>
+            }
+            <div class="subtotal">
+                <span>Total Deductions</span>
+                <span class="amount deduct">-₱@Model.TotalDeductions.ToString("N2")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Pay -->
+    <div class="net-pay">
+        <div>
+            <div class="label">NET PAY</div>
+            <div class="sub">@(period?.PeriodName) · Pay Date: @(period?.PayDate.ToString("MMM dd, yyyy"))</div>
+        </div>
+        <div class="amount">₱@Model.NetPay.ToString("N2")</div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="footer">
+        <div class="sig-block">
+            <div class="sig-line">Employee Signature</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-line">HR Officer</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-line">Accountant / Finance</div>
+        </div>
+    </div>
+
+    <div class="watermark">
+        Generated by PayroTech · @DateTime.Now.ToString("MMMM dd, yyyy hh:mm tt") · This is a system-generated payslip.
+    </div>
+</div>
+
+<script>
+    // Auto-open print dialog when page loads
+    window.addEventListener('load', function () {
+        // Small delay to ensure styles are applied
+        setTimeout(() => window.print(), 400);
+    });
+</script>
+</body>
+</html>

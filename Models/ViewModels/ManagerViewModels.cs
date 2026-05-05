@@ -103,6 +103,7 @@ public class CompanySettingsViewModel
     public bool WorkOnHolidays { get; set; } = false;
     public int HolidayPayRate { get; set; } = 200;
     public decimal OvertimeRatePerHour { get; set; } = 1.25m;
+    public PayroTech.Models.Enums.PayrollFrequency PayrollFrequency { get; set; } = PayroTech.Models.Enums.PayrollFrequency.Monthly;
     public decimal HRDailyRate { get; set; } = 800;
     public decimal AccountantDailyRate { get; set; } = 800;
     public decimal DefaultDailyRate { get; set; } = 500;

@@ -74,6 +74,12 @@ public enum PayrollDeadlineType
     SecondHalf = 2  // 30th/31st of month
 }
 
+public enum PayrollFrequency
+{
+    Monthly    = 1,  // Once a month (1st–last day)
+    SemiMonthly = 2  // Twice a month (1st–15th, 16th–last day)
+}
+
 public enum PayrollDeadlineStatus
 {
     Pending = 1,

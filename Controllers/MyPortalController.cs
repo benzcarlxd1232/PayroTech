@@ -287,6 +287,31 @@ public class MyPortalController : Controller
         return View("~/Views/Employee/Overtime.cshtml");
     }
 
+    // GET: /MyPortal/PrintPayslip?id=X — printable payslip page (opens in new tab)
+    [HttpGet]
+    public async Task<IActionResult> PrintPayslip(int id)
+    {
+        var user = await GetEmployeeUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var employee = await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Company)
+            .FirstOrDefaultAsync(e => e.UserId == user.Id);
+
+        if (employee == null) return NotFound();
+
+        var payroll = await _context.Payrolls
+            .Include(p => p.PayrollPeriod)
+            .Include(p => p.Employee).ThenInclude(e => e.Department)
+            .Include(p => p.Employee).ThenInclude(e => e.Company)
+            .FirstOrDefaultAsync(p => p.Id == id && p.EmployeeId == employee.Id);
+
+        if (payroll == null) return NotFound();
+
+        return View("~/Views/Employee/PrintPayslip.cshtml", payroll);
+    }
+
     // GET: /MyPortal/GetPayslip?id=X — returns full payslip JSON for modal
     [HttpGet]
     public async Task<IActionResult> GetPayslip(int id)

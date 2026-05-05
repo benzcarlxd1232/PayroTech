@@ -827,6 +827,7 @@ public class ManagerController : Controller
             WorkOnHolidays       = company.WorkOnHolidays,
             HolidayPayRate       = company.HolidayPayRate,
             OvertimeRatePerHour  = company.OvertimeRatePerHour,
+            PayrollFrequency     = company.PayrollFrequency,
             HRDailyRate          = company.HRDailyRate ?? 800,
             AccountantDailyRate  = company.AccountantDailyRate ?? 800,
             DefaultDailyRate     = company.DefaultDailyRate ?? 500
@@ -853,6 +854,7 @@ public class ManagerController : Controller
         company.WorkOnHolidays      = model.WorkOnHolidays;
         company.HolidayPayRate      = model.HolidayPayRate;
         company.OvertimeRatePerHour = model.OvertimeRatePerHour;
+        company.PayrollFrequency    = model.PayrollFrequency;
         company.HRDailyRate         = model.HRDailyRate;
         company.AccountantDailyRate = model.AccountantDailyRate;
         company.DefaultDailyRate    = model.DefaultDailyRate;

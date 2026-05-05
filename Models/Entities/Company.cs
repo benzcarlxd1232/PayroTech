@@ -1,3 +1,5 @@
+using PayroTech.Models.Enums;
+
 namespace PayroTech.Models.Entities;
 
 public class Company : BaseEntity
@@ -24,6 +26,7 @@ public class Company : BaseEntity
     public bool WorkOnHolidays { get; set; } = false;
     public int HolidayPayRate { get; set; } = 200;  // Percentage (200 = double pay)
     public decimal OvertimeRatePerHour { get; set; } = 1.25m;  // Multiplier (1.25 = 125%)
+    public PayrollFrequency PayrollFrequency { get; set; } = PayrollFrequency.Monthly;
 
     // Default Salary Rates by Role
     public decimal? HRDailyRate { get; set; }
