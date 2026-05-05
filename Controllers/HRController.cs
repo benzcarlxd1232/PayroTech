@@ -383,7 +383,204 @@ public class HRController : Controller
     {
         var user = await GetHRUser();
         if (user == null) return RedirectToAction("Index", "Home");
+
+        var today      = DateTime.Today;
+        var deptId     = user.DepartmentId;
+        var companyId  = user.CompanyId ?? 0;
+
+        // Get current month period dates
+        var periodStart = new DateTime(today.Year, today.Month, 1);
+        var periodEnd   = periodStart.AddMonths(1).AddDays(-1);
+        var payDate     = periodEnd.AddDays(5);
+
+        // Check if already submitted this period
+        var existing = await _context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.CompanyId == companyId
+                                   && p.StartDate == periodStart
+                                   && p.Status != PayrollStatus.Draft);
+        ViewBag.AlreadySubmitted = existing != null;
+        ViewBag.ExistingStatus   = existing?.Status.ToString();
+
+        // Get employees in HR's team
+        var employees = await _context.Employees
+            .Include(e => e.User)
+            .Where(e => e.CompanyId == companyId && e.IsActive
+                     && (deptId == null || e.DepartmentId == deptId))
+            .ToListAsync();
+
+        // Get attendance for this period
+        var attendance = await _context.Attendances
+            .Where(a => a.Employee.CompanyId == companyId
+                     && a.Date >= periodStart && a.Date <= today
+                     && (deptId == null || a.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        var company = await _context.Companies.FindAsync(companyId);
+
+        // Build payroll preview per employee
+        var payrollItems = employees.Select(emp =>
+        {
+            var empAtt      = attendance.Where(a => a.EmployeeId == emp.Id).ToList();
+            var daysWorked  = empAtt.Count(a => a.TimeIn != null);
+            var lateMinutes = empAtt.Sum(a => a.LateMinutes);
+            var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
+            var dailyRate   = emp.DailyRate ?? company?.DefaultDailyRate ?? 500m;
+            var hourlyRate  = emp.HourlyRate ?? (dailyRate / 8m);
+
+            var basicPay    = dailyRate * daysWorked;
+            var otPay       = (hourlyRate * 1.25m) * (otMinutes / 60m);
+            var lateDeduct  = (hourlyRate / 60m) * lateMinutes;
+            var gross       = basicPay + otPay;
+            var sss         = Math.Min(gross * 0.045m, 900m);
+            var philhealth  = Math.Min(gross * 0.025m, 625m);
+            var pagibig     = Math.Min(gross * 0.02m, 200m);
+            var taxable     = gross - sss - philhealth - pagibig;
+            var tax         = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
+            var totalDeduct = lateDeduct + sss + philhealth + pagibig + tax;
+            var netPay      = gross - totalDeduct;
+
+            return new
+            {
+                EmployeeId   = emp.Id,
+                FullName     = emp.FullName,
+                DaysWorked   = daysWorked,
+                OtHours      = Math.Round(otMinutes / 60m, 1),
+                LateMinutes  = lateMinutes,
+                BasicPay     = basicPay,
+                OtPay        = otPay,
+                LateDeduct   = lateDeduct,
+                Sss          = sss,
+                PhilHealth   = philhealth,
+                PagIbig      = pagibig,
+                Tax          = tax,
+                TotalDeduct  = totalDeduct,
+                NetPay       = netPay,
+                GrossPay     = gross
+            };
+        }).ToList();
+
+        ViewBag.PayrollItems  = payrollItems;
+        ViewBag.PeriodStart   = periodStart;
+        ViewBag.PeriodEnd     = periodEnd;
+        ViewBag.PayDate       = payDate;
+        ViewBag.TotalEmployees = employees.Count;
+        ViewBag.TotalBasicPay = payrollItems.Sum(p => p.BasicPay);
+        ViewBag.TotalOtPay    = payrollItems.Sum(p => p.OtPay);
+        ViewBag.TotalDeduct   = payrollItems.Sum(p => p.TotalDeduct);
+        ViewBag.TotalNetPay   = payrollItems.Sum(p => p.NetPay);
+        ViewBag.TotalSss      = payrollItems.Sum(p => p.Sss);
+        ViewBag.TotalPhilHealth = payrollItems.Sum(p => p.PhilHealth);
+        ViewBag.TotalPagIbig  = payrollItems.Sum(p => p.PagIbig);
+        ViewBag.TotalTax      = payrollItems.Sum(p => p.Tax);
+
         return View();
+    }
+
+    // POST: /HR/SubmitPayroll — creates PayrollPeriod + Payroll records, sets status to Processed
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubmitPayroll(string? notes)
+    {
+        var user = await GetHRUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var today     = DateTime.Today;
+        var deptId    = user.DepartmentId;
+        var companyId = user.CompanyId ?? 0;
+
+        var periodStart = new DateTime(today.Year, today.Month, 1);
+        var periodEnd   = periodStart.AddMonths(1).AddDays(-1);
+
+        // Prevent duplicate submission
+        var existing = await _context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.CompanyId == companyId
+                                   && p.StartDate == periodStart
+                                   && p.Status != PayrollStatus.Draft);
+        if (existing != null)
+        {
+            TempData["Warning"] = $"Payroll for {periodStart:MMMM yyyy} was already submitted (Status: {existing.Status}).";
+            return RedirectToAction(nameof(Payroll));
+        }
+
+        var company = await _context.Companies.FindAsync(companyId);
+
+        // Create PayrollPeriod
+        var period = new PayrollPeriod
+        {
+            CompanyId  = companyId,
+            PeriodName = $"{periodStart:MMMM yyyy} Payroll",
+            StartDate  = periodStart,
+            EndDate    = periodEnd,
+            PayDate    = periodEnd.AddDays(5),
+            Status     = PayrollStatus.Processed  // Submitted to manager for approval
+        };
+        _context.PayrollPeriods.Add(period);
+        await _context.SaveChangesAsync();
+
+        // Get employees
+        var employees = await _context.Employees
+            .Where(e => e.CompanyId == companyId && e.IsActive
+                     && (deptId == null || e.DepartmentId == deptId))
+            .ToListAsync();
+
+        // Get attendance
+        var attendance = await _context.Attendances
+            .Where(a => a.Employee.CompanyId == companyId
+                     && a.Date >= periodStart && a.Date <= today
+                     && (deptId == null || a.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        // Create Payroll records for each employee
+        foreach (var emp in employees)
+        {
+            var empAtt      = attendance.Where(a => a.EmployeeId == emp.Id).ToList();
+            var daysWorked  = (decimal)empAtt.Count(a => a.TimeIn != null);
+            var lateMinutes = empAtt.Sum(a => a.LateMinutes);
+            var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
+            var dailyRate   = emp.DailyRate ?? company?.DefaultDailyRate ?? 500m;
+            var hourlyRate  = emp.HourlyRate ?? (dailyRate / 8m);
+
+            var basicPay    = dailyRate * daysWorked;
+            var otPay       = (hourlyRate * 1.25m) * (otMinutes / 60m);
+            var lateDeduct  = (hourlyRate / 60m) * lateMinutes;
+            var gross       = basicPay + otPay;
+            var sss         = Math.Min(gross * 0.045m, 900m);
+            var philhealth  = Math.Min(gross * 0.025m, 625m);
+            var pagibig     = Math.Min(gross * 0.02m, 200m);
+            var taxable     = gross - sss - philhealth - pagibig;
+            var tax         = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
+            var totalDeduct = lateDeduct + sss + philhealth + pagibig + tax;
+
+            _context.Payrolls.Add(new Payroll
+            {
+                EmployeeId             = emp.Id,
+                PayrollPeriodId        = period.Id,
+                BasicPay               = basicPay,
+                OvertimePay            = otPay,
+                GrossPay               = gross,
+                LateDeduction          = lateDeduct,
+                SSSContribution        = sss,
+                PhilHealthContribution = philhealth,
+                PagIbigContribution    = pagibig,
+                WithholdingTax         = tax,
+                TotalDeductions        = totalDeduct,
+                NetPay                 = gross - totalDeduct,
+                DaysWorked             = daysWorked,
+                OvertimeHours          = otMinutes / 60m,
+                LateHours              = lateMinutes / 60m,
+                Status                 = PayrollStatus.Processed
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Submitted Payroll for Approval", "PayrollPeriod",
+            period.Id.ToString(), null,
+            new { Period = period.PeriodName, EmployeeCount = employees.Count, Notes = notes },
+            user.CompanyId);
+
+        TempData["Success"] = $"✅ Payroll for {period.PeriodName} submitted successfully! {employees.Count} employee records created. Waiting for Manager approval.";
+        return RedirectToAction(nameof(Payroll));
     }
 
     // GET: /HR/IncidentReport  →  Views/HR/IncidentReport.cshtml

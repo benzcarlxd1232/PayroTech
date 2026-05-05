@@ -15,112 +15,122 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- PayroTech Design System -->
     <link href="~/css/design-system.css" rel="stylesheet" asp-append-version="true">
-    <!-- Role Theme -->
     <link href="~/css/themes/accountant.css" rel="stylesheet" asp-append-version="true">
     @RenderSection("Styles", required: false)
 </head>
 <body>
-    <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
+
+    <!-- Sidebar — same structure as Manager layout -->
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-logo">
-                <i class="bi bi-calculator"></i>
-            </div>
-            <div>
-                <div class="sidebar-brand">PayroTech</div>
-                <div class="sidebar-subtitle">Accountant Portal</div>
-            </div>
+            <a href="/Accountant" class="sidebar-brand">
+                <i class="bi bi-calculator"></i>PayroTech<span class="role-badge">Accountant</span>
+            </a>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
         </div>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Main</div>
-            <a href="/Accountant" class="nav-link @(currentAction == "Index" ? "active" : "")">
-                <i class="bi bi-speedometer2"></i>
-                <span class="nav-text">Dashboard</span>
-            </a>
-        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-header"><span>Main</span></li>
+            <li class="nav-item">
+                <a href="/Accountant" class="nav-link @(currentAction == "Index" ? "active" : "")">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Payroll</div>
-            <a href="/Accountant/PendingPayrolls" class="nav-link @(currentAction == "PendingPayrolls" ? "active" : "")">
-                <i class="bi bi-hourglass-split"></i>
-                <span class="nav-text">Pending Payrolls</span>
-            </a>
-            <a href="/Accountant/ProcessPayroll" class="nav-link @(currentAction == "ProcessPayroll" ? "active" : "")">
-                <i class="bi bi-cash-stack"></i>
-                <span class="nav-text">Process Payroll</span>
-            </a>
-            <a href="/Accountant/DistributeSalaries" class="nav-link @(currentAction == "DistributeSalaries" ? "active" : "")">
-                <i class="bi bi-wallet2"></i>
-                <span class="nav-text">Distribute Salaries</span>
-            </a>
-            <a href="/Accountant/PayrollHistory" class="nav-link @(currentAction == "PayrollHistory" ? "active" : "")">
-                <i class="bi bi-clock-history"></i>
-                <span class="nav-text">Payroll History</span>
-            </a>
-        </div>
+            <li class="nav-header"><span>Payroll</span></li>
+            <li class="nav-item">
+                <a href="/Accountant/PendingPayrolls" class="nav-link @(currentAction == "PendingPayrolls" ? "active" : "")">
+                    <i class="bi bi-hourglass-split"></i>
+                    <span>Pending Payrolls</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/Accountant/PayrollHistory" class="nav-link @(currentAction == "PayrollHistory" ? "active" : "")">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Payroll History</span>
+                </a>
+            </li>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Reports</div>
-            <a href="/Accountant/Payslips" class="nav-link @(currentAction == "Payslips" ? "active" : "")">
-                <i class="bi bi-file-earmark-text"></i>
-                <span class="nav-text">Payslips</span>
-            </a>
-            <a href="/Accountant/Reports" class="nav-link @(currentAction == "Reports" ? "active" : "")">
-                <i class="bi bi-graph-up"></i>
-                <span class="nav-text">Financial Reports</span>
-            </a>
-        </div>
+            <li class="nav-header"><span>Reports</span></li>
+            <li class="nav-item">
+                <a href="/Accountant/Payslips" class="nav-link @(currentAction == "Payslips" ? "active" : "")">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Payslips</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/Accountant/Reports" class="nav-link @(currentAction == "Reports" ? "active" : "")">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Financial Reports</span>
+                </a>
+            </li>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Account</div>
-            <a href="/Accountant/AuditLogs" class="nav-link @(currentAction == "AuditLogs" ? "active" : "")">
-                <i class="bi bi-journal-text"></i>
-                <span class="nav-text">Activity Logs</span>
-            </a>
-            <a href="/Accountant/MyAttendance" class="nav-link @(currentAction == "MyAttendance" ? "active" : "")">
-                <i class="bi bi-calendar-check"></i>
-                <span class="nav-text">My Attendance</span>
-            </a>
-        </div>
+            <li class="nav-header"><span>Security</span></li>
+            <li class="nav-item">
+                <a href="/Accountant/AuditLogs" class="nav-link @(currentAction == "AuditLogs" ? "active" : "")">
+                    <i class="bi bi-journal-text"></i>
+                    <span>Activity Logs</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/Accountant/MyAttendance" class="nav-link @(currentAction == "MyAttendance" ? "active" : "")">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>My Attendance</span>
+                </a>
+            </li>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Reports</div>
-            <a href="/IncidentReport/Create" class="nav-link @(currentAction == "Create" ? "active" : "")">
-                <i class="bi bi-exclamation-triangle"></i>
-                <span class="nav-text">Submit Incident Report</span>
-            </a>
-            <a href="/IncidentReport/MyReports" class="nav-link @(currentAction == "MyReports" ? "active" : "")">
-                <i class="bi bi-file-earmark-text"></i>
-                <span class="nav-text">My Submitted Reports</span>
-            </a>
-        </div>
-    </nav>
+            <li class="nav-header"><span>Incident Reports</span></li>
+            <li class="nav-item">
+                <a href="/IncidentReport/Create" class="nav-link @(currentAction == "Create" ? "active" : "")">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Submit Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/IncidentReport/MyReports" class="nav-link @(currentAction == "MyReports" ? "active" : "")">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span>My Reports</span>
+                </a>
+            </li>
+
+            <li class="nav-header"><span>Settings</span></li>
+            <li class="nav-item">
+                <a href="/ChangePin" class="nav-link">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Change Kiosk PIN</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
 
     <!-- Main Content -->
-    <div class="main-content">
-        <div class="top-navbar">
-            <div class="d-flex align-items-center gap-3">
-                <button class="toggle-sidebar" onclick="toggleSidebar()">
-                    <i class="bi bi-list"></i>
-                </button>
-                <div>
-                    <h5 class="mb-0">@ViewData["Title"]</h5>
-                    <small class="text-muted">Payroll & Finance Management</small>
-                </div>
+    <main class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <div>
+                <h1 class="page-title">@ViewData["Title"]</h1>
+                @if (ViewData["Breadcrumb"] != null)
+                {
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/Accountant">Dashboard</a></li>
+                            <li class="breadcrumb-item active">@ViewData["Breadcrumb"]</li>
+                        </ol>
+                    </nav>
+                }
             </div>
 
-            <div class="d-flex align-items-center gap-3">
-                <!-- Dark Mode Toggle -->
-                <button class="toggle-sidebar" onclick="toggleDarkMode()" title="Toggle Dark Mode">
-                    <i class="bi bi-moon-stars"></i>
+            <div class="navbar-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="bi bi-sun-fill" id="themeIcon"></i>
                 </button>
 
-                <!-- User Dropdown -->
-                <div class="dropdown">
-                    <div class="user-dropdown" data-bs-toggle="dropdown">
+                <div class="user-dropdown">
+                    <button class="user-btn" onclick="toggleDropdown()">
                         <div class="user-avatar">
                             @(user?.FirstName?.Substring(0, 1) ?? "A")
                         </div>
@@ -128,40 +138,41 @@
                             <div class="user-name">@(user != null ? $"{user.FirstName} {user.LastName}" : "Accountant")</div>
                             <div class="user-role">Accountant</div>
                         </div>
-                        <i class="bi bi-chevron-down text-muted"></i>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="/Accountant/Profile" class="dropdown-item">
+                            <i class="bi bi-person"></i> My Profile
+                        </a>
+                        <a href="/Accountant/AuditLogs" class="dropdown-item">
+                            <i class="bi bi-journal-text"></i> Activity Log
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0" id="logoutForm">
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="dropdown-item w-100 text-start border-0 bg-transparent text-danger"
+                                    onclick="confirmLogout()">
+                                <i class="bi bi-box-arrow-right"></i> Sign Out
+                            </button>
+                        </form>
                     </div>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/Accountant/Profile"><i class="bi bi-person me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="/Accountant/AuditLogs"><i class="bi bi-journal-text me-2"></i>Activity Log</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form method="post" action="/Auth/Logout" id="logoutForm">
-                                <button type="button" class="dropdown-item text-danger" onclick="confirmLogout()">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
                 </div>
             </div>
-        </div>
-        
-        <!-- Logout Confirmation Modal -->
-        <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        </nav>
+
+        <!-- Logout Modal -->
+        <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="logoutModalLabel">
-                            <i class="bi bi-box-arrow-right me-2"></i>Confirm Logout
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <h5 class="modal-title"><i class="bi bi-box-arrow-right me-2"></i>Confirm Logout</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <p>Are you sure you want to logout from PayroTech?</p>
-                    </div>
+                    <div class="modal-body">Are you sure you want to logout from PayroTech?</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger" onclick="document.getElementById('logoutForm').submit();">
+                        <button type="button" class="btn btn-danger"
+                                onclick="document.getElementById('logoutForm').submit();">
                             <i class="bi bi-box-arrow-right me-1"></i>Yes, Logout
                         </button>
                     </div>
@@ -169,18 +180,27 @@
             </div>
         </div>
 
+        <!-- Global antiforgery token for fetch calls -->
+        @Html.AntiForgeryToken()
+
         @if (TempData["Success"] != null)
         {
-            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <div class="alert alert-success alert-dismissible fade show m-3">
+                <i class="bi bi-check-circle me-2"></i>@Html.Raw(TempData["Success"])
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
-
         @if (TempData["Error"] != null)
         {
-            <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
+            <div class="alert alert-danger alert-dismissible fade show m-3">
                 <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show m-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Warning"]
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
@@ -188,34 +208,52 @@
         <div class="page-content">
             @RenderBody()
         </div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/design-system.js" asp-append-version="true"></script>
     <script>
         function confirmLogout() {
-            var logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
-            logoutModal.show();
+            new bootstrap.Modal(document.getElementById('logoutModal')).show();
         }
-        
+
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
+            const sidebar     = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
             sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
             localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
         }
 
-        function toggleDarkMode() {
+        function toggleTheme() {
             document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            const icon = document.getElementById('themeIcon');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.replace('bi-sun-fill', 'bi-moon-fill');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                icon.classList.replace('bi-moon-fill', 'bi-sun-fill');
+                localStorage.setItem('theme', 'light');
+            }
         }
 
-        // Load preferences
-        document.addEventListener('DOMContentLoaded', function() {
+        function toggleDropdown() {
+            document.getElementById('userDropdown').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.user-dropdown'))
+                document.getElementById('userDropdown')?.classList.remove('show');
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
             if (localStorage.getItem('sidebarCollapsed') === 'true') {
                 document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
             }
-            if (localStorage.getItem('darkMode') === 'true') {
+            if (localStorage.getItem('theme') === 'dark') {
                 document.body.classList.add('dark-mode');
+                document.getElementById('themeIcon').classList.replace('bi-sun-fill', 'bi-moon-fill');
             }
         });
     </script>

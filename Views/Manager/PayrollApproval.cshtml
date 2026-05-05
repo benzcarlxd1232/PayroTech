@@ -1,47 +1,47 @@
 @{
     ViewData["Title"] = "Payroll Approval";
     Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+
+    var pendingPeriods = ViewBag.PendingPeriods as List<PayroTech.Models.Entities.PayrollPeriod> ?? new();
+    var historyPeriods = ViewBag.HistoryPeriods as List<PayroTech.Models.Entities.PayrollPeriod> ?? new();
+    int pendingCount   = ViewBag.PendingCount ?? 0;
+    decimal pendingTotal = ViewBag.PendingTotal ?? 0m;
 }
 
-<!-- Page Header -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1">Payroll Approval</h4>
         <p class="text-muted mb-0">Review and approve payroll submissions from HR</p>
     </div>
-    <div class="d-flex gap-2">
-        <button class="pt-btn pt-btn-ghost">
-            <i class="bi bi-clock-history me-2"></i>History
-        </button>
-    </div>
 </div>
 
-<!-- Summary Cards -->
+<!-- Stats -->
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="pt-stats-card warning">
-            <div class="pt-stats-value">3</div>
+            <div class="pt-stats-value">@pendingCount</div>
             <div class="pt-stats-label">Pending Approval</div>
             <i class="bi bi-hourglass-split pt-stats-icon"></i>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="pt-stats-card success">
-            <div class="pt-stats-value">8</div>
-            <div class="pt-stats-label">Approved This Month</div>
+            <div class="pt-stats-value">@historyPeriods.Count</div>
+            <div class="pt-stats-label">Approved</div>
             <i class="bi bi-check-circle pt-stats-icon"></i>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="pt-stats-card danger">
-            <div class="pt-stats-value">1</div>
-            <div class="pt-stats-label">Late Submissions</div>
-            <i class="bi bi-exclamation-triangle pt-stats-icon"></i>
-        </div>
-    </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="pt-stats-card">
-            <div class="pt-stats-value">₱1.5M</div>
+            <div class="pt-stats-value">₱@pendingTotal.ToString("N0")</div>
             <div class="pt-stats-label">Pending Amount</div>
             <i class="bi bi-cash-stack pt-stats-icon"></i>
         </div>
@@ -49,301 +49,275 @@
 </div>
 
 <!-- Pending Approvals -->
-<div class="row">
-    <div class="col-12">
-        <div class="pt-card mb-4">
-            <div class="pt-card-header">
-                <i class="bi bi-hourglass-split text-warning me-2"></i>Pending Approvals
-            </div>
-            <div class="pt-card-body p-0">
-                <!-- Pending Item 1 -->
-                <div class="p-4 border-bottom">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="pt-avatar" style="background: linear-gradient(135deg, #0891b2, #22d3ee); width: 50px; height: 50px;">E</div>
-                                <div>
-                                    <h5 class="mb-1">Engineering Team - March 2026 (2nd Half)</h5>
-                                    <div class="d-flex gap-3 text-muted small">
-                                        <span><i class="bi bi-person me-1"></i>Submitted by Maria Santos</span>
-                                        <span><i class="bi bi-calendar me-1"></i>Mar 28, 2026</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="text-muted small">Employees</div>
-                                    <div class="fw-bold">24</div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-muted small">Total</div>
-                                    <div class="fw-bold text-primary">₱450,000</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <span class="pt-badge pt-badge-warning mb-2 d-inline-block">Pending Review</span>
-                            <div class="d-flex gap-2 justify-content-end">
-                                <button class="pt-btn pt-btn-ghost pt-btn-sm" data-bs-toggle="modal" data-bs-target="#viewPayrollModal">
-                                    <i class="bi bi-eye me-1"></i>View
-                                </button>
-                                <button class="pt-btn pt-btn-success pt-btn-sm">
-                                    <i class="bi bi-check-lg me-1"></i>Approve
-                                </button>
-                                <button class="pt-btn pt-btn-danger pt-btn-sm">
-                                    <i class="bi bi-x-lg me-1"></i>Reject
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pending Item 2 -->
-                <div class="p-4 border-bottom">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="pt-avatar" style="background: linear-gradient(135deg, #059669, #34d399); width: 50px; height: 50px;">S</div>
-                                <div>
-                                    <h5 class="mb-1">Sales Team - March 2026 (2nd Half)</h5>
-                                    <div class="d-flex gap-3 text-muted small">
-                                        <span><i class="bi bi-person me-1"></i>Submitted by Juan Dela Cruz</span>
-                                        <span><i class="bi bi-calendar me-1"></i>Mar 28, 2026</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="text-muted small">Employees</div>
-                                    <div class="fw-bold">18</div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-muted small">Total</div>
-                                    <div class="fw-bold text-primary">₱380,000</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <span class="pt-badge pt-badge-warning mb-2 d-inline-block">Pending Review</span>
-                            <div class="d-flex gap-2 justify-content-end">
-                                <button class="pt-btn pt-btn-ghost pt-btn-sm">
-                                    <i class="bi bi-eye me-1"></i>View
-                                </button>
-                                <button class="pt-btn pt-btn-success pt-btn-sm">
-                                    <i class="bi bi-check-lg me-1"></i>Approve
-                                </button>
-                                <button class="pt-btn pt-btn-danger pt-btn-sm">
-                                    <i class="bi bi-x-lg me-1"></i>Reject
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pending Item 3 (Late) -->
-                <div class="p-4" style="background: rgba(239, 68, 68, 0.05);">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="pt-avatar" style="background: linear-gradient(135deg, #7c3aed, #a855f7); width: 50px; height: 50px;">O</div>
-                                <div>
-                                    <h5 class="mb-1">
-                                        Operations Team - March 2026 (2nd Half)
-                                        <span class="pt-badge pt-badge-danger ms-2">LATE</span>
-                                    </h5>
-                                    <div class="d-flex gap-3 text-muted small">
-                                        <span><i class="bi bi-person me-1"></i>Submitted by Ana Reyes</span>
-                                        <span class="text-danger"><i class="bi bi-calendar me-1"></i>Mar 29, 2026 (2 days late)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="text-muted small">Employees</div>
-                                    <div class="fw-bold">32</div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-muted small">Total</div>
-                                    <div class="fw-bold text-primary">₱520,000</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <span class="pt-badge pt-badge-danger mb-2 d-inline-block">Late Submission</span>
-                            <div class="d-flex gap-2 justify-content-end">
-                                <button class="pt-btn pt-btn-ghost pt-btn-sm">
-                                    <i class="bi bi-eye me-1"></i>View
-                                </button>
-                                <button class="pt-btn pt-btn-warning pt-btn-sm">
-                                    <i class="bi bi-exclamation-triangle me-1"></i>View Incident
-                                </button>
-                                <button class="pt-btn pt-btn-success pt-btn-sm">
-                                    <i class="bi bi-check-lg me-1"></i>Approve
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="pt-card mb-4">
+    <div class="pt-card-header">
+        <i class="bi bi-hourglass-split text-warning me-2"></i>
+        Pending Approvals
+        @if (pendingCount > 0)
+        {
+            <span class="badge bg-warning text-dark ms-2">@pendingCount</span>
+        }
     </div>
+    @if (!pendingPeriods.Any())
+    {
+        <div class="pt-card-body text-center py-5">
+            <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
+            <h6>No pending payrolls</h6>
+            <p class="text-muted small">All payroll submissions have been reviewed.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var period in pendingPeriods)
+        {
+            var total      = period.Payrolls.Sum(p => p.NetPay);
+            var empCount   = period.Payrolls.Select(p => p.EmployeeId).Distinct().Count();
+            var deptNames  = period.Payrolls
+                .Select(p => p.Employee?.Department?.DepartmentName)
+                .Where(d => d != null).Distinct().Take(2).ToList();
+            var deptLabel  = deptNames.Any() ? string.Join(", ", deptNames) : "All Teams";
+
+            <div class="p-4 border-bottom">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-1">@period.PeriodName</h5>
+                        <div class="d-flex gap-3 text-muted small flex-wrap">
+                            <span><i class="bi bi-people me-1"></i>@deptLabel</span>
+                            <span><i class="bi bi-calendar me-1"></i>@period.StartDate.ToString("MMM dd") – @period.EndDate.ToString("MMM dd, yyyy")</span>
+                            <span><i class="bi bi-clock me-1"></i>Pay date: @period.PayDate.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-muted small">Employees</div>
+                                <div class="fw-bold">@empCount</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">Net Total</div>
+                                <div class="fw-bold text-primary">₱@total.ToString("N0")</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <span class="pt-badge pt-badge-warning mb-2 d-inline-block">Pending Review</span>
+                        <div class="d-flex gap-2 justify-content-end flex-wrap">
+                            <button class="pt-btn pt-btn-ghost pt-btn-sm"
+                                    onclick="viewPayroll(@period.Id, '@period.PeriodName')">
+                                <i class="bi bi-eye me-1"></i>View
+                            </button>
+                            <button class="pt-btn pt-btn-success pt-btn-sm"
+                                    onclick="approvePayroll(@period.Id, '@period.PeriodName', @total)">
+                                <i class="bi bi-check-lg me-1"></i>Approve
+                            </button>
+                            <button class="pt-btn pt-btn-danger pt-btn-sm"
+                                    onclick="rejectPayroll(@period.Id, '@period.PeriodName')">
+                                <i class="bi bi-x-lg me-1"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
 </div>
 
-<!-- Recently Approved -->
-<div class="row">
-    <div class="col-12">
-        <div class="pt-table-wrapper">
-            <div class="pt-card-header">
-                <i class="bi bi-check-circle text-success me-2"></i>Recently Approved
-            </div>
+<!-- History -->
+@if (historyPeriods.Any())
+{
+    <div class="pt-card">
+        <div class="pt-card-header">
+            <i class="bi bi-check-circle text-success me-2"></i>Approved History
+        </div>
+        <div class="table-responsive">
             <table class="pt-table">
                 <thead>
                     <tr>
-                        <th>Team</th>
                         <th>Period</th>
-                        <th>Submitted By</th>
-                        <th>Employees</th>
-                        <th>Total Amount</th>
-                        <th>Approved Date</th>
-                        <th>Status</th>
+                        <th class="text-center">Employees</th>
+                        <th class="text-end">Net Total</th>
+                        <th class="text-center">Approved</th>
+                        <th class="text-center">Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">H</div>
-                                HR & Admin
-                            </div>
-                        </td>
-                        <td>March 2026 (2nd Half)</td>
-                        <td>Pedro Garcia</td>
-                        <td>12</td>
-                        <td class="fw-semibold">₱195,000</td>
-                        <td>Mar 27, 2026</td>
-                        <td><span class="pt-badge pt-badge-success">Approved</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #0891b2, #22d3ee);">E</div>
-                                Engineering
-                            </div>
-                        </td>
-                        <td>March 2026 (1st Half)</td>
-                        <td>Maria Santos</td>
-                        <td>24</td>
-                        <td class="fw-semibold">₱445,000</td>
-                        <td>Mar 13, 2026</td>
-                        <td><span class="pt-badge pt-badge-success">Approved</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="pt-avatar pt-avatar-sm" style="background: linear-gradient(135deg, #059669, #34d399);">S</div>
-                                Sales
-                            </div>
-                        </td>
-                        <td>March 2026 (1st Half)</td>
-                        <td>Juan Dela Cruz</td>
-                        <td>18</td>
-                        <td class="fw-semibold">₱375,000</td>
-                        <td>Mar 13, 2026</td>
-                        <td><span class="pt-badge pt-badge-success">Approved</span></td>
-                    </tr>
+                    @foreach (var period in historyPeriods)
+                    {
+                        <tr>
+                            <td class="fw-medium">@period.PeriodName</td>
+                            <td class="text-center">@period.Payrolls.Select(p => p.EmployeeId).Distinct().Count()</td>
+                            <td class="text-end fw-semibold">₱@period.Payrolls.Sum(p => p.NetPay).ToString("N2")</td>
+                            <td class="text-center text-muted small">@(period.ProcessedAt?.ToString("MMM dd, yyyy") ?? "—")</td>
+                            <td class="text-center">
+                                <span class="pt-badge @(period.Status == PayrollStatus.Paid ? "pt-badge-success" : "pt-badge-primary")">
+                                    @period.Status
+                                </span>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
     </div>
-</div>
+}
 
-<!-- View Payroll Modal -->
+<!-- View Detail Modal -->
 <div class="modal fade" id="viewPayrollModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2"></i>Payroll Details - Engineering Team</h5>
+                <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2"></i><span id="modalPeriodName"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <p class="mb-1"><strong>Team:</strong> Engineering Team</p>
-                        <p class="mb-1"><strong>Period:</strong> March 2026 (2nd Half)</p>
-                        <p class="mb-1"><strong>Submitted By:</strong> Maria Santos</p>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <p class="mb-1"><strong>Submission Date:</strong> Mar 28, 2026</p>
-                        <p class="mb-1"><strong>Total Employees:</strong> 24</p>
-                        <p class="mb-1"><strong>Total Amount:</strong> <span class="text-primary fw-bold">₱450,000</span></p>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Basic Pay</th>
-                                <th>OT Pay</th>
-                                <th>Deductions</th>
-                                <th>Net Pay</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Juan Rodriguez</td>
-                                <td>₱25,000</td>
-                                <td>₱3,000</td>
-                                <td class="text-danger">-₱2,500</td>
-                                <td class="fw-bold">₱25,500</td>
-                            </tr>
-                            <tr>
-                                <td>Maria Santos</td>
-                                <td>₱28,000</td>
-                                <td>₱1,500</td>
-                                <td class="text-danger">-₱2,800</td>
-                                <td class="fw-bold">₱26,700</td>
-                            </tr>
-                            <tr>
-                                <td>Pedro Garcia</td>
-                                <td>₱22,000</td>
-                                <td>₱2,200</td>
-                                <td class="text-danger">-₱2,200</td>
-                                <td class="fw-bold">₱22,000</td>
-                            </tr>
-                            <tr>
-                                <td colspan="4" class="text-muted">... and 21 more employees</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr class="fw-bold">
-                                <td>TOTAL</td>
-                                <td>₱400,000</td>
-                                <td>₱80,000</td>
-                                <td class="text-danger">-₱30,000</td>
-                                <td class="text-primary">₱450,000</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+            <div class="modal-body" id="modalPayrollBody">
+                <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="pt-btn pt-btn-ghost" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="pt-btn pt-btn-danger">
-                    <i class="bi bi-x-lg me-1"></i>Reject
-                </button>
-                <button type="button" class="pt-btn pt-btn-success">
-                    <i class="bi bi-check-lg me-1"></i>Approve Payroll
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="modalApproveBtn">
+                    <i class="bi bi-check-lg me-1"></i>Approve
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-x-circle me-2"></i>Reject Payroll</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Rejecting <strong id="rejectPeriodName"></strong> will send it back to HR for correction.</p>
+                <label class="form-label">Reason for rejection <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="rejectReason" rows="3" placeholder="Explain what needs to be corrected..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmRejectBtn">
+                    <i class="bi bi-x-lg me-1"></i>Confirm Reject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value
+               || '@Html.AntiForgeryToken()'.match(/value="([^"]+)"/)?.[1];
+
+    // Inline antiforgery for fetch calls
+    const csrfToken = '@Html.AntiForgeryToken()';
+
+    async function approvePayroll(periodId, periodName, total) {
+        if (!confirm(`Approve "${periodName}"?\nTotal Net Pay: ₱${Number(total).toLocaleString('en-PH', {minimumFractionDigits:2})}\n\nThis will allow the Accountant to distribute salaries.`)) return;
+
+        const fd = new FormData();
+        fd.append('periodId', periodId);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r = await fetch('/Manager/ApprovePayroll', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message, 'error');
+        }
+    }
+
+    let currentRejectId = null;
+    function rejectPayroll(periodId, periodName) {
+        currentRejectId = periodId;
+        document.getElementById('rejectPeriodName').textContent = periodName;
+        document.getElementById('rejectReason').value = '';
+        new bootstrap.Modal(document.getElementById('rejectModal')).show();
+    }
+
+    document.getElementById('confirmRejectBtn').addEventListener('click', async () => {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) { alert('Please provide a reason for rejection.'); return; }
+
+        const fd = new FormData();
+        fd.append('periodId', currentRejectId);
+        fd.append('reason', reason);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r = await fetch('/Manager/RejectPayroll', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
+        if (data.success) {
+            showToast(data.message, 'warning');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message, 'error');
+        }
+    });
+
+    async function viewPayroll(periodId, periodName) {
+        document.getElementById('modalPeriodName').textContent = periodName;
+        document.getElementById('modalPayrollBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        document.getElementById('modalApproveBtn').onclick = () => {
+            bootstrap.Modal.getInstance(document.getElementById('viewPayrollModal')).hide();
+            approvePayroll(periodId, periodName, 0);
+        };
+        new bootstrap.Modal(document.getElementById('viewPayrollModal')).show();
+
+        const r = await fetch(`/Manager/GetPayrollDetails?periodId=${periodId}`);
+        const data = await r.json();
+
+        if (data.payrolls) {
+            let rows = data.payrolls.map(p => `
+                <tr>
+                    <td>${p.employeeName}</td>
+                    <td>${p.department}</td>
+                    <td class="text-end">₱${Number(p.basicPay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
+                    <td class="text-end text-success">₱${Number(p.overtimePay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
+                    <td class="text-end text-danger">-₱${Number(p.totalDeductions).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
+                    <td class="text-end fw-bold text-primary">₱${Number(p.netPay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
+                </tr>`).join('');
+
+            document.getElementById('modalPayrollBody').innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Employee</th><th>Dept</th>
+                                <th class="text-end">Basic</th>
+                                <th class="text-end">OT</th>
+                                <th class="text-end">Deductions</th>
+                                <th class="text-end">Net Pay</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="5">TOTAL</td>
+                                <td class="text-end text-primary">₱${Number(data.totalNetPay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>`;
+            document.getElementById('modalApproveBtn').onclick = () => {
+                bootstrap.Modal.getInstance(document.getElementById('viewPayrollModal')).hide();
+                approvePayroll(periodId, periodName, data.totalNetPay);
+            };
+        }
+    }
+
+    function getToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    function showToast(msg, type) {
+        try { PT.Toast[type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'error'](msg); }
+        catch { alert(msg); }
+    }
+</script>
+}

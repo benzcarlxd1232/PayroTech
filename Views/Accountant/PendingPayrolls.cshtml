@@ -8,6 +8,19 @@
     int pageSize    = ViewBag.PageSize    ?? 15;
     int startP      = Math.Max(1, currentPage - 2);
     int endP        = Math.Min(totalPages, currentPage + 2);
+
+    // Group by period for bulk actions
+    var byPeriod = payrolls
+        .GroupBy(p => new { p.PayrollPeriodId, Name = p.PayrollPeriod?.PeriodName ?? "Unknown" })
+        .ToList();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        <i class="bi bi-check-circle me-2"></i>@Html.Raw(TempData["Success"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,60 +28,101 @@
         <h4 class="mb-1">Pending Payrolls</h4>
         <p class="text-muted mb-0">Approved payrolls ready for salary distribution</p>
     </div>
+    @if (payrolls.Any())
+    {
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Total pending:</span>
+            <strong class="text-success fs-5">₱@payrolls.Sum(p => p.NetPay).ToString("N2")</strong>
+        </div>
+    }
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header fw-semibold">
-        <i class="bi bi-hourglass-split me-2"></i>@payrolls.Count record(s) pending
-    </div>
-    @if (!payrolls.Any())
-    {
+@if (!payrolls.Any())
+{
+    <div class="card shadow-sm">
         <div class="card-body text-center py-5">
             <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
             <h6>No pending payrolls</h6>
-            <p class="text-muted small">All payrolls have been distributed.</p>
+            <p class="text-muted small">All payrolls have been distributed. Check Payroll History for records.</p>
+            <a href="/Accountant/PayrollHistory" class="btn btn-outline-primary btn-sm">View History</a>
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var group in byPeriod)
+    {
+        var periodTotal = group.Sum(p => p.NetPay);
+        var periodId    = group.Key.PayrollPeriodId;
+        var periodName  = group.Key.Name;
+
+        <div class="card shadow-sm mb-4">
+            <!-- Period Header with Bulk Action -->
+            <div class="card-header d-flex justify-content-between align-items-center py-3"
+                 style="background:linear-gradient(135deg,#f59e0b15,#fbbf2415);">
+                <div>
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-calendar-check me-2 text-warning"></i>@periodName
+                    </h6>
+                    <small class="text-muted">@group.Count() employees · Total Net: <strong class="text-success">₱@periodTotal.ToString("N2")</strong></small>
+                </div>
+                <button class="btn btn-success btn-sm fw-semibold px-4"
+                        onclick="markAllAsPaid(@periodId, '@periodName', @periodTotal)">
+                    <i class="bi bi-send-check me-2"></i>Distribute All (₱@periodTotal.ToString("N0"))
+                </button>
+            </div>
+
+            <!-- Employee Rows -->
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle small">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Employee</th>
+                            <th>Department</th>
+                            <th class="text-center">Days</th>
+                            <th class="text-end">Basic</th>
+                            <th class="text-end">OT</th>
+                            <th class="text-end text-danger">Deductions</th>
+                            <th class="text-end text-success">Net Pay</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in group.OrderBy(p => p.Employee?.LastName))
+                        {
+                            <tr id="row-@p.Id">
+                                <td class="ps-4 fw-medium">@p.Employee?.FullName</td>
+                                <td class="text-muted">@(p.Employee?.Department?.DepartmentName ?? "—")</td>
+                                <td class="text-center">@p.DaysWorked.ToString("N1")</td>
+                                <td class="text-end">₱@p.BasicPay.ToString("N2")</td>
+                                <td class="text-end text-success">₱@p.OvertimePay.ToString("N2")</td>
+                                <td class="text-end text-danger">-₱@p.TotalDeductions.ToString("N2")</td>
+                                <td class="text-end fw-bold text-success">₱@p.NetPay.ToString("N2")</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-success"
+                                            onclick="markOnePaid(@p.Id, '@p.Employee?.FullName', @p.NetPay)"
+                                            id="btn-@p.Id">
+                                        <i class="bi bi-check2"></i> Pay
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="6" class="ps-4 fw-bold">Period Total</td>
+                            <td class="text-end fw-bold text-success">₱@periodTotal.ToString("N2")</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     }
-    else
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
     {
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Employee</th>
-                        <th>Department</th>
-                        <th>Period</th>
-                        <th class="text-end">Gross</th>
-                        <th class="text-end">Deductions</th>
-                        <th class="text-end">Net Pay</th>
-                        <th class="text-center">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var p in payrolls)
-                    {
-                        <tr>
-                            <td class="ps-4 fw-medium">@p.Employee?.FullName</td>
-                            <td class="text-muted small">@(p.Employee?.Department?.DepartmentName ?? "—")</td>
-                            <td class="text-muted small">@(p.PayrollPeriod?.PeriodName ?? "—")</td>
-                            <td class="text-end">₱@p.GrossPay.ToString("N2")</td>
-                            <td class="text-end text-danger">-₱@p.TotalDeductions.ToString("N2")</td>
-                            <td class="text-end fw-bold text-success">₱@p.NetPay.ToString("N2")</td>
-                            <td class="text-center">
-                                <span class="badge bg-warning text-dark">@p.Status</span>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-                <tfoot class="table-light">
-                    <tr>
-                        <td colspan="5" class="ps-4 fw-bold">Total</td>
-                        <td class="text-end fw-bold text-success">₱@payrolls.Sum(p => p.NetPay).ToString("N2")</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
         <div class="pt-pagination">
             <small class="text-muted me-auto ps-1">
                 Showing @((currentPage - 1) * pageSize + 1)–@Math.Min(currentPage * pageSize, totalCount) of @totalCount records
@@ -77,17 +131,10 @@
                     onclick="window.location.href='?page=@(currentPage - 1)'">
                 <i class="bi bi-chevron-left"></i>
             </button>
-            @if (startP > 1) {
-                <button class="pt-pagination-btn" onclick="window.location.href='?page=1'">1</button>
-                if (startP > 2) { <span class="pt-pagination-ellipsis">…</span> }
-            }
-            @for (int i = startP; i <= endP; i++) {
+            @for (int i = startP; i <= endP; i++)
+            {
                 <button class="pt-pagination-btn @(currentPage == i ? "active" : "")"
                         onclick="window.location.href='?page=@i'">@i</button>
-            }
-            @if (endP < totalPages) {
-                if (endP < totalPages - 1) { <span class="pt-pagination-ellipsis">…</span> }
-                <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages'">@totalPages</button>
             }
             <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "")
                     onclick="window.location.href='?page=@(currentPage + 1)'">
@@ -95,4 +142,67 @@
             </button>
         </div>
     }
-</div>
+}
+
+@section Scripts {
+<script>
+    function getToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    function showToast(msg, type) {
+        try {
+            if (typeof PT !== 'undefined' && PT.Toast) {
+                PT.Toast[type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'error'](msg);
+            } else {
+                alert(msg);
+            }
+        } catch { alert(msg); }
+    }
+
+    async function markOnePaid(payrollId, employeeName, netPay) {
+        if (!confirm(`Mark ₱${Number(netPay).toLocaleString('en-PH',{minimumFractionDigits:2})} as paid to ${employeeName}?`)) return;
+
+        const btn = document.getElementById(`btn-${payrollId}`);
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        const fd = new FormData();
+        fd.append('id', payrollId);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r    = await fetch('/Accountant/MarkAsPaid', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            const row = document.getElementById(`row-${payrollId}`);
+            row.style.opacity = '0.4';
+            row.style.textDecoration = 'line-through';
+            btn.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Paid';
+        } else {
+            showToast(data.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check2"></i> Pay';
+        }
+    }
+
+    async function markAllAsPaid(periodId, periodName, total) {
+        if (!confirm(`Distribute ALL salaries for "${periodName}"?\nTotal: ₱${Number(total).toLocaleString('en-PH',{minimumFractionDigits:2})}\n\nThis will mark all employees in this period as paid.`)) return;
+
+        const fd = new FormData();
+        fd.append('periodId', periodId);
+        fd.append('__RequestVerificationToken', getToken());
+
+        const r    = await fetch('/Accountant/MarkAllAsPaid', { method: 'POST', body: fd });
+        const data = await r.json();
+
+        if (data.success) {
+            showToast(`✅ ${data.count} salaries distributed! Total: ₱${Number(data.total).toLocaleString('en-PH',{minimumFractionDigits:2})}`, 'success');
+            setTimeout(() => location.reload(), 1800);
+        } else {
+            showToast(data.message, 'error');
+        }
+    }
+</script>
+}

@@ -163,6 +163,71 @@ public class AccountantController : Controller
         return View();
     }
 
+    // POST: /Accountant/MarkAsPaid — mark a payroll record as paid (salary distributed)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkAsPaid(int id)
+    {
+        var user = await GetAccountantUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var payroll = await _context.Payrolls
+            .Include(p => p.Employee)
+            .FirstOrDefaultAsync(p => p.Id == id && p.Employee.CompanyId == user.CompanyId);
+
+        if (payroll == null)
+            return Json(new { success = false, message = "Payroll record not found." });
+
+        if (payroll.Status == PayrollStatus.Paid)
+            return Json(new { success = false, message = "Already marked as paid." });
+
+        payroll.Status      = PayrollStatus.Paid;
+        payroll.ProcessedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Marked Payroll as Paid", "Payroll",
+            payroll.Id.ToString(), null,
+            new { EmployeeId = payroll.EmployeeId, NetPay = payroll.NetPay },
+            user.CompanyId);
+
+        return Json(new { success = true, message = $"Salary of ₱{payroll.NetPay:N2} marked as distributed." });
+    }
+
+    // POST: /Accountant/MarkAllAsPaid — mark all approved payrolls as paid for a period
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkAllAsPaid(int periodId)
+    {
+        var user = await GetAccountantUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var payrolls = await _context.Payrolls
+            .Include(p => p.Employee)
+            .Where(p => p.PayrollPeriodId == periodId
+                     && p.Employee.CompanyId == user.CompanyId
+                     && (p.Status == PayrollStatus.Approved || p.Status == PayrollStatus.Processed))
+            .ToListAsync();
+
+        if (!payrolls.Any())
+            return Json(new { success = false, message = "No pending payrolls found for this period." });
+
+        var total = payrolls.Sum(p => p.NetPay);
+        foreach (var p in payrolls)
+        {
+            p.Status      = PayrollStatus.Paid;
+            p.ProcessedAt = DateTime.UtcNow;
+        }
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Distributed All Salaries", "PayrollPeriod",
+            periodId.ToString(), null,
+            new { Count = payrolls.Count, TotalAmount = total },
+            user.CompanyId);
+
+        TempData["Success"] = $"✅ {payrolls.Count} salaries totalling ₱{total:N2} marked as distributed!";
+        return Json(new { success = true, count = payrolls.Count, total = total });
+    }
+
     // GET: /Accountant/Reports  →  Views/Accountant/Reports.cshtml
     public async Task<IActionResult> Reports()
     {

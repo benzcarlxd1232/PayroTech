@@ -412,7 +412,7 @@ public class ManagerController : Controller
 
             TempData["Success"] = $"{role} account created for {model.FirstName} {model.LastName}. Welcome email sent to {model.Email}.";
             TempData["ShowStaffID"] = newUser.Id;
-            return RedirectToAction(role == UserRole.Employee ? nameof(AllStaff) : nameof(HRManagement));
+            return RedirectToAction(nameof(AllStaff));
         }
 
         foreach (var error in result.Errors)
@@ -616,7 +616,128 @@ public class ManagerController : Controller
     {
         var user = await GetManagerUser();
         if (user == null) return RedirectToAction("Index", "Home");
+
+        var companyId = user.CompanyId ?? 0;
+
+        // Pending — submitted by HR, waiting for manager approval
+        var pending = await _context.PayrollPeriods
+            .Include(p => p.Payrolls).ThenInclude(pr => pr.Employee).ThenInclude(e => e.Department)
+            .Where(p => p.CompanyId == companyId && p.Status == PayrollStatus.Processed)
+            .OrderByDescending(p => p.StartDate)
+            .ToListAsync();
+
+        // Recently approved / rejected
+        var history = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .Where(p => p.CompanyId == companyId
+                     && (p.Status == PayrollStatus.Approved || p.Status == PayrollStatus.Paid))
+            .OrderByDescending(p => p.ProcessedAt ?? p.StartDate)
+            .Take(10)
+            .ToListAsync();
+
+        ViewBag.PendingPeriods  = pending;
+        ViewBag.HistoryPeriods  = history;
+        ViewBag.PendingCount    = pending.Count;
+        ViewBag.PendingTotal    = pending.Sum(p => p.Payrolls.Sum(pr => pr.NetPay));
+
         return View();
+    }
+
+    // POST: /Manager/ApprovePayroll
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApprovePayroll(int periodId)
+    {
+        var user = await GetManagerUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId && p.CompanyId == user.CompanyId);
+
+        if (period == null)
+            return Json(new { success = false, message = "Payroll period not found." });
+
+        if (period.Status != PayrollStatus.Processed)
+            return Json(new { success = false, message = $"Cannot approve — current status is {period.Status}." });
+
+        period.Status      = PayrollStatus.Approved;
+        period.ProcessedAt = DateTime.UtcNow;
+
+        foreach (var payroll in period.Payrolls)
+            payroll.Status = PayrollStatus.Approved;
+
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Approved Payroll", "PayrollPeriod",
+            period.Id.ToString(), null,
+            new { Period = period.PeriodName, Total = period.Payrolls.Sum(p => p.NetPay) },
+            user.CompanyId);
+
+        return Json(new { success = true, message = $"✅ {period.PeriodName} approved! Accountant can now distribute salaries." });
+    }
+
+    // POST: /Manager/RejectPayroll
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectPayroll(int periodId, string? reason)
+    {
+        var user = await GetManagerUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+            .FirstOrDefaultAsync(p => p.Id == periodId && p.CompanyId == user.CompanyId);
+
+        if (period == null)
+            return Json(new { success = false, message = "Payroll period not found." });
+
+        period.Status      = PayrollStatus.Draft;  // Send back to HR
+        period.ProcessedAt = DateTime.UtcNow;
+
+        foreach (var payroll in period.Payrolls)
+            payroll.Status = PayrollStatus.Draft;
+
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Rejected Payroll", "PayrollPeriod",
+            period.Id.ToString(), null,
+            new { Period = period.PeriodName, Reason = reason },
+            user.CompanyId);
+
+        return Json(new { success = true, message = $"Payroll rejected and sent back to HR. Reason: {reason}" });
+    }
+
+    // GET: /Manager/GetPayrollDetails?periodId=X — returns payroll breakdown for modal
+    [HttpGet]
+    public async Task<IActionResult> GetPayrollDetails(int periodId)
+    {
+        var user = await GetManagerUser();
+        if (user == null) return Unauthorized();
+
+        var payrolls = await _context.Payrolls
+            .Include(p => p.Employee).ThenInclude(e => e.Department)
+            .Where(p => p.PayrollPeriodId == periodId && p.Employee.CompanyId == user.CompanyId)
+            .OrderBy(p => p.Employee.LastName)
+            .ToListAsync();
+
+        var result = payrolls.Select(p => new
+        {
+            employeeName   = p.Employee?.FullName ?? "—",
+            department     = p.Employee?.Department?.DepartmentName ?? "—",
+            basicPay       = p.BasicPay,
+            overtimePay    = p.OvertimePay,
+            totalDeductions = p.TotalDeductions,
+            netPay         = p.NetPay
+        });
+
+        return Json(new
+        {
+            payrolls     = result,
+            totalNetPay  = payrolls.Sum(p => p.NetPay),
+            totalGross   = payrolls.Sum(p => p.GrossPay),
+            employeeCount = payrolls.Count
+        });
     }
 
     // GET: /Manager/IncidentReports  →  Views/Manager/IncidentReports.cshtml

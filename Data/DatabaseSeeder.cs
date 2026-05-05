@@ -15,6 +15,9 @@ public static class DatabaseSeeder
         // Seed Sample Company
         await SeedSampleCompanyAsync(context, userManager);
 
+        // Seed Demo Company with full payroll data
+        await SeedDemoCompanyAsync(context, userManager);
+
         // Update demo passwords to meet new 12-char requirement
         await UpdateDemoPasswordsAsync(userManager);
 
@@ -66,11 +69,20 @@ public static class DatabaseSeeder
         // Map of email → new password for demo accounts
         var demoPasswords = new Dictionary<string, string>
         {
-            ["superadmin@payrotech.com"] = "SuperAdmin@123",
-            ["admin@payrotech.com"]      = "Admin@12345678",
-            ["hr@payrotech.com"]         = "Hr@1234567890",
-            ["employee@payrotech.com"]   = "Employee@12345",
-            ["accountant@payrotech.com"] = "Accountant@1234"
+            ["superadmin@payrotech.com"]      = "SuperAdmin@123",
+            ["admin@payrotech.com"]           = "Admin@12345678",
+            ["hr@payrotech.com"]              = "Hr@1234567890",
+            ["employee@payrotech.com"]        = "Employee@12345",
+            ["accountant@payrotech.com"]      = "Accountant@1234",
+            // Demo company accounts
+            ["manager@democorp.ph"]           = "Manager@12345",
+            ["hr1@democorp.ph"]               = "HrDemo@12345",
+            ["accountant1@democorp.ph"]       = "AccDemo@12345",
+            ["emp1@democorp.ph"]              = "EmpDemo@12345",
+            ["emp2@democorp.ph"]              = "EmpDemo@12345",
+            ["emp3@democorp.ph"]              = "EmpDemo@12345",
+            ["emp4@democorp.ph"]              = "EmpDemo@12345",
+            ["emp5@democorp.ph"]              = "EmpDemo@12345",
         };
 
         foreach (var (email, newPassword) in demoPasswords)
@@ -78,11 +90,9 @@ public static class DatabaseSeeder
             var user = await userManager.FindByEmailAsync(email);
             if (user == null) continue;
 
-            // Check if password already meets requirements (try to validate)
             var valid = await userManager.CheckPasswordAsync(user, newPassword);
-            if (valid) continue; // Already updated
+            if (valid) continue;
 
-            // Reset to new password
             var token = await userManager.GeneratePasswordResetTokenAsync(user);
             await userManager.ResetPasswordAsync(user, token, newPassword);
         }
@@ -446,6 +456,324 @@ public static class DatabaseSeeder
             });
         }
 
+        await context.SaveChangesAsync();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DEMO COMPANY — "Demo Corp Philippines" with full payroll flow data
+    // Accounts: manager@democorp.ph / hr1@democorp.ph / accountant1@democorp.ph
+    //           emp1-5@democorp.ph
+    // All passwords set in UpdateDemoPasswordsAsync above
+    // ─────────────────────────────────────────────────────────────────────────
+    private static async Task SeedDemoCompanyAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+    {
+        // Skip if demo company already exists
+        if (context.Companies.Any(c => c.CompanyCode == "DEMOCORP"))
+            return;
+
+        // ── Company ──────────────────────────────────────────────────────────
+        var company = new Company
+        {
+            CompanyCode             = "DEMOCORP",
+            CompanyName             = "Demo Corp Philippines",
+            Address                 = "456 Ayala Avenue, Makati City, Metro Manila",
+            ContactNumber           = "+63 2 8123 4567",
+            Email                   = "info@democorp.ph",
+            TIN                     = "987-654-321-000",
+            SSSEmployerNumber       = "98-7654321-0",
+            PhilHealthEmployerNumber = "98765432101",
+            PagIbigEmployerNumber   = "987654321012",
+            SubscriptionStart       = DateTime.UtcNow.AddMonths(-3),
+            SubscriptionEnd         = DateTime.UtcNow.AddMonths(9),
+            IsSubscriptionActive    = true,
+            IsInitialSetupComplete  = true,
+            WorkDaysPerWeek         = 5,
+            WorkingDaysPerMonth     = 22,
+            WorkOnHolidays          = true,
+            HolidayPayRate          = 200,
+            OvertimeRatePerHour     = 1.25m,
+            DefaultDailyRate        = 700,
+            HRDailyRate             = 900,
+            AccountantDailyRate     = 950
+        };
+        context.Companies.Add(company);
+        await context.SaveChangesAsync();
+
+        // Enable all modules
+        foreach (ModuleType mt in Enum.GetValues(typeof(ModuleType)))
+            context.CompanyModules.Add(new CompanyModule { CompanyId = company.Id, ModuleType = mt, IsEnabled = true });
+        await context.SaveChangesAsync();
+
+        // ── Shifts ───────────────────────────────────────────────────────────
+        var dayShift = new Shift
+        {
+            CompanyId = company.Id, ShiftName = "Day Shift (8AM-5PM)",
+            StartTime = new TimeSpan(8, 0, 0), EndTime = new TimeSpan(17, 0, 0),
+            BreakStart = new TimeSpan(12, 0, 0), BreakEnd = new TimeSpan(13, 0, 0),
+            GracePeriodMinutes = 15, IsActive = true, CreatedAt = DateTime.UtcNow
+        };
+        context.Shifts.Add(dayShift);
+        await context.SaveChangesAsync();
+
+        // ── Departments ──────────────────────────────────────────────────────
+        var salesDept = new Department { CompanyId = company.Id, DepartmentCode = "SALES", DepartmentName = "Sales Team", IsActive = true };
+        var techDept  = new Department { CompanyId = company.Id, DepartmentCode = "TECH",  DepartmentName = "Tech Team",  IsActive = true };
+        var opsDept   = new Department { CompanyId = company.Id, DepartmentCode = "OPS",   DepartmentName = "Operations", IsActive = true };
+        context.Departments.AddRange(salesDept, techDept, opsDept);
+        await context.SaveChangesAsync();
+
+        // ── Users ────────────────────────────────────────────────────────────
+        var makeUser = (string email, string first, string last, UserRole role, int? deptId) => new ApplicationUser
+        {
+            UserName = email, Email = email, FirstName = first, LastName = last,
+            CompanyId = company.Id, DepartmentId = deptId, Role = role,
+            IsActive = true, EmailConfirmed = true,
+            MustChangePassword = false, RequiresFaceEnrollment = false, IsFaceEnrolled = true,
+            QRCodeHash = KioskController.GenerateQRCodeHash(email), QRCodeGeneratedAt = DateTime.UtcNow,
+            StaffCode = $"{(role == UserRole.HR ? "HR" : role == UserRole.Accountant ? "ACC" : role == UserRole.CompanyAdmin ? "MGR" : "EMP")}-DC-{new Random().Next(1000,9999)}",
+            DailyRate = role == UserRole.HR ? 900 : role == UserRole.Accountant ? 950 : 700
+        };
+
+        var managerUser    = makeUser("manager@democorp.ph",    "Carlo",  "Reyes",   UserRole.CompanyAdmin, null);
+        var hrUser         = makeUser("hr1@democorp.ph",        "Liza",   "Santos",  UserRole.HR,           salesDept.Id);
+        var accountantUser = makeUser("accountant1@democorp.ph","Marco",  "Dela Cruz",UserRole.Accountant,  techDept.Id);
+
+        await userManager.CreateAsync(managerUser,    "Manager@12345");
+        await userManager.CreateAsync(hrUser,         "HrDemo@12345");
+        await userManager.CreateAsync(accountantUser, "AccDemo@12345");
+
+        // ── Employees ────────────────────────────────────────────────────────
+        var today = DateTime.Today;
+        var empData = new[]
+        {
+            ("emp1@democorp.ph", "Jose",    "Bautista",  salesDept.Id, 800m,  "EMP-DC-0001"),
+            ("emp2@democorp.ph", "Maria",   "Cruz",      salesDept.Id, 750m,  "EMP-DC-0002"),
+            ("emp3@democorp.ph", "Pedro",   "Villanueva",techDept.Id,  900m,  "EMP-DC-0003"),
+            ("emp4@democorp.ph", "Ana",     "Mendoza",   techDept.Id,  850m,  "EMP-DC-0004"),
+            ("emp5@democorp.ph", "Roberto", "Garcia",    opsDept.Id,   700m,  "EMP-DC-0005"),
+        };
+
+        var empUsers = new List<ApplicationUser>();
+        foreach (var (email, first, last, deptId, rate, code) in empData)
+        {
+            var eu = makeUser(email, first, last, UserRole.Employee, deptId);
+            eu.StaffCode  = code;
+            eu.DailyRate  = rate;
+            eu.KioskPin   = code[^4..];
+            await userManager.CreateAsync(eu, "EmpDemo@12345");
+            empUsers.Add(eu);
+        }
+
+        // Employee entities (linked to ApplicationUser)
+        var employees = new List<Employee>();
+        var empDetails = new[]
+        {
+            (empUsers[0], salesDept.Id, 800m,  "EMP-DC-0001", "12-1111111-1", "11111111111", "111111111111", "111-111-111"),
+            (empUsers[1], salesDept.Id, 750m,  "EMP-DC-0002", "12-2222222-2", "22222222222", "222222222222", "222-222-222"),
+            (empUsers[2], techDept.Id,  900m,  "EMP-DC-0003", "12-3333333-3", "33333333333", "333333333333", "333-333-333"),
+            (empUsers[3], techDept.Id,  850m,  "EMP-DC-0004", "12-4444444-4", "44444444444", "444444444444", "444-444-444"),
+            (empUsers[4], opsDept.Id,   700m,  "EMP-DC-0005", "12-5555555-5", "55555555555", "555555555555", "555-555-555"),
+        };
+
+        int empNum = 1;
+        foreach (var (eu, deptId, rate, code, sss, ph, pagibig, tin) in empDetails)
+        {
+            var emp = new Employee
+            {
+                CompanyId      = company.Id,
+                UserId         = eu.Id,
+                EmployeeNumber = code,
+                FirstName      = eu.FirstName,
+                LastName       = eu.LastName,
+                Email          = eu.Email,
+                DateOfBirth    = new DateTime(1990 + empNum, empNum * 2, 10),
+                Gender         = empNum % 2 == 0 ? "Female" : "Male",
+                CivilStatus    = "Single",
+                Address        = $"{empNum * 100} Demo St, Makati City",
+                ContactNumber  = $"+63 9{empNum:D2}0 000 000{empNum}",
+                HireDate       = today.AddMonths(-6),
+                BasicSalary    = rate * 22,
+                SalaryType     = SalaryType.Daily,
+                DailyRate      = rate,
+                HourlyRate     = rate / 8,
+                SSSNumber      = sss,
+                PhilHealthNumber = ph,
+                PagIbigNumber  = pagibig,
+                TINNumber      = tin,
+                DepartmentId   = deptId,
+                ShiftId        = dayShift.Id,
+                IsActive       = true
+            };
+            employees.Add(emp);
+            empNum++;
+        }
+        context.Employees.AddRange(employees);
+        await context.SaveChangesAsync();
+
+        // Leave balances
+        foreach (var emp in employees)
+            context.LeaveBalances.Add(new LeaveBalance { EmployeeId = emp.Id, Year = today.Year, VacationLeaveBalance = 15, SickLeaveBalance = 15 });
+        await context.SaveChangesAsync();
+
+        // ── Attendance (last 22 working days) ────────────────────────────────
+        var attendanceRecords = new List<Attendance>();
+        var workDays = Enumerable.Range(1, 30)
+            .Select(d => today.AddDays(-d))
+            .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+            .Take(22).ToList();
+
+        var rng = new Random(42);
+        foreach (var emp in employees)
+        {
+            var dailyRate  = emp.DailyRate  ?? 700m;
+            var hourlyRate = emp.HourlyRate ?? (dailyRate / 8m);
+
+            foreach (var day in workDays)
+            {
+                // 90% attendance rate
+                if (rng.NextDouble() < 0.10) continue;
+
+                var lateMinutes = rng.NextDouble() < 0.15 ? rng.Next(5, 45) : 0;
+                var timeIn  = dayShift.StartTime.Add(TimeSpan.FromMinutes(lateMinutes));
+                var timeOut = dayShift.EndTime.Add(TimeSpan.FromMinutes(rng.Next(-10, 30)));
+                var otMinutes = rng.NextDouble() < 0.20 ? rng.Next(60, 180) : 0; // 1–3 hrs OT
+
+                var lateDeduct = (hourlyRate / 60m) * lateMinutes;
+                var otAmount   = (hourlyRate * 1.25m) * (otMinutes / 60m);
+
+                attendanceRecords.Add(new Attendance
+                {
+                    EmployeeId          = emp.Id,
+                    Date                = day,
+                    TimeIn              = day.Add(timeIn),
+                    TimeOut             = day.Add(timeOut),
+                    LateMinutes         = lateMinutes,
+                    OvertimeMinutes     = otMinutes,
+                    WorkedMinutes       = (int)(dayShift.EndTime - dayShift.StartTime).TotalMinutes - 60 + otMinutes,
+                    LateDeductionAmount = lateDeduct,
+                    OvertimeAmount      = otAmount,
+                    Status              = lateMinutes > 0 ? AttendanceStatus.Late : AttendanceStatus.Present,
+                    IsApproved          = true
+                });
+            }
+        }
+        context.Attendances.AddRange(attendanceRecords);
+        await context.SaveChangesAsync();
+
+        // ── Payroll Periods ──────────────────────────────────────────────────
+        // Period 1: Last month (Approved — ready for accountant to distribute)
+        var lastMonthStart = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
+        var lastMonthEnd   = lastMonthStart.AddMonths(1).AddDays(-1);
+
+        var period1 = new PayrollPeriod
+        {
+            CompanyId  = company.Id,
+            PeriodName = $"{lastMonthStart:MMMM yyyy} Payroll",
+            StartDate  = lastMonthStart,
+            EndDate    = lastMonthEnd,
+            PayDate    = lastMonthEnd.AddDays(5),
+            Status     = PayrollStatus.Approved
+        };
+
+        // Period 2: Two months ago (Paid — historical)
+        var twoMonthsStart = lastMonthStart.AddMonths(-1);
+        var twoMonthsEnd   = twoMonthsStart.AddMonths(1).AddDays(-1);
+
+        var period2 = new PayrollPeriod
+        {
+            CompanyId  = company.Id,
+            PeriodName = $"{twoMonthsStart:MMMM yyyy} Payroll",
+            StartDate  = twoMonthsStart,
+            EndDate    = twoMonthsEnd,
+            PayDate    = twoMonthsEnd.AddDays(5),
+            Status     = PayrollStatus.Paid
+        };
+
+        context.PayrollPeriods.AddRange(period1, period2);
+        await context.SaveChangesAsync();
+
+        // ── Payroll Records ──────────────────────────────────────────────────
+        static (decimal sss, decimal philhealth, decimal pagibig, decimal tax) ComputeDeductions(decimal gross)
+        {
+            var sss        = Math.Min(gross * 0.045m, 900m);
+            var philhealth = Math.Min(gross * 0.025m, 625m);
+            var pagibig    = Math.Min(gross * 0.02m,  200m);
+            var taxable    = gross - sss - philhealth - pagibig;
+            var tax        = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
+            return (sss, philhealth, pagibig, tax);
+        }
+
+        var payrollsToAdd = new List<Payroll>();
+
+        foreach (var emp in employees)
+        {
+            var dailyRateP  = emp.DailyRate  ?? 700m;
+            var hourlyRateP = emp.HourlyRate ?? (dailyRateP / 8m);
+
+            // Period 1 — Approved (pending distribution by accountant)
+            var daysWorked1 = (decimal)workDays.Count(d => d >= lastMonthStart && d <= lastMonthEnd) * 0.9m;
+            var otMinutes1  = attendanceRecords
+                .Where(a => a.EmployeeId == emp.Id && a.Date >= lastMonthStart && a.Date <= lastMonthEnd)
+                .Sum(a => a.OvertimeMinutes);
+            var lateMin1    = attendanceRecords
+                .Where(a => a.EmployeeId == emp.Id && a.Date >= lastMonthStart && a.Date <= lastMonthEnd)
+                .Sum(a => a.LateMinutes);
+
+            var otHours1    = otMinutes1 / 60m;
+            var basicPay1   = dailyRateP * daysWorked1;
+            var otPay1      = hourlyRateP * otHours1 * 1.25m;
+            var lateDeduct1 = (hourlyRateP / 60m) * lateMin1;
+            var gross1      = basicPay1 + otPay1;
+            var (sss1, ph1, pi1, tax1) = ComputeDeductions(gross1);
+            var totalDeduct1 = lateDeduct1 + sss1 + ph1 + pi1 + tax1;
+
+            payrollsToAdd.Add(new Payroll
+            {
+                EmployeeId             = emp.Id,
+                PayrollPeriodId        = period1.Id,
+                BasicPay               = basicPay1,
+                OvertimePay            = otPay1,
+                GrossPay               = gross1,
+                LateDeduction          = lateDeduct1,
+                SSSContribution        = sss1,
+                PhilHealthContribution = ph1,
+                PagIbigContribution    = pi1,
+                WithholdingTax         = tax1,
+                TotalDeductions        = totalDeduct1,
+                NetPay                 = gross1 - totalDeduct1,
+                DaysWorked             = daysWorked1,
+                OvertimeHours          = otHours1,
+                LateHours              = lateMin1 / 60m,
+                Status                 = PayrollStatus.Approved
+            });
+
+            // Period 2 — Paid (historical)
+            var daysWorked2 = 20m;
+            var basicPay2   = dailyRateP * daysWorked2;
+            var gross2      = basicPay2;
+            var (sss2, ph2, pi2, tax2) = ComputeDeductions(gross2);
+            var totalDeduct2 = sss2 + ph2 + pi2 + tax2;
+
+            payrollsToAdd.Add(new Payroll
+            {
+                EmployeeId             = emp.Id,
+                PayrollPeriodId        = period2.Id,
+                BasicPay               = basicPay2,
+                OvertimePay            = 0,
+                GrossPay               = gross2,
+                SSSContribution        = sss2,
+                PhilHealthContribution = ph2,
+                PagIbigContribution    = pi2,
+                WithholdingTax         = tax2,
+                TotalDeductions        = totalDeduct2,
+                NetPay                 = gross2 - totalDeduct2,
+                DaysWorked             = daysWorked2,
+                Status                 = PayrollStatus.Paid,
+                ProcessedAt          = twoMonthsEnd.AddDays(5)
+            });
+        }
+
+        context.Payrolls.AddRange(payrollsToAdd);
         await context.SaveChangesAsync();
     }
 }
