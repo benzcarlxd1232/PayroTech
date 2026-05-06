@@ -57,12 +57,20 @@ builder.Services.AddHttpClient("PayMongo");
 
 // Add Custom Services
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout        = TimeSpan.FromMinutes(15);
+    options.Cookie.HttpOnly    = true;
+    options.Cookie.IsEssential = true;
+});
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IQRCodeService, QRCodeService>();
 builder.Services.AddScoped<IPasswordGeneratorService, PasswordGeneratorService>();
 builder.Services.AddScoped<IFirstLoginSetupService, FirstLoginSetupService>();
+builder.Services.AddScoped<ITwoFactorService, TwoFactorService>();
+builder.Services.AddScoped<ILoginSecurityService, LoginSecurityService>();
 
 // Vendor-specific services
 builder.Services.AddScoped<IVendorAuditService, VendorAuditService>();
@@ -117,6 +125,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 
 // Add no-cache headers for authenticated pages to prevent back button access after logout
 app.Use(async (context, next) =>

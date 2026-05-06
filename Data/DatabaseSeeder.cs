@@ -70,6 +70,8 @@ public static class DatabaseSeeder
         var demoPasswords = new Dictionary<string, string>
         {
             ["superadmin@payrotech.com"]      = "SuperAdmin@123",
+            ["superadmin2@payrotech.com"]     = "SuperAdmin2@123",
+            ["superadmin3@payrotech.com"]     = "SuperAdmin3@123",
             ["admin@payrotech.com"]           = "Admin@12345678",
             ["hr@payrotech.com"]              = "Hr@1234567890",
             ["employee@payrotech.com"]        = "Employee@12345",
@@ -100,25 +102,37 @@ public static class DatabaseSeeder
 
     private static async Task SeedSuperAdminAsync(UserManager<ApplicationUser> userManager)
     {
-        var superAdminEmail = "superadmin@payrotech.com";
+        // Primary SuperAdmin
+        await CreateSuperAdminIfNotExists(userManager,
+            "superadmin@payrotech.com", "Super", "Admin", "SuperAdmin@123");
 
-        if (await userManager.FindByEmailAsync(superAdminEmail) != null)
-            return;
+        // Backup SuperAdmin accounts
+        await CreateSuperAdminIfNotExists(userManager,
+            "superadmin2@payrotech.com", "Super", "Admin2", "SuperAdmin2@123");
 
-        var superAdmin = new ApplicationUser
+        await CreateSuperAdminIfNotExists(userManager,
+            "superadmin3@payrotech.com", "Super", "Admin3", "SuperAdmin3@123");
+    }
+
+    private static async Task CreateSuperAdminIfNotExists(
+        UserManager<ApplicationUser> userManager,
+        string email, string firstName, string lastName, string password)
+    {
+        if (await userManager.FindByEmailAsync(email) != null) return;
+
+        var admin = new ApplicationUser
         {
-            UserName = superAdminEmail,
-            Email = superAdminEmail,
-            FirstName = "Super",
-            LastName = "Admin",
-            Role = UserRole.ErpSuperAdmin,
-            IsActive = true,
-            EmailConfirmed = true,
-            MustChangePassword = false,  // Demo account - no password change required
-            RequiresFaceEnrollment = false  // SuperAdmin doesn't use kiosk
+            UserName               = email,
+            Email                  = email,
+            FirstName              = firstName,
+            LastName               = lastName,
+            Role                   = UserRole.ErpSuperAdmin,
+            IsActive               = true,
+            EmailConfirmed         = true,
+            MustChangePassword     = false,
+            RequiresFaceEnrollment = false
         };
-
-        await userManager.CreateAsync(superAdmin, "SuperAdmin@123");
+        await userManager.CreateAsync(admin, password);
     }
 
     private static async Task SeedSampleCompanyAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)

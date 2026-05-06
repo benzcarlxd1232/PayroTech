@@ -31,6 +31,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<IncidentReport> IncidentReports { get; set; } = null!;
     public DbSet<LoginAttempt> LoginAttempts { get; set; } = null!;
     public DbSet<IDRequest> IDRequests { get; set; } = null!;
+    public DbSet<TwoFactorCode> TwoFactorCodes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -324,6 +325,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(vl => new { vl.VendorId, vl.CreatedAt });
             entity.HasIndex(vl => vl.Action);
             entity.HasIndex(vl => vl.CreatedAt);
+        });
+
+        // TwoFactorCode configuration
+        builder.Entity<TwoFactorCode>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(t => t.Code).HasMaxLength(10).IsRequired();
+            entity.HasIndex(t => new { t.UserId, t.IsUsed });
+
+            entity.HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
