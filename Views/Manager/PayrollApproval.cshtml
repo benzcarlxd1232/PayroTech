@@ -18,8 +18,18 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1">Payroll Approval</h4>
-        <p class="text-muted mb-0">Review and approve payroll submissions from HR</p>
+        <h4 class="mb-1">Payroll Budget Approval</h4>
+        <p class="text-muted mb-0">Review attendance reports and approve payroll budgets per department</p>
+    </div>
+</div>
+
+<!-- Role info banner -->
+<div class="alert alert-primary d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-shield-check fs-4"></i>
+    <div>
+        <strong>Manager View</strong> — You can see each employee's salary breakdown and total budget per department.
+        HR submitted attendance data only — salary calculations are done here.
+        The Accountant will only see the <strong>total budget amount</strong> to distribute.
     </div>
 </div>
 
@@ -41,8 +51,8 @@
     </div>
     <div class="col-md-4">
         <div class="pt-stats-card">
-            <div class="pt-stats-value">₱@pendingTotal.ToString("N0")</div>
-            <div class="pt-stats-label">Pending Amount</div>
+            <div class="pt-stats-value" style="font-size:1.2rem;">₱@pendingTotal.ToString("N0")</div>
+            <div class="pt-stats-label">Pending Budget</div>
             <i class="bi bi-cash-stack pt-stats-icon"></i>
         </div>
     </div>
@@ -52,63 +62,100 @@
 <div class="pt-card mb-4">
     <div class="pt-card-header">
         <i class="bi bi-hourglass-split text-warning me-2"></i>
-        Pending Approvals
+        Attendance Reports Pending Budget Approval
         @if (pendingCount > 0)
         {
             <span class="badge bg-warning text-dark ms-2">@pendingCount</span>
         }
     </div>
+
     @if (!pendingPeriods.Any())
     {
         <div class="pt-card-body text-center py-5">
             <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
-            <h6>No pending payrolls</h6>
-            <p class="text-muted small">All payroll submissions have been reviewed.</p>
+            <h6>No pending attendance reports</h6>
+            <p class="text-muted small">HR will submit attendance reports here for your budget approval.</p>
         </div>
     }
     else
     {
         foreach (var period in pendingPeriods)
         {
-            var total      = period.Payrolls.Sum(p => p.NetPay);
-            var empCount   = period.Payrolls.Select(p => p.EmployeeId).Distinct().Count();
-            var deptNames  = period.Payrolls
-                .Select(p => p.Employee?.Department?.DepartmentName)
-                .Where(d => d != null).Distinct().Take(2).ToList();
-            var deptLabel  = deptNames.Any() ? string.Join(", ", deptNames) : "All Teams";
+            var payrolls    = period.Payrolls.ToList();
+            var totalNet    = payrolls.Sum(p => p.NetPay);
+            var totalGross  = payrolls.Sum(p => p.GrossPay);
+            var empCount    = payrolls.Select(p => p.EmployeeId).Distinct().Count();
+
+            // Group by department for budget breakdown
+            var byDept = payrolls
+                .GroupBy(p => p.Employee?.Department?.DepartmentName ?? "General")
+                .Select(g => new {
+                    Dept     = g.Key,
+                    EmpCount = g.Count(),
+                    Budget   = g.Sum(p => p.NetPay),
+                    Gross    = g.Sum(p => p.GrossPay)
+                }).ToList();
 
             <div class="p-4 border-bottom">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
+                <div class="row align-items-start">
+                    <div class="col-md-5">
                         <h5 class="mb-1">@period.PeriodName</h5>
-                        <div class="d-flex gap-3 text-muted small flex-wrap">
-                            <span><i class="bi bi-people me-1"></i>@deptLabel</span>
+                        <div class="d-flex gap-3 text-muted small flex-wrap mb-3">
                             <span><i class="bi bi-calendar me-1"></i>@period.StartDate.ToString("MMM dd") – @period.EndDate.ToString("MMM dd, yyyy")</span>
-                            <span><i class="bi bi-clock me-1"></i>Pay date: @period.PayDate.ToString("MMM dd, yyyy")</span>
+                            <span><i class="bi bi-people me-1"></i>@empCount employees</span>
+                        </div>
+
+                        <!-- Department Budget Breakdown — Manager sees salary details -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0 small">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Department</th>
+                                        <th class="text-center">Staff</th>
+                                        <th class="text-end">Gross Pay</th>
+                                        <th class="text-end fw-bold text-success">Net Budget</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var dept in byDept)
+                                    {
+                                        <tr>
+                                            <td>@dept.Dept</td>
+                                            <td class="text-center">@dept.EmpCount</td>
+                                            <td class="text-end text-muted">₱@dept.Gross.ToString("N2")</td>
+                                            <td class="text-end fw-bold text-success">₱@dept.Budget.ToString("N2")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light fw-bold">
+                                    <tr>
+                                        <td colspan="2">TOTAL (@empCount employees)</td>
+                                        <td class="text-end">₱@totalGross.ToString("N2")</td>
+                                        <td class="text-end text-success">₱@totalNet.ToString("N2")</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
-                    <div class="col-md-3 text-center">
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="text-muted small">Employees</div>
-                                <div class="fw-bold">@empCount</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="text-muted small">Net Total</div>
-                                <div class="fw-bold text-primary">₱@total.ToString("N0")</div>
-                            </div>
+
+                    <div class="col-md-4 text-center">
+                        <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #86efac;">
+                            <div class="text-muted small mb-1">Total Budget to Approve</div>
+                            <h3 class="text-success fw-bold mb-0">₱@totalNet.ToString("N2")</h3>
+                            <div class="text-muted small mt-1">Net pay for all @empCount employees</div>
                         </div>
                     </div>
+
                     <div class="col-md-3 text-end">
-                        <span class="pt-badge pt-badge-warning mb-2 d-inline-block">Pending Review</span>
+                        <span class="pt-badge pt-badge-warning mb-3 d-inline-block">Pending Review</span>
                         <div class="d-flex gap-2 justify-content-end flex-wrap">
                             <button class="pt-btn pt-btn-ghost pt-btn-sm"
-                                    onclick="viewPayroll(@period.Id, '@period.PeriodName')">
-                                <i class="bi bi-eye me-1"></i>View
+                                    onclick="viewDetails(@period.Id, '@period.PeriodName')">
+                                <i class="bi bi-eye me-1"></i>Full Detail
                             </button>
                             <button class="pt-btn pt-btn-success pt-btn-sm"
-                                    onclick="approvePayroll(@period.Id, '@period.PeriodName', @total)">
-                                <i class="bi bi-check-lg me-1"></i>Approve
+                                    onclick="approvePayroll(@period.Id, '@period.PeriodName', @totalNet)">
+                                <i class="bi bi-check-lg me-1"></i>Approve Budget
                             </button>
                             <button class="pt-btn pt-btn-danger pt-btn-sm"
                                     onclick="rejectPayroll(@period.Id, '@period.PeriodName')">
@@ -135,7 +182,7 @@
                     <tr>
                         <th>Period</th>
                         <th class="text-center">Employees</th>
-                        <th class="text-end">Net Total</th>
+                        <th class="text-end">Net Budget</th>
                         <th class="text-center">Approved</th>
                         <th class="text-center">Status</th>
                     </tr>
@@ -149,7 +196,7 @@
                             <td class="text-end fw-semibold">₱@period.Payrolls.Sum(p => p.NetPay).ToString("N2")</td>
                             <td class="text-center text-muted small">@(period.ProcessedAt?.ToString("MMM dd, yyyy") ?? "—")</td>
                             <td class="text-center">
-                                <span class="pt-badge @(period.Status == PayrollStatus.Paid ? "pt-badge-success" : "pt-badge-primary")">
+                                <span class="pt-badge @(period.Status == PayroTech.Models.Enums.PayrollStatus.Paid ? "pt-badge-success" : "pt-badge-primary")">
                                     @period.Status
                                 </span>
                             </td>
@@ -161,21 +208,21 @@
     </div>
 }
 
-<!-- View Detail Modal -->
-<div class="modal fade" id="viewPayrollModal" tabindex="-1">
+<!-- Full Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2"></i><span id="modalPeriodName"></span></h5>
+                <h5 class="modal-title"><i class="bi bi-table me-2"></i><span id="detailTitle"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modalPayrollBody">
+            <div class="modal-body" id="detailBody">
                 <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-success" id="modalApproveBtn">
-                    <i class="bi bi-check-lg me-1"></i>Approve
+                    <i class="bi bi-check-lg me-1"></i>Approve Budget
                 </button>
             </div>
         </div>
@@ -187,19 +234,17 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-danger"><i class="bi bi-x-circle me-2"></i>Reject Payroll</h5>
+                <h5 class="modal-title text-danger"><i class="bi bi-x-circle me-2"></i>Reject Attendance Report</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>Rejecting <strong id="rejectPeriodName"></strong> will send it back to HR for correction.</p>
-                <label class="form-label">Reason for rejection <span class="text-danger">*</span></label>
-                <textarea class="form-control" id="rejectReason" rows="3" placeholder="Explain what needs to be corrected..."></textarea>
+                <label class="form-label">Reason <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="rejectReason" rows="3" placeholder="What needs to be corrected?"></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmRejectBtn">
-                    <i class="bi bi-x-lg me-1"></i>Confirm Reject
-                </button>
+                <button type="button" class="btn btn-danger" id="confirmRejectBtn">Confirm Reject</button>
             </div>
         </div>
     </div>
@@ -207,28 +252,18 @@
 
 @section Scripts {
 <script>
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value
-               || '@Html.AntiForgeryToken()'.match(/value="([^"]+)"/)?.[1];
-
-    // Inline antiforgery for fetch calls
-    const csrfToken = '@Html.AntiForgeryToken()';
+    function getToken() { return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''; }
+    function showToast(msg, type) { try { PT.Toast[type](msg); } catch { alert(msg); } }
 
     async function approvePayroll(periodId, periodName, total) {
-        if (!confirm(`Approve "${periodName}"?\nTotal Net Pay: ₱${Number(total).toLocaleString('en-PH', {minimumFractionDigits:2})}\n\nThis will allow the Accountant to distribute salaries.`)) return;
-
+        if (!confirm(`Approve budget of ₱${Number(total).toLocaleString('en-PH',{minimumFractionDigits:2})} for "${periodName}"?\n\nThis will send the budget to the Accountant for distribution.`)) return;
         const fd = new FormData();
         fd.append('periodId', periodId);
         fd.append('__RequestVerificationToken', getToken());
-
-        const r = await fetch('/Manager/ApprovePayroll', { method: 'POST', body: fd });
-        const data = await r.json();
-
-        if (data.success) {
-            showToast(data.message, 'success');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            showToast(data.message, 'error');
-        }
+        const r = await fetch('/Manager/ApprovePayroll', { method:'POST', body:fd });
+        const d = await r.json();
+        if (d.success) { showToast(d.message, 'success'); setTimeout(() => location.reload(), 1500); }
+        else showToast(d.message, 'error');
     }
 
     let currentRejectId = null;
@@ -241,83 +276,59 @@
 
     document.getElementById('confirmRejectBtn').addEventListener('click', async () => {
         const reason = document.getElementById('rejectReason').value.trim();
-        if (!reason) { alert('Please provide a reason for rejection.'); return; }
-
+        if (!reason) { alert('Please provide a reason.'); return; }
         const fd = new FormData();
         fd.append('periodId', currentRejectId);
         fd.append('reason', reason);
         fd.append('__RequestVerificationToken', getToken());
-
-        const r = await fetch('/Manager/RejectPayroll', { method: 'POST', body: fd });
-        const data = await r.json();
-
+        const r = await fetch('/Manager/RejectPayroll', { method:'POST', body:fd });
+        const d = await r.json();
         bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
-        if (data.success) {
-            showToast(data.message, 'warning');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            showToast(data.message, 'error');
-        }
+        if (d.success) { showToast(d.message, 'warning'); setTimeout(() => location.reload(), 1500); }
+        else showToast(d.message, 'error');
     });
 
-    async function viewPayroll(periodId, periodName) {
-        document.getElementById('modalPeriodName').textContent = periodName;
-        document.getElementById('modalPayrollBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    async function viewDetails(periodId, periodName) {
+        document.getElementById('detailTitle').textContent = periodName;
+        document.getElementById('detailBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
         document.getElementById('modalApproveBtn').onclick = () => {
-            bootstrap.Modal.getInstance(document.getElementById('viewPayrollModal')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
             approvePayroll(periodId, periodName, 0);
         };
-        new bootstrap.Modal(document.getElementById('viewPayrollModal')).show();
-
+        new bootstrap.Modal(document.getElementById('detailModal')).show();
         const r = await fetch(`/Manager/GetPayrollDetails?periodId=${periodId}`);
-        const data = await r.json();
-
-        if (data.payrolls) {
-            let rows = data.payrolls.map(p => `
+        const d = await r.json();
+        if (d.payrolls) {
+            const rows = d.payrolls.map(p => `
                 <tr>
                     <td>${p.employeeName}</td>
                     <td>${p.department}</td>
+                    <td class="text-center">${p.daysWorked}</td>
                     <td class="text-end">₱${Number(p.basicPay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
                     <td class="text-end text-success">₱${Number(p.overtimePay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
                     <td class="text-end text-danger">-₱${Number(p.totalDeductions).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
                     <td class="text-end fw-bold text-primary">₱${Number(p.netPay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
                 </tr>`).join('');
-
-            document.getElementById('modalPayrollBody').innerHTML = `
+            document.getElementById('detailBody').innerHTML = `
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">
                         <thead class="table-light">
-                            <tr>
-                                <th>Employee</th><th>Dept</th>
-                                <th class="text-end">Basic</th>
-                                <th class="text-end">OT</th>
-                                <th class="text-end">Deductions</th>
-                                <th class="text-end">Net Pay</th>
-                            </tr>
+                            <tr><th>Employee</th><th>Dept</th><th class="text-center">Days</th>
+                            <th class="text-end">Basic</th><th class="text-end">OT</th>
+                            <th class="text-end">Deductions</th><th class="text-end">Net Pay</th></tr>
                         </thead>
                         <tbody>${rows}</tbody>
                         <tfoot class="table-light fw-bold">
-                            <tr>
-                                <td colspan="5">TOTAL</td>
-                                <td class="text-end text-primary">₱${Number(data.totalNetPay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
-                            </tr>
+                            <tr><td colspan="6">TOTAL</td>
+                            <td class="text-end text-primary">₱${Number(d.totalNetPay).toLocaleString('en-PH',{minimumFractionDigits:2})}</td></tr>
                         </tfoot>
                     </table>
                 </div>`;
             document.getElementById('modalApproveBtn').onclick = () => {
-                bootstrap.Modal.getInstance(document.getElementById('viewPayrollModal')).hide();
-                approvePayroll(periodId, periodName, data.totalNetPay);
+                bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();
+                approvePayroll(periodId, periodName, d.totalNetPay);
             };
         }
-    }
-
-    function getToken() {
-        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-    }
-
-    function showToast(msg, type) {
-        try { PT.Toast[type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'error'](msg); }
-        catch { alert(msg); }
     }
 </script>
 }

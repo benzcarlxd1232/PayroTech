@@ -1,0 +1,225 @@
+@{
+    ViewData["Title"] = "Submit Attendance Report";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+
+    var periodStart      = (DateTime)(ViewBag.PeriodStart ?? DateTime.Today);
+    var periodEnd        = (DateTime)(ViewBag.PeriodEnd   ?? DateTime.Today);
+    var totalEmployees   = (int)(ViewBag.TotalEmployees   ?? 0);
+    var alreadySubmitted = (bool)(ViewBag.AlreadySubmitted ?? false);
+    var existingStatus   = ViewBag.ExistingStatus as string;
+    var periodLabel      = ViewBag.PeriodLabel as string ?? periodStart.ToString("MMMM yyyy");
+
+    var attendanceItems = ViewBag.AttendanceItems as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+@Html.AntiForgeryToken()
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Submit Attendance Report</h4>
+        <p class="text-muted mb-0">Review and submit attendance data for <strong>@periodLabel</strong></p>
+    </div>
+    <a href="/HR/Attendance" class="pt-btn pt-btn-ghost">
+        <i class="bi bi-arrow-left me-2"></i>Back to Attendance
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        <i class="bi bi-check-circle me-2"></i>@Html.Raw(TempData["Success"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (alreadySubmitted)
+{
+    <div class="alert alert-success mb-4">
+        <i class="bi bi-check-circle me-2"></i>
+        Attendance report for <strong>@periodLabel</strong> has been submitted (Status: <strong>@existingStatus</strong>).
+        The Manager is now reviewing the budget.
+    </div>
+}
+
+@if (totalEmployees == 0)
+{
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>No employees found</strong> in your team for this period. Make sure employees are assigned to your team and have attendance records.
+    </div>
+}
+
+<!-- Period Header -->
+<div class="pt-card mb-4" style="background:linear-gradient(135deg,#0891b2,#22d3ee);color:white;">
+    <div class="pt-card-body">
+        <div class="row align-items-center">
+            <div class="col-md-5">
+                <h5 class="text-white mb-1">Period: @periodLabel</h5>
+                <p class="mb-0 opacity-75">@periodStart.ToString("MMM dd") – @periodEnd.ToString("MMM dd, yyyy")</p>
+            </div>
+            <div class="col-md-4 text-center border-start border-white border-opacity-25">
+                <div class="opacity-75 small">Total Employees</div>
+                <h4 class="text-white mb-0">@totalEmployees</h4>
+            </div>
+            <div class="col-md-3 text-center border-start border-white border-opacity-25">
+                <div class="opacity-75 small">Report Type</div>
+                <h5 class="text-white mb-0">Attendance Only</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="pt-stats-card success">
+            <div class="pt-stats-value">@((int)(ViewBag.TotalDaysWorked ?? 0))</div>
+            <div class="pt-stats-label">Total Days Worked</div>
+            <i class="bi bi-calendar-check pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card warning">
+            <div class="pt-stats-value">@((int)(ViewBag.TotalOtHours ?? 0))</div>
+            <div class="pt-stats-label">Total OT Hours</div>
+            <i class="bi bi-clock-history pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card danger">
+            <div class="pt-stats-value">@((int)(ViewBag.TotalAbsentDays ?? 0))</div>
+            <div class="pt-stats-label">Total Absent Days</div>
+            <i class="bi bi-x-circle pt-stats-icon"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="pt-stats-card">
+            <div class="pt-stats-value">@((int)(ViewBag.TotalLateMinutes ?? 0))</div>
+            <div class="pt-stats-label">Total Late Minutes</div>
+            <i class="bi bi-clock pt-stats-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Table — NO SALARY COLUMNS -->
+<div class="pt-card mb-4">
+    <div class="pt-card-header">
+        <i class="bi bi-table me-2"></i>Attendance Summary — @periodLabel
+        <span class="badge bg-info ms-2 small">Attendance data only — salary is managed by Manager</span>
+    </div>
+    @if (!attendanceItems.Any())
+    {
+        <div class="pt-card-body text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+            <h6>No attendance data yet</h6>
+            <p class="text-muted small">Employees need to clock in via the kiosk for attendance records to appear.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th class="text-center">Days Present</th>
+                        <th class="text-center">Days Absent</th>
+                        <th class="text-center">OT Hours</th>
+                        <th class="text-center">Late (min)</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in attendanceItems)
+                    {
+                        var hasIssue = (int)item.LateMinutes > 0 || (decimal)item.AbsentDays > 0;
+                        <tr class="@(hasIssue ? "table-warning" : "")">
+                            <td class="fw-medium">@item.FullName</td>
+                            <td class="text-muted small">@item.Department</td>
+                            <td class="text-center fw-semibold text-success">@item.DaysWorked</td>
+                            <td class="text-center @((decimal)item.AbsentDays > 0 ? "text-danger fw-semibold" : "text-muted")">@item.AbsentDays</td>
+                            <td class="text-center @((decimal)item.OtHours > 0 ? "text-warning fw-semibold" : "text-muted")">@item.OtHours</td>
+                            <td class="text-center @((int)item.LateMinutes > 0 ? "text-danger" : "text-muted")">@item.LateMinutes</td>
+                            <td class="text-center">
+                                @if ((int)item.LateMinutes > 0 || (decimal)item.AbsentDays > 0)
+                                {
+                                    <span class="pt-badge pt-badge-warning">Has Issues</span>
+                                }
+                                else
+                                {
+                                    <span class="pt-badge pt-badge-success">Complete</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="2">TOTAL (@totalEmployees employees)</td>
+                        <td class="text-center text-success">@((int)(ViewBag.TotalDaysWorked ?? 0))</td>
+                        <td class="text-center text-danger">@((int)(ViewBag.TotalAbsentDays ?? 0))</td>
+                        <td class="text-center text-warning">@((int)(ViewBag.TotalOtHours ?? 0))</td>
+                        <td class="text-center text-danger">@((int)(ViewBag.TotalLateMinutes ?? 0))</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Submit Form -->
+@if (!alreadySubmitted && totalEmployees > 0)
+{
+    <div class="pt-card">
+        <div class="pt-card-header"><i class="bi bi-send me-2"></i>Submit Attendance Report to Manager</div>
+        <div class="pt-card-body">
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>What happens next:</strong> The Manager will review this attendance report and calculate the payroll budget for each department. You will not see salary amounts — that is handled by the Manager and Accountant.
+            </div>
+            <form asp-action="SubmitAttendanceReport" asp-controller="HR" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-4">
+                    <label class="form-label">Notes for Manager (Optional)</label>
+                    <textarea class="form-control" name="notes" rows="3"
+                              placeholder="e.g. 3 employees were on approved leave, 2 had overtime approved..."></textarea>
+                </div>
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="confirmCheck">
+                    <label class="form-check-label" for="confirmCheck">
+                        I confirm that all attendance records for <strong>@periodLabel</strong> are accurate and complete.
+                    </label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="pt-btn pt-btn-primary" id="submitBtn" disabled>
+                        <i class="bi bi-send me-2"></i>Submit Attendance Report
+                    </button>
+                    <a href="/HR/Attendance" class="pt-btn pt-btn-ghost">
+                        <i class="bi bi-x me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+else if (alreadySubmitted)
+{
+    <div class="pt-card">
+        <div class="pt-card-body text-center py-4">
+            <i class="bi bi-check-circle-fill text-success fs-1 mb-3 d-block"></i>
+            <h5>Attendance Report Submitted</h5>
+            <p class="text-muted">The Manager is now reviewing the attendance data and calculating the payroll budget.</p>
+            <a href="/HR/Attendance" class="pt-btn pt-btn-primary">Back to Attendance</a>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    document.getElementById('confirmCheck')?.addEventListener('change', function () {
+        document.getElementById('submitBtn').disabled = !this.checked;
+    });
+</script>
+}

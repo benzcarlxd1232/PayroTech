@@ -51,7 +51,7 @@
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="pt-stats-card pt-stagger-1">
-            <div class="pt-stats-value">@Model. Teams</div>
+            <div class="pt-stats-value">@((int)Model.TotalTeams)</div>
             <div class="pt-stats-label">Total Teams</div>
             <i class="bi bi-people pt-stats-icon"></i>
             <div class="pt-trend up mt-2">
@@ -61,7 +61,7 @@
     </div>
     <div class="col-md-3">
         <div class="pt-stats-card success pt-stagger-2">
-            <div class="pt-stats-value">@Model.TotalStaff</div>
+            <div class="pt-stats-value">@((int)Model.TotalStaff)</div>
             <div class="pt-stats-label">Total Staff</div>
             <i class="bi bi-person-badge pt-stats-icon"></i>
             <div class="pt-trend mt-2">
@@ -81,7 +81,7 @@
     </div>
     <div class="col-md-3">
         <div class="pt-stats-card pt-stagger-4">
-            <div class="pt-stats-value">@Model.PendingApprovals</div>
+            <div class="pt-stats-value">@((int)Model.PendingApprovals)</div>
             <div class="pt-stats-label">Pending Approvals</div>
             <i class="bi bi-clock-history pt-stats-icon"></i>
             <div class="pt-trend warning mt-2">

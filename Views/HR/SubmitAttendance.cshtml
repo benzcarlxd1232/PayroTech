@@ -1,0 +1,176 @@
+@{
+    ViewData["Title"] = "Submit Attendance Report";
+    Layout = "~/Views/Shared/_HRLayout.cshtml";
+
+    var periodStart      = (DateTime)(ViewBag.PeriodStart ?? DateTime.Today);
+    var periodEnd        = (DateTime)(ViewBag.PeriodEnd   ?? DateTime.Today);
+    var totalEmployees   = (int)(ViewBag.TotalEmployees   ?? 0);
+    var alreadySubmitted = (bool)(ViewBag.AlreadySubmitted ?? false);
+    var existingStatus   = ViewBag.ExistingStatus as string;
+    var attendanceItems  = ViewBag.AttendanceItems as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Submit Attendance Report</h4>
+        <p class="text-muted mb-0">Send attendance data to Manager for payroll budget approval</p>
+    </div>
+    <a href="/HR/Attendance" class="pt-btn pt-btn-ghost">
+        <i class="bi bi-arrow-left me-2"></i>Back to Attendance
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        <i class="bi bi-check-circle me-2"></i>@Html.Raw(TempData["Success"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (alreadySubmitted)
+{
+    <div class="alert alert-success mb-4">
+        <i class="bi bi-check-circle me-2"></i>
+        Attendance report for <strong>@periodStart.ToString("MMMM yyyy")</strong> has been submitted (Status: <strong>@existingStatus</strong>).
+        The Manager is reviewing the budget.
+    </div>
+}
+
+@if (totalEmployees == 0)
+{
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>No attendance records found</strong> for this period. Make sure employees have clocked in via the kiosk.
+    </div>
+}
+
+<!-- Period Header -->
+<div class="pt-card mb-4" style="background:linear-gradient(135deg,#0891b2,#0e7490);color:white;">
+    <div class="pt-card-body">
+        <div class="row align-items-center">
+            <div class="col-md-5">
+                <h5 class="text-white mb-1">Period: @periodStart.ToString("MMMM yyyy")</h5>
+                <p class="mb-0 opacity-75">@periodStart.ToString("MMM dd") – @periodEnd.ToString("MMM dd, yyyy")</p>
+            </div>
+            <div class="col-md-3 text-center border-start border-white border-opacity-25">
+                <div class="opacity-75 small">Total Employees</div>
+                <h4 class="text-white mb-0">@totalEmployees</h4>
+            </div>
+            <div class="col-md-4 text-center border-start border-white border-opacity-25">
+                <div class="opacity-75 small">Report Type</div>
+                <h5 class="text-white mb-0">Attendance Only</h5>
+                <small class="opacity-75">No salary data included</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Table — NO SALARY COLUMNS -->
+<div class="pt-card mb-4">
+    <div class="pt-card-header">
+        <i class="bi bi-calendar-check me-2"></i>Attendance Summary — @periodStart.ToString("MMMM yyyy")
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle small">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Employee</th>
+                    <th>Department</th>
+                    <th class="text-center">Days Present</th>
+                    <th class="text-center">Days Absent</th>
+                    <th class="text-center">OT Hours</th>
+                    <th class="text-center">Late (hrs)</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in attendanceItems)
+                {
+                    var hasIssue = (int)item.LateMinutes > 0 || (decimal)item.AbsentDays > 0;
+                    <tr class="@(hasIssue ? "table-warning" : "")">
+                        <td class="ps-3 fw-medium">@item.FullName</td>
+                        <td class="text-muted">@item.Department</td>
+                        <td class="text-center fw-semibold text-success">@item.DaysPresent</td>
+                        <td class="text-center @((decimal)item.AbsentDays > 0 ? "text-danger fw-semibold" : "text-muted")">@item.AbsentDays</td>
+                        <td class="text-center @((decimal)item.OtHours > 0 ? "text-warning fw-semibold" : "text-muted")">@item.OtHours</td>
+                        <td class="text-center @((int)item.LateMinutes > 0 ? "text-danger" : "text-muted")">
+                            @(Math.Round((decimal)item.LateMinutes / 60m, 1))
+                        </td>
+                        <td class="text-center">
+                            @if ((decimal)item.AbsentDays > 0)
+                            {
+                                <span class="badge bg-danger">Has Absences</span>
+                            }
+                            else if ((int)item.LateMinutes > 0)
+                            {
+                                <span class="badge bg-warning text-dark">Has Late</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Complete</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!attendanceItems.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No attendance records found for this period.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Info box explaining the flow -->
+<div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>How this works:</strong> You are submitting <strong>attendance data only</strong> — no salary information is included.
+    The Manager will review the attendance and calculate the payroll budget. The Accountant will then distribute the approved budget.
+</div>
+
+<!-- Submit Form -->
+@if (!alreadySubmitted && totalEmployees > 0)
+{
+    <div class="pt-card">
+        <div class="pt-card-header"><i class="bi bi-send me-2"></i>Submit Attendance Report to Manager</div>
+        <div class="pt-card-body">
+            <form asp-action="SubmitAttendance" asp-controller="HR" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-4">
+                    <label class="form-label">Notes for Manager (Optional)</label>
+                    <textarea class="form-control" name="notes" rows="3"
+                              placeholder="Any notes about attendance issues, absences, or overtime..."></textarea>
+                </div>
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="confirmCheck">
+                    <label class="form-check-label" for="confirmCheck">
+                        I confirm that all attendance records for this period are accurate and complete.
+                    </label>
+                </div>
+                <button type="submit" class="pt-btn pt-btn-primary" id="submitBtn" disabled>
+                    <i class="bi bi-send me-2"></i>Submit Attendance Report
+                </button>
+            </form>
+        </div>
+    </div>
+}
+else if (alreadySubmitted)
+{
+    <div class="pt-card">
+        <div class="pt-card-body text-center py-4">
+            <i class="bi bi-check-circle-fill text-success fs-1 mb-3 d-block"></i>
+            <h5>Attendance Report Submitted</h5>
+            <p class="text-muted">Status: <strong>@existingStatus</strong> — The Manager is reviewing the budget.</p>
+            <a href="/HR/Attendance" class="pt-btn pt-btn-primary">Back to Attendance</a>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    document.getElementById('confirmCheck')?.addEventListener('change', function () {
+        document.getElementById('submitBtn').disabled = !this.checked;
+    });
+</script>
+}

@@ -209,6 +209,72 @@ public class AccountantController : Controller
         return View();
     }
 
+    // POST: /Accountant/DistributeDept — distribute budget to one department
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DistributeDept(int periodId, string deptName)
+    {
+        var user = await GetAccountantUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var payrolls = await _context.Payrolls
+            .Include(p => p.Employee).ThenInclude(e => e.Department)
+            .Where(p => p.PayrollPeriodId == periodId
+                     && p.Employee.CompanyId == user.CompanyId
+                     && (p.Employee.Department!.DepartmentName ?? "General") == deptName
+                     && (p.Status == PayrollStatus.Approved || p.Status == PayrollStatus.Processed))
+            .ToListAsync();
+
+        if (!payrolls.Any())
+            return Json(new { success = false, message = "No pending payrolls found for this department." });
+
+        var total = payrolls.Sum(p => p.NetPay);
+        foreach (var p in payrolls) { p.Status = PayrollStatus.Paid; p.ProcessedAt = DateTime.UtcNow; }
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Distributed Department Salaries", "Payroll",
+            periodId.ToString(), null,
+            new { Department = deptName, Count = payrolls.Count, Total = total },
+            user.CompanyId);
+
+        return Json(new { success = true, message = $"✅ ₱{total:N2} distributed to {deptName} ({payrolls.Count} employees)." });
+    }
+
+    // POST: /Accountant/MarkDeptAsPaid — distribute budget to one department
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkDeptAsPaid(int periodId, string deptName)
+    {
+        var user = await GetAccountantUser();
+        if (user == null) return Json(new { success = false, message = "Unauthorized" });
+
+        var payrolls = await _context.Payrolls
+            .Include(p => p.Employee).ThenInclude(e => e.Department)
+            .Where(p => p.PayrollPeriodId == periodId
+                     && p.Employee.CompanyId == user.CompanyId
+                     && (p.Employee.Department!.DepartmentName ?? "General") == deptName
+                     && (p.Status == PayrollStatus.Approved || p.Status == PayrollStatus.Processed))
+            .ToListAsync();
+
+        if (!payrolls.Any())
+            return Json(new { success = false, message = "No pending payrolls found for this department." });
+
+        var total = payrolls.Sum(p => p.NetPay);
+        foreach (var p in payrolls)
+        {
+            p.Status      = PayrollStatus.Paid;
+            p.ProcessedAt = DateTime.UtcNow;
+        }
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Distributed Department Salaries", "Payroll",
+            periodId.ToString(), null,
+            new { Department = deptName, Count = payrolls.Count, TotalAmount = total },
+            user.CompanyId);
+
+        return Json(new { success = true, count = payrolls.Count, total = total });
+    }
+
     // POST: /Accountant/MarkAsPaid — mark a payroll record as paid (salary distributed)
     [HttpPost]
     [ValidateAntiForgeryToken]

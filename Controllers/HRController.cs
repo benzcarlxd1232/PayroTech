@@ -780,7 +780,228 @@ public class HRController : Controller
         return Json(new { success = true, message = "Overtime rejected." });
     }
 
-    // GET: /HR/SubmitPayroll  →  Views/HR/SubmitPayroll.cshtml
+    // GET: /HR/SubmitAttendance — attendance-only report (no salary data shown to HR)
+    public async Task<IActionResult> SubmitAttendance()
+    {
+        var user = await GetHRUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var today      = DateTime.Today;
+        var deptId     = user.DepartmentId;
+        var companyId  = user.CompanyId ?? 0;
+
+        var companyFreq = await _context.Companies.FindAsync(companyId);
+        var (periodStart, periodEnd, _) = GetCurrentPeriod(today,
+            companyFreq?.PayrollFrequency ?? PayrollFrequency.Monthly);
+
+        // Check if already submitted
+        var existing = await _context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.CompanyId == companyId
+                                   && p.StartDate == periodStart
+                                   && p.Status != PayrollStatus.Draft);
+        ViewBag.AlreadySubmitted = existing != null;
+        ViewBag.ExistingStatus   = existing?.Status.ToString();
+        ViewBag.PeriodStart      = periodStart;
+        ViewBag.PeriodEnd        = periodEnd;
+
+        // Get employees
+        var employees = await _context.Employees
+            .Include(e => e.User)
+            .Include(e => e.Department)
+            .Where(e => e.CompanyId == companyId && e.IsActive
+                     && (deptId == null || e.DepartmentId == deptId))
+            .ToListAsync();
+
+        // Get attendance — NO salary data
+        var attendance = await _context.Attendances
+            .Where(a => a.Employee.CompanyId == companyId
+                     && a.Date >= periodStart && a.Date <= today
+                     && (deptId == null || a.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        var workDaysInPeriod = Enumerable.Range(0, (today - periodStart).Days + 1)
+            .Select(d => periodStart.AddDays(d))
+            .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+            .ToList();
+        var totalWorkDays = workDaysInPeriod.Count;
+
+        var attendanceItems = employees.Select(emp =>
+        {
+            var empAtt      = attendance.Where(a => a.EmployeeId == emp.Id).ToList();
+            var daysPresent = empAtt.Count(a => a.TimeIn != null);
+            var absentDays  = Math.Max(0, totalWorkDays - daysPresent);
+            var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
+            var lateMinutes = empAtt.Sum(a => a.LateMinutes);
+
+            return new
+            {
+                EmployeeId  = emp.Id,
+                FullName    = emp.FullName,
+                Department  = emp.Department?.DepartmentName ?? "—",
+                DaysPresent = daysPresent,
+                AbsentDays  = absentDays,
+                OtHours     = Math.Round(otMinutes / 60m, 1),
+                LateMinutes = lateMinutes
+            };
+        }).ToList();
+
+        ViewBag.AttendanceItems = attendanceItems;
+        ViewBag.TotalEmployees  = employees.Count;
+
+        return View("~/Views/HR/SubmitAttendance.cshtml");
+    }
+
+    // POST: /HR/SubmitAttendance — creates PayrollPeriod with attendance data, status = Processed
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubmitAttendance(string? notes)
+    {
+        var user = await GetHRUser();
+        if (user == null) return RedirectToAction("Index", "Home");
+
+        var today     = DateTime.Today;
+        var deptId    = user.DepartmentId;
+        var companyId = user.CompanyId ?? 0;
+
+        var companyFreqPost = await _context.Companies.FindAsync(companyId);
+        var (periodStart, periodEnd, periodNamePost) = GetCurrentPeriod(today,
+            companyFreqPost?.PayrollFrequency ?? PayrollFrequency.Monthly);
+
+        // Prevent duplicate
+        var existing = await _context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.CompanyId == companyId
+                                   && p.StartDate == periodStart
+                                   && p.Status != PayrollStatus.Draft);
+        if (existing != null)
+        {
+            TempData["Warning"] = $"Attendance report for {periodStart:MMMM yyyy} was already submitted.";
+            return RedirectToAction(nameof(Attendance));
+        }
+
+        // Create PayrollPeriod (attendance report — salary computed by manager)
+        var period = new PayrollPeriod
+        {
+            CompanyId  = companyId,
+            PeriodName = periodNamePost,
+            StartDate  = periodStart,
+            EndDate    = periodEnd,
+            PayDate    = periodEnd.AddDays(5),
+            Status     = PayrollStatus.Processed  // Sent to manager for budget approval
+        };
+        _context.PayrollPeriods.Add(period);
+        await _context.SaveChangesAsync();
+
+        // Get employees and attendance — compute payroll in background (manager sees budget, not HR)
+        var company   = await _context.Companies.FindAsync(companyId);
+        var holidays  = await _context.Holidays
+            .Where(h => h.CompanyId == companyId && h.Date >= periodStart && h.Date <= periodEnd)
+            .ToListAsync();
+        var holidayDates = holidays.Select(h => h.Date.Date).ToHashSet();
+
+        var employees = await _context.Employees
+            .Include(e => e.Shift)
+            .Where(e => e.CompanyId == companyId && e.IsActive
+                     && (deptId == null || e.DepartmentId == deptId))
+            .ToListAsync();
+
+        var attendance = await _context.Attendances
+            .Where(a => a.Employee.CompanyId == companyId
+                     && a.Date >= periodStart && a.Date <= today
+                     && (deptId == null || a.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        var approvedLeaves = await _context.Leaves
+            .Where(l => l.Employee.CompanyId == companyId
+                     && l.Status == LeaveStatus.Approved
+                     && l.StartDate <= periodEnd && l.EndDate >= periodStart
+                     && (deptId == null || l.Employee.DepartmentId == deptId))
+            .ToListAsync();
+
+        var workDaysInPeriod = Enumerable.Range(0, (today - periodStart).Days + 1)
+            .Select(d => periodStart.AddDays(d))
+            .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+            .ToList();
+        var totalWorkDays = workDaysInPeriod.Count;
+
+        // Compute payroll records (hidden from HR — only manager/accountant see amounts)
+        foreach (var emp in employees)
+        {
+            var empAtt      = attendance.Where(a => a.EmployeeId == emp.Id).ToList();
+            var dailyRateP  = emp.DailyRate  ?? company?.DefaultDailyRate ?? 500m;
+            var hourlyRateP = emp.HourlyRate ?? (dailyRateP / 8m);
+            var daysWorked  = (decimal)empAtt.Count(a => a.TimeIn != null);
+            var lateMinutes = empAtt.Sum(a => a.LateMinutes);
+            var otMinutes   = empAtt.Sum(a => a.OvertimeMinutes);
+            var undertimeMinutes = empAtt
+                .Where(a => a.TimeIn != null && a.TimeOut != null && a.WorkedMinutes > 0)
+                .Sum(a => Math.Max(0, (8 * 60) - a.WorkedMinutes));
+
+            var empLeaveDays = approvedLeaves
+                .Where(l => l.EmployeeId == emp.Id && l.LeaveType != LeaveType.Unpaid)
+                .Sum(l => l.TotalDays > 0 ? l.TotalDays
+                    : (decimal)(Math.Min((l.EndDate - l.StartDate).Days + 1,
+                        workDaysInPeriod.Count(d => d >= l.StartDate && d <= l.EndDate))));
+            var absentDays = Math.Max(0, totalWorkDays - daysWorked - empLeaveDays);
+
+            var holidayDaysWorked = empAtt.Where(a => a.TimeIn != null && holidayDates.Contains(a.Date.Date)).ToList();
+            var regularHolidayDays = holidayDaysWorked.Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Regular));
+            var specialHolidayDays = holidayDaysWorked.Count(a => holidays.Any(h => h.Date.Date == a.Date.Date && h.HolidayType == HolidayType.Special));
+            var holidayPayRate = company?.HolidayPayRate ?? 200;
+            var holidayPay = dailyRateP * (holidayPayRate / 100m - 1m) * regularHolidayDays
+                           + dailyRateP * 0.30m * specialHolidayDays;
+
+            var basicPay        = dailyRateP * daysWorked;
+            var otPay           = (hourlyRateP * 1.25m) * (otMinutes / 60m);
+            var ndMinutes       = empAtt.Sum(a => a.NightDifferentialMinutes);
+            var ndPay           = (hourlyRateP * 0.10m) * (ndMinutes / 60m);
+            var gross           = basicPay + otPay + holidayPay + ndPay;
+            var lateDeduct      = (hourlyRateP / 60m) * lateMinutes;
+            var undertimeDeduct = (hourlyRateP / 60m) * undertimeMinutes;
+            var absenceDeduct   = dailyRateP * absentDays;
+            var sss             = Math.Min(gross * 0.045m, 900m);
+            var philhealth      = Math.Min(gross * 0.025m, 625m);
+            var pagibig         = Math.Min(gross * 0.02m, 200m);
+            var taxable         = gross - sss - philhealth - pagibig;
+            var tax             = taxable > 33333m ? (taxable - 33333m) * 0.20m : 0m;
+            var totalDeduct     = lateDeduct + undertimeDeduct + absenceDeduct + sss + philhealth + pagibig + tax;
+
+            _context.Payrolls.Add(new Payroll
+            {
+                EmployeeId             = emp.Id,
+                PayrollPeriodId        = period.Id,
+                BasicPay               = Math.Round(basicPay, 2),
+                OvertimePay            = Math.Round(otPay, 2),
+                HolidayPay             = Math.Round(holidayPay, 2),
+                NightDifferentialPay   = Math.Round(ndPay, 2),
+                GrossPay               = Math.Round(gross, 2),
+                LateDeduction          = Math.Round(lateDeduct, 2),
+                UndertimeDeduction     = Math.Round(undertimeDeduct, 2),
+                AbsenceDeduction       = Math.Round(absenceDeduct, 2),
+                SSSContribution        = Math.Round(sss, 2),
+                PhilHealthContribution = Math.Round(philhealth, 2),
+                PagIbigContribution    = Math.Round(pagibig, 2),
+                WithholdingTax         = Math.Round(tax, 2),
+                TotalDeductions        = Math.Round(totalDeduct, 2),
+                NetPay                 = Math.Round(gross - totalDeduct, 2),
+                DaysWorked             = daysWorked,
+                OvertimeHours          = Math.Round(otMinutes / 60m, 2),
+                LateHours              = Math.Round(lateMinutes / 60m, 2),
+                UndertimeHours         = Math.Round(undertimeMinutes / 60m, 2),
+                AbsentDays             = absentDays,
+                Status                 = PayrollStatus.Processed
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _auditLogService.LogAsync(user.Id, "Submitted Attendance Report", "PayrollPeriod",
+            period.Id.ToString(), null,
+            new { Period = period.PeriodName, EmployeeCount = employees.Count, Notes = notes },
+            user.CompanyId);
+
+        TempData["Success"] = $"✅ Attendance report for {period.PeriodName} submitted! The Manager will review and approve the budget.";
+        return RedirectToAction(nameof(Attendance));
+    }
     public async Task<IActionResult> SubmitPayroll()
     {
         var user = await GetHRUser();

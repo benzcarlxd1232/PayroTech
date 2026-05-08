@@ -9,7 +9,7 @@
     int startP      = Math.Max(1, currentPage - 2);
     int endP        = Math.Min(totalPages, currentPage + 2);
 
-    // Group by period for bulk actions
+    // Group by period then by department — accountant sees DEPARTMENT TOTALS only, not individual salaries
     var byPeriod = payrolls
         .GroupBy(p => new { p.PayrollPeriodId, Name = p.PayrollPeriod?.PeriodName ?? "Unknown" })
         .ToList();
@@ -26,7 +26,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1">Pending Payrolls</h4>
-        <p class="text-muted mb-0">Approved payrolls ready for salary distribution</p>
+        <p class="text-muted mb-0">Approved budgets ready for salary distribution</p>
     </div>
     @if (payrolls.Any())
     {
@@ -35,6 +35,16 @@
             <strong class="text-success fs-5">₱@payrolls.Sum(p => p.NetPay).ToString("N2")</strong>
         </div>
     }
+</div>
+
+<!-- Accountant role info -->
+<div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-info-circle fs-4"></i>
+    <div>
+        <strong>Accountant View</strong> — You see the <strong>total approved budget per department</strong>.
+        Individual employee salaries are managed by the Manager.
+        Click <strong>"Distribute All"</strong> to release the budget to all staff in that department.
+    </div>
 </div>
 
 @if (!payrolls.Any())
@@ -56,15 +66,29 @@ else
         var periodId    = group.Key.PayrollPeriodId;
         var periodName  = group.Key.Name;
 
+        // Group by department — show department totals only
+        var byDept = group
+            .GroupBy(p => p.Employee?.Department?.DepartmentName ?? "General")
+            .Select(g => new {
+                DeptName     = g.Key,
+                EmployeeCount = g.Count(),
+                TotalBudget  = g.Sum(p => p.NetPay)
+            })
+            .OrderBy(d => d.DeptName)
+            .ToList();
+
         <div class="card shadow-sm mb-4">
-            <!-- Period Header with Bulk Action -->
+            <!-- Period Header -->
             <div class="card-header d-flex justify-content-between align-items-center py-3"
                  style="background:linear-gradient(135deg,#f59e0b15,#fbbf2415);">
                 <div>
                     <h6 class="mb-0 fw-bold">
                         <i class="bi bi-calendar-check me-2 text-warning"></i>@periodName
                     </h6>
-                    <small class="text-muted">@group.Count() employees · Total Net: <strong class="text-success">₱@periodTotal.ToString("N2")</strong></small>
+                    <small class="text-muted">
+                        @byDept.Sum(d => d.EmployeeCount) employees across @byDept.Count department(s) ·
+                        Total: <strong class="text-success">₱@periodTotal.ToString("N2")</strong>
+                    </small>
                 </div>
                 <button class="btn btn-success btn-sm fw-semibold px-4"
                         onclick="markAllAsPaid(@periodId, '@periodName', @periodTotal)">
@@ -72,37 +96,42 @@ else
                 </button>
             </div>
 
-            <!-- Employee Rows -->
+            <!-- Department Budget Table — NO individual salaries -->
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle small">
+                <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-4">Employee</th>
-                            <th>Department</th>
-                            <th class="text-center">Days</th>
-                            <th class="text-end">Basic</th>
-                            <th class="text-end">OT</th>
-                            <th class="text-end text-danger">Deductions</th>
-                            <th class="text-end text-success">Net Pay</th>
+                            <th class="ps-4">Department</th>
+                            <th class="text-center">Employees</th>
+                            <th class="text-end">Total Budget to Distribute</th>
                             <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var p in group.OrderBy(p => p.Employee?.LastName))
+                        @foreach (var dept in byDept)
                         {
-                            <tr id="row-@p.Id">
-                                <td class="ps-4 fw-medium">@p.Employee?.FullName</td>
-                                <td class="text-muted">@(p.Employee?.Department?.DepartmentName ?? "—")</td>
-                                <td class="text-center">@p.DaysWorked.ToString("N1")</td>
-                                <td class="text-end">₱@p.BasicPay.ToString("N2")</td>
-                                <td class="text-end text-success">₱@p.OvertimePay.ToString("N2")</td>
-                                <td class="text-end text-danger">-₱@p.TotalDeductions.ToString("N2")</td>
-                                <td class="text-end fw-bold text-success">₱@p.NetPay.ToString("N2")</td>
+                            // Get payroll IDs for this department in this period
+                            var deptPayrollIds = group
+                                .Where(p => (p.Employee?.Department?.DepartmentName ?? "General") == dept.DeptName)
+                                .Select(p => p.Id)
+                                .ToList();
+
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-semibold">@dept.DeptName</div>
+                                    <div class="text-muted small">@dept.EmployeeCount employee(s)</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">@dept.EmployeeCount</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="fw-bold text-success fs-5">₱@dept.TotalBudget.ToString("N2")</span>
+                                    <div class="text-muted small">Approved by Manager</div>
+                                </td>
                                 <td class="text-center">
                                     <button class="btn btn-sm btn-outline-success"
-                                            onclick="markOnePaid(@p.Id, '@p.Employee?.FullName', @p.NetPay)"
-                                            id="btn-@p.Id">
-                                        <i class="bi bi-check2"></i> Pay
+                                            onclick="distributeDept(@periodId, '@dept.DeptName', @dept.TotalBudget, '@periodName')">
+                                        <i class="bi bi-send me-1"></i>Distribute
                                     </button>
                                 </td>
                             </tr>
@@ -110,8 +139,8 @@ else
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <td colspan="6" class="ps-4 fw-bold">Period Total</td>
-                            <td class="text-end fw-bold text-success">₱@periodTotal.ToString("N2")</td>
+                            <td colspan="2" class="ps-4 fw-bold">Period Total</td>
+                            <td class="text-end fw-bold text-success fs-5">₱@periodTotal.ToString("N2")</td>
                             <td></td>
                         </tr>
                     </tfoot>
@@ -151,44 +180,30 @@ else
     }
 
     function showToast(msg, type) {
-        try {
-            if (typeof PT !== 'undefined' && PT.Toast) {
-                PT.Toast[type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'error'](msg);
-            } else {
-                alert(msg);
-            }
-        } catch { alert(msg); }
+        try { PT.Toast[type](msg); } catch { alert(msg); }
     }
 
-    async function markOnePaid(payrollId, employeeName, netPay) {
-        if (!confirm(`Mark ₱${Number(netPay).toLocaleString('en-PH',{minimumFractionDigits:2})} as paid to ${employeeName}?`)) return;
-
-        const btn = document.getElementById(`btn-${payrollId}`);
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    async function distributeDept(periodId, deptName, total, periodName) {
+        if (!confirm(`Distribute ₱${Number(total).toLocaleString('en-PH',{minimumFractionDigits:2})} to ${deptName}?\n\nThis will mark all employees in ${deptName} as paid for ${periodName}.`)) return;
 
         const fd = new FormData();
-        fd.append('id', payrollId);
+        fd.append('periodId', periodId);
+        fd.append('deptName', deptName);
         fd.append('__RequestVerificationToken', getToken());
 
-        const r    = await fetch('/Accountant/MarkAsPaid', { method: 'POST', body: fd });
+        const r    = await fetch('/Accountant/MarkDeptAsPaid', { method: 'POST', body: fd });
         const data = await r.json();
 
         if (data.success) {
-            showToast(data.message, 'success');
-            const row = document.getElementById(`row-${payrollId}`);
-            row.style.opacity = '0.4';
-            row.style.textDecoration = 'line-through';
-            btn.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Paid';
+            showToast(`✅ ${deptName} salaries distributed! ₱${Number(data.total).toLocaleString('en-PH',{minimumFractionDigits:2})}`, 'success');
+            setTimeout(() => location.reload(), 1500);
         } else {
             showToast(data.message, 'error');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check2"></i> Pay';
         }
     }
 
     async function markAllAsPaid(periodId, periodName, total) {
-        if (!confirm(`Distribute ALL salaries for "${periodName}"?\nTotal: ₱${Number(total).toLocaleString('en-PH',{minimumFractionDigits:2})}\n\nThis will mark all employees in this period as paid.`)) return;
+        if (!confirm(`Distribute ALL salaries for "${periodName}"?\nTotal: ₱${Number(total).toLocaleString('en-PH',{minimumFractionDigits:2})}\n\nThis will mark all departments as paid.`)) return;
 
         const fd = new FormData();
         fd.append('periodId', periodId);
