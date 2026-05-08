@@ -117,7 +117,8 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    // Note: HSTS disabled — hosting plan does not support SSL
+    // app.UseHsts();
 }
 
 // Note: HTTPS redirect disabled — hosting plan does not support SSL
