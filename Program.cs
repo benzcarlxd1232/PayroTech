@@ -120,7 +120,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Note: HTTPS redirect disabled — hosting plan does not support SSL
+// app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthentication();
