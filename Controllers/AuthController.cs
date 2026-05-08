@@ -54,17 +54,34 @@ public class AuthController : Controller
         if (User.Identity?.IsAuthenticated == true)
             return RedirectToAction("Index", "Home");
 
-        ViewData["ReturnUrl"] = returnUrl;
+        ViewData["ReturnUrl"]       = returnUrl;
+        ViewBag.RecaptchaSiteKey    = _configuration["ReCaptcha:SiteKey"] ?? "";
         return View();
     }
 
     [HttpPost]
     public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
-        ViewData["ReturnUrl"] = returnUrl;
+        ViewData["ReturnUrl"]    = returnUrl;
+        ViewBag.RecaptchaSiteKey = _configuration["ReCaptcha:SiteKey"] ?? "";
 
         if (!ModelState.IsValid)
             return View(model);
+
+        // ── Verify reCAPTCHA FIRST — block bots before any DB query ──────────
+        var recaptchaToken = Request.Form["g-recaptcha-response"].ToString();
+        if (string.IsNullOrWhiteSpace(recaptchaToken))
+        {
+            ModelState.AddModelError(string.Empty, "Please complete the reCAPTCHA verification.");
+            return View(model);
+        }
+
+        var recaptchaValid = await VerifyRecaptchaAsync(recaptchaToken);
+        if (!recaptchaValid)
+        {
+            ModelState.AddModelError(string.Empty, "reCAPTCHA verification failed. Please try again.");
+            return View(model);
+        }
 
         var ip        = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         var userAgent = Request.Headers["User-Agent"].ToString();
@@ -277,6 +294,32 @@ public class AuthController : Controller
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+    private async Task<bool> VerifyRecaptchaAsync(string token)
+    {
+        try
+        {
+            var secretKey = _configuration["ReCaptcha:SecretKey"];
+            if (string.IsNullOrEmpty(secretKey)) return true; // skip if not configured
+
+            using var http = new System.Net.Http.HttpClient();
+            var response = await http.PostAsync(
+                "https://www.google.com/recaptcha/api/siteverify",
+                new System.Net.Http.FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["secret"]   = secretKey,
+                    ["response"] = token
+                }));
+
+            var json = await response.Content.ReadAsStringAsync();
+            // Parse "success": true from the JSON response
+            return json.Contains("\"success\": true") || json.Contains("\"success\":true");
+        }
+        catch
+        {
+            return true; // fail open — don't block login if reCAPTCHA service is down
+        }
+    }
+
     private async Task LogHazardAttemptAsync(ApplicationUser user, string ip, int failedCount)
     {
         // Only log for CompanyAdmin and SuperAdmin

@@ -110,7 +110,20 @@
                 <div class="remember-row">
                     <label><input type="checkbox" asp-for="RememberMe" style="accent-color:var(--accent);"> Remember me</label>
                 </div>
-                <button type="submit" class="btn-signin"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
+
+                <!-- reCAPTCHA v2 — must be completed before sign in -->
+                <div class="mb-3">
+                    <div class="g-recaptcha" data-sitekey="@ViewBag.RecaptchaSiteKey"
+                         data-callback="onRecaptchaSuccess"
+                         data-expired-callback="onRecaptchaExpired"></div>
+                    <div id="recaptcha-error" style="display:none;color:#dc2626;font-size:.8rem;margin-top:4px;">
+                        <i class="bi bi-exclamation-circle me-1"></i>Please complete the reCAPTCHA verification.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-signin" id="signinBtn" disabled>
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                </button>
             </form>
             <div class="divider">or</div>
             <a href="/Register" class="register-link">
@@ -132,6 +145,27 @@
             else { i.type = "password"; e.className = "bi bi-eye eye"; }
         }
         if (window.history.replaceState) window.history.replaceState(null, null, window.location.href);
+
+        // reCAPTCHA callbacks
+        function onRecaptchaSuccess(token) {
+            document.getElementById('signinBtn').disabled = false;
+            document.getElementById('recaptcha-error').style.display = 'none';
+        }
+        function onRecaptchaExpired() {
+            document.getElementById('signinBtn').disabled = true;
+        }
+
+        // Extra guard: validate reCAPTCHA on form submit
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const response = grecaptcha.getResponse();
+            if (!response) {
+                e.preventDefault();
+                document.getElementById('recaptcha-error').style.display = 'block';
+                document.getElementById('signinBtn').disabled = true;
+            }
+        });
     </script>
+    <!-- Google reCAPTCHA v2 -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </body>
 </html>
