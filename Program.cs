@@ -110,6 +110,9 @@ using (var scope = app.Services.CreateScope())
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while migrating or seeding the database.");
         // Don't crash the app — let it start and show an error page instead
+        // Log to console for debugging
+        Console.WriteLine($"STARTUP ERROR: {ex.Message}");
+        Console.WriteLine($"INNER: {ex.InnerException?.Message}");
     }
 }
 
@@ -125,9 +128,9 @@ if (!app.Environment.IsDevelopment())
 // app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseSession();
 
 // Add no-cache headers for authenticated pages to prevent back button access after logout
 app.Use(async (context, next) =>
