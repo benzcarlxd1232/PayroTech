@@ -44,14 +44,6 @@ public class ManagerController : Controller
         return user;
     }
 
-    // Redirect to change password if still on temp password (used by all actions)
-    private IActionResult? EnforcePasswordChange(ApplicationUser user)
-    {
-        if (user.MustChangePassword)
-            return RedirectToAction("ChangePassword", "Auth");
-        return null;
-    }
-
     // GET: /Manager/Index  →  Views/Manager/Index.cshtml
     public async Task<IActionResult> Index()
     {

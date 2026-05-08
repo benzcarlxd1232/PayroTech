@@ -523,54 +523,6 @@ public class SuperAdminController : Controller
     }
 
     // Module Management
-    // Company Status
-    public async Task<IActionResult> CompanyStatus()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Company Status";
-        return View("ComingSoon");
-    }
-
-    // Subscription Management
-    public async Task<IActionResult> SubscriptionPlans()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Subscription Plans";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> ActiveSubscriptions()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Active Subscriptions";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> UpgradeRequests()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Upgrade Requests";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> PaymentMonitoring()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Payment Monitoring";
-        return View("ComingSoon");
-    }
-
-    // Module Management
     public async Task<IActionResult> Modules()
     {
         if (!await IsSuperAdmin())
@@ -602,52 +554,6 @@ public class SuperAdminController : Controller
             ModuleType.Reports => "Generate and view system reports",
             _ => "Module description not available"
         };
-    }
-
-    public async Task<IActionResult> AssignModules()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Assign Modules";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> ModuleAccess()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Module Access Control";
-        return View("ComingSoon");
-    }
-
-    // User Management
-    public async Task<IActionResult> CompanyAdmins()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Company Administrators";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> EmployeeMonitor()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Employee Count Monitoring";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> RolePermissions()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Role Permissions";
-        return View("ComingSoon");
     }
 
     // Reports & Analytics
@@ -775,69 +681,14 @@ public class SuperAdminController : Controller
         return View("SystemLogs", logs);
     }
 
-    // System Settings
-    public async Task<IActionResult> PricingConfig()
+    // System Settings — redirect to Companies for now
+    public async Task<IActionResult> Settings()
     {
         if (!await IsSuperAdmin())
             return RedirectToAction("Index", "Home");
 
-        ViewData["Title"] = "Pricing Configuration";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> GovernmentRates()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Government Rates";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> Branding()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "System Branding";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> Notifications()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Notification Settings";
-        return View("ComingSoon");
-    }
-
-    // Support
-    public async Task<IActionResult> SupportTickets()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Support Tickets";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> IssueTracking()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Issue Tracking";
-        return View("ComingSoon");
-    }
-
-    public async Task<IActionResult> Feedback()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "Client Feedback";
-        return View("ComingSoon");
+        ViewData["Title"] = "System Settings";
+        return View();
     }
 
     // Security
@@ -899,23 +750,13 @@ public class SuperAdminController : Controller
         });
     }
 
-    public async Task<IActionResult> ExportLogs(int? days = 7, string? action = null, string? search = null, string format = "csv")
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        // Implementation for export would go here
-        TempData["Info"] = "Export functionality coming soon";
-        return RedirectToAction(nameof(SystemLogs), new { days, action, search });
-    }
-
     public async Task<IActionResult> AuditTrail()
     {
         if (!await IsSuperAdmin())
             return RedirectToAction("Index", "Home");
 
-        ViewData["Title"] = "Audit Trail";
-        return View("ComingSoon");
+        // Redirect to SystemLogs which has the real implementation
+        return RedirectToAction(nameof(SystemLogs));
     }
 
     [HttpGet]
@@ -1070,15 +911,6 @@ public class SuperAdminController : Controller
             return RedirectToAction("Index", "Home");
 
         ViewData["Title"] = "Reports & Analytics";
-        return View();
-    }
-
-    public async Task<IActionResult> Settings()
-    {
-        if (!await IsSuperAdmin())
-            return RedirectToAction("Index", "Home");
-
-        ViewData["Title"] = "System Settings";
         return View();
     }
 
