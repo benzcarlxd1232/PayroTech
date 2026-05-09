@@ -96,23 +96,24 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Set a longer timeout for migration/seeding on startup
         context.Database.SetCommandTimeout(180);
 
-        // Apply pending migrations
+        // Only migrate — skip seeding in production to avoid startup crashes
         await context.Database.MigrateAsync();
 
-        // Seed initial data
-        await DatabaseSeeder.SeedAsync(context, userManager);
+        // Only seed if database is empty (first run)
+        if (!context.Users.Any())
+        {
+            await DatabaseSeeder.SeedAsync(context, userManager);
+        }
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
-        // Don't crash the app — let it start and show an error page instead
-        // Log to console for debugging
-        Console.WriteLine($"STARTUP ERROR: {ex.Message}");
+        logger.LogError(ex, "Startup DB error: {Message}", ex.Message);
+        Console.WriteLine($"STARTUP DB ERROR: {ex.Message}");
         Console.WriteLine($"INNER: {ex.InnerException?.Message}");
+        // Continue — don't crash the app
     }
 }
 
