@@ -91,29 +91,48 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
         context.Database.SetCommandTimeout(180);
 
-        // Only migrate — skip seeding in production to avoid startup crashes
-        await context.Database.MigrateAsync();
+        // Apply pending migrations
+        try
+        {
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Database migration completed successfully.");
+        }
+        catch (Exception migEx)
+        {
+            logger.LogError(migEx, "Migration failed: {Message}", migEx.Message);
+            Console.WriteLine($"MIGRATION ERROR: {migEx.Message}");
+            // Continue — app can still run with existing schema
+        }
 
         // Only seed if database is empty (first run)
-        if (!context.Users.Any())
+        try
         {
-            await DatabaseSeeder.SeedAsync(context, userManager);
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            if (!context.Users.Any())
+            {
+                await DatabaseSeeder.SeedAsync(context, userManager);
+                logger.LogInformation("Database seeding completed.");
+            }
+        }
+        catch (Exception seedEx)
+        {
+            logger.LogError(seedEx, "Seeding failed: {Message}", seedEx.Message);
+            Console.WriteLine($"SEED ERROR: {seedEx.Message}");
+            // Continue — seeding failure should not crash the app
         }
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Startup DB error: {Message}", ex.Message);
-        Console.WriteLine($"STARTUP DB ERROR: {ex.Message}");
-        Console.WriteLine($"INNER: {ex.InnerException?.Message}");
-        // Continue — don't crash the app
+        var logger2 = services.GetRequiredService<ILogger<Program>>();
+        logger2.LogError(ex, "Critical startup error: {Message}", ex.Message);
+        Console.WriteLine($"CRITICAL STARTUP ERROR: {ex.Message}");
     }
 }
 
