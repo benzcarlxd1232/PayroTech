@@ -115,21 +115,21 @@
                             @company.SubscriptionEnd?.ToString("MMM dd, yyyy")
                             @if (isExpiringSoon)
                             {
-                                <span class="ms-1 fw-semibold" style="color:#d97706;">Expiring Soon</span>
+                                <span class="badge bg-warning text-dark ms-1">Expiring Soon</span>
                             }
                         </td>
                         <td>
                             @if (company.IsActive && company.IsSubscriptionActive)
                             {
-                                <span class="fw-semibold" style="color:#16a34a;">Active</span>
+                                <span class="badge bg-success">Active</span>
                             }
                             else if (!company.IsSubscriptionActive)
                             {
-                                <span class="fw-semibold" style="color:#dc2626;">Expired</span>
+                                <span class="badge bg-danger">Expired</span>
                             }
                             else
                             {
-                                <span class="fw-semibold" style="color:#6b7280;">Inactive</span>
+                                <span class="badge bg-secondary">Inactive</span>
                             }
                         </td>
                         <td>

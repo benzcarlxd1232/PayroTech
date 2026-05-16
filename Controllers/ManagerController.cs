@@ -784,8 +784,9 @@ public class ManagerController : Controller
         var fromDate = DateTime.UtcNow.AddDays(-days);
         var pageSize = 20;
 
+        // Query ALL logs for the manager's company (not just their own)
         var query = _context.AuditLogs
-            .Where(l => l.UserId == user.Id && l.CreatedAt >= fromDate)
+            .Where(l => l.CompanyId == user.CompanyId && l.CreatedAt >= fromDate)
             .OrderByDescending(l => l.CreatedAt)
             .AsQueryable();
 
@@ -798,6 +799,9 @@ public class ManagerController : Controller
 
         ViewBag.CurrentPage = page;
         ViewBag.TotalPages  = (int)Math.Ceiling(totalCount / (double)pageSize);
+        ViewBag.Days        = days;
+        ViewBag.Action      = action;
+        ViewBag.Search      = search;
 
         return View(logs);
     }

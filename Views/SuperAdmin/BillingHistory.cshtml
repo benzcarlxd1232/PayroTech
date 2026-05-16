@@ -59,27 +59,27 @@
                                 @(subEnd.HasValue ? subEnd.Value.ToString("MMM dd, yyyy") : "—")
                                 @if (isExpiringSoon)
                                 {
-                                    <span class="ms-1 fw-semibold" style="color:#d97706;">Expiring Soon</span>
+                                    <span class="badge bg-warning text-dark ms-1">Expiring Soon</span>
                                 }
                             </td>
                             <td>
                                 @if (isSubActive)
                                 {
-                                    <span class="fw-semibold" style="color:#16a34a;">Active</span>
+                                    <span class="badge bg-success">Active</span>
                                 }
                                 else
                                 {
-                                    <span class="fw-semibold" style="color:#dc2626;">Expired</span>
+                                    <span class="badge bg-danger">Expired</span>
                                 }
                             </td>
                             <td>
                                 @if (isActive)
                                 {
-                                    <span class="fw-semibold" style="color:#16a34a;">Enabled</span>
+                                    <span class="badge bg-success">Enabled</span>
                                 }
                                 else
                                 {
-                                    <span class="fw-semibold" style="color:#6b7280;">Disabled</span>
+                                    <span class="badge bg-secondary">Disabled</span>
                                 }
                             </td>
                         </tr>

@@ -188,16 +188,36 @@ public class AuthController : Controller
         var smtpEmail = _configuration["EmailSettings:SmtpUsername"] ?? "your email";
         ViewBag.SmtpEmail = smtpEmail;
 
+        // Track OTP verification attempts (max 5)
+        var attempts = HttpContext.Session.GetInt32("2fa_otpAttempts") ?? 0;
+
         if (string.IsNullOrWhiteSpace(code))
         {
             ModelState.AddModelError(string.Empty, "Please enter the verification code.");
             return View("~/Views/Auth/VerifyOtp.cshtml");
         }
 
+        attempts++;
+        HttpContext.Session.SetInt32("2fa_otpAttempts", attempts);
+
+        if (attempts >= 5)
+        {
+            // Exceeded max attempts — invalidate OTP and force re-login
+            await _twoFactorService.InvalidateOtpAsync(userId);
+            HttpContext.Session.Remove("2fa_userId");
+            HttpContext.Session.Remove("2fa_returnUrl");
+            HttpContext.Session.Remove("2fa_remember");
+            HttpContext.Session.Remove("2fa_otpAttempts");
+
+            TempData["Error"] = "Too many incorrect OTP attempts. Please log in again.";
+            return RedirectToAction("Login");
+        }
+
         var valid = await _twoFactorService.ValidateOtpAsync(userId, code.Trim());
         if (!valid)
         {
-            ModelState.AddModelError(string.Empty, "Invalid or expired code. Please try again.");
+            var remaining = 5 - attempts;
+            ModelState.AddModelError(string.Empty, $"Invalid or expired code. {remaining} attempt{(remaining != 1 ? "s" : "")} remaining.");
             return View("~/Views/Auth/VerifyOtp.cshtml");
         }
 
@@ -209,12 +229,30 @@ public class AuthController : Controller
         HttpContext.Session.Remove("2fa_userId");
         HttpContext.Session.Remove("2fa_returnUrl");
         HttpContext.Session.Remove("2fa_remember");
+        HttpContext.Session.Remove("2fa_otpAttempts");
 
         await _signInManager.SignInAsync(user, remember);
         user.LastLoginAt = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        await _auditLogService.LogLoginAsync(user.Id, Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown");
+        var loginIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+        await _auditLogService.LogLoginAsync(user.Id, loginIp, user.CompanyId);
+
+        // Also log to VendorLog for SuperAdmin visibility
+        _context.VendorLogs.Add(new VendorLog
+        {
+            VendorId    = user.Id,
+            VendorName  = user.FullName,
+            Action      = "Login",
+            EntityType  = "Authentication",
+            Description = $"{user.FullName} ({user.Email}) logged in from {loginIp}",
+            IpAddress   = loginIp,
+            UserAgent   = Request.Headers["User-Agent"].ToString(),
+            RequestPath = "/Auth/VerifyOtp",
+            IsSuccess   = true,
+            CreatedAt   = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
 
         // First-login setup check
         var setupResult = await _firstLoginSetupService.DetermineNextStepAsync(user.Id);
@@ -293,6 +331,286 @@ public class AuthController : Controller
         return View("~/Views/Auth/ResetPassword.cshtml");
     }
 
+    // ── Forgot Password (OTP-based) ──────────────────────────────────────────
+    [HttpGet]
+    public IActionResult ForgotPassword()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+            return RedirectToAction("Index", "Home");
+
+        return View("~/Views/Auth/ForgotPassword.cshtml");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ForgotPassword(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            ModelState.AddModelError(string.Empty, "Please enter your email address.");
+            return View("~/Views/Auth/ForgotPassword.cshtml");
+        }
+
+        // Always show same success message to prevent user enumeration
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            TempData["ForgotPasswordSuccess"] = "If an account with that email exists, a verification code has been sent.";
+            return View("~/Views/Auth/ForgotPassword.cshtml");
+        }
+
+        // Generate & send OTP using existing TwoFactorService
+        await _twoFactorService.GenerateAndSendOtpAsync(user.Id, user.Email!, user.FullName);
+
+        // Log: Password reset requested
+        await LogForgotPasswordEventAsync(user, "Password Reset Requested",
+            $"Password reset OTP sent for account {user.Email} ({user.FullName})");
+
+        // Store state in session for OTP verification step
+        HttpContext.Session.SetString("fp_userId", user.Id);
+        HttpContext.Session.SetString("fp_email", user.Email!);
+        HttpContext.Session.SetInt32("fp_otpAttempts", 0);
+
+        TempData["ForgotPasswordSuccess"] = "If an account with that email exists, a verification code has been sent.";
+        return RedirectToAction("VerifyForgotPasswordOtp");
+    }
+
+    // ── Forgot Password: OTP Verification ────────────────────────────────────
+    [HttpGet]
+    public IActionResult VerifyForgotPasswordOtp()
+    {
+        var userId = HttpContext.Session.GetString("fp_userId");
+        if (string.IsNullOrEmpty(userId))
+            return RedirectToAction("ForgotPassword");
+
+        var smtpEmail = _configuration["EmailSettings:SmtpUsername"] ?? "your email";
+        ViewBag.SmtpEmail = smtpEmail;
+        ViewBag.MaxAttempts = 5;
+        ViewBag.AttemptsUsed = HttpContext.Session.GetInt32("fp_otpAttempts") ?? 0;
+        return View("~/Views/Auth/VerifyForgotPasswordOtp.cshtml");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> VerifyForgotPasswordOtp(string code)
+    {
+        var userId = HttpContext.Session.GetString("fp_userId");
+        var email  = HttpContext.Session.GetString("fp_email");
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email))
+            return RedirectToAction("ForgotPassword");
+
+        var smtpEmail = _configuration["EmailSettings:SmtpUsername"] ?? "your email";
+        ViewBag.SmtpEmail = smtpEmail;
+        ViewBag.MaxAttempts = 5;
+
+        // Track OTP verification attempts (max 5)
+        var attempts = HttpContext.Session.GetInt32("fp_otpAttempts") ?? 0;
+
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            ModelState.AddModelError(string.Empty, "Please enter the verification code.");
+            ViewBag.AttemptsUsed = attempts;
+            return View("~/Views/Auth/VerifyForgotPasswordOtp.cshtml");
+        }
+
+        attempts++;
+        HttpContext.Session.SetInt32("fp_otpAttempts", attempts);
+
+        if (attempts >= 5)
+        {
+            // Exceeded max attempts — invalidate OTP and force restart
+            await _twoFactorService.InvalidateOtpAsync(userId);
+
+            // Log: Max OTP attempts exceeded
+            var lockedUser = await _userManager.FindByIdAsync(userId);
+            if (lockedUser != null)
+                await LogForgotPasswordEventAsync(lockedUser, "Password Reset OTP Max Attempts",
+                    $"Max 5 OTP attempts exceeded for {email}. Password reset process forced to restart.");
+
+            HttpContext.Session.Remove("fp_userId");
+            HttpContext.Session.Remove("fp_email");
+            HttpContext.Session.Remove("fp_otpAttempts");
+
+            TempData["ForgotPasswordError"] = "Too many incorrect attempts. Please restart the password reset process.";
+            return RedirectToAction("ForgotPassword");
+        }
+
+        var valid = await _twoFactorService.ValidateOtpAsync(userId, code.Trim());
+        if (!valid)
+        {
+            // Log: Failed OTP attempt
+            var failUser = await _userManager.FindByIdAsync(userId);
+            if (failUser != null)
+                await LogForgotPasswordEventAsync(failUser, "Password Reset OTP Failed",
+                    $"Failed OTP verification attempt #{attempts} for {email}. {5 - attempts} attempts remaining.");
+
+            var remaining = 5 - attempts;
+            ModelState.AddModelError(string.Empty, $"Invalid or expired code. {remaining} attempt{(remaining != 1 ? "s" : "")} remaining.");
+            ViewBag.AttemptsUsed = attempts;
+            return View("~/Views/Auth/VerifyForgotPasswordOtp.cshtml");
+        }
+
+        // OTP verified — generate password reset token and store in session
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return RedirectToAction("ForgotPassword");
+
+        // Log: OTP verified successfully
+        await LogForgotPasswordEventAsync(user, "Password Reset OTP Verified",
+            $"OTP verified successfully for {email}. User may now set a new password.");
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        HttpContext.Session.SetString("fp_resetToken", token);
+        HttpContext.Session.Remove("fp_otpAttempts");
+
+        return RedirectToAction("ResetForgotPassword");
+    }
+
+    // ── Forgot Password: Resend OTP ──────────────────────────────────────────
+    [HttpPost]
+    public async Task<IActionResult> ResendForgotPasswordOtp()
+    {
+        var userId = HttpContext.Session.GetString("fp_userId");
+        var email  = HttpContext.Session.GetString("fp_email");
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email))
+            return Json(new { success = false });
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Json(new { success = false });
+
+        // Reset attempt counter on resend
+        HttpContext.Session.SetInt32("fp_otpAttempts", 0);
+        await _twoFactorService.GenerateAndSendOtpAsync(user.Id, user.Email!, user.FullName);
+
+        // Log: OTP resent
+        await LogForgotPasswordEventAsync(user, "Password Reset OTP Resent",
+            $"New OTP code sent for password reset of {user.Email}. Attempt counter reset.");
+
+        return Json(new { success = true });
+    }
+
+    // ── Forgot Password: Set New Password (after OTP verified) ───────────────
+    [HttpGet]
+    public IActionResult ResetForgotPassword()
+    {
+        var userId = HttpContext.Session.GetString("fp_userId");
+        var token  = HttpContext.Session.GetString("fp_resetToken");
+        var email  = HttpContext.Session.GetString("fp_email");
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token) || string.IsNullOrEmpty(email))
+            return RedirectToAction("ForgotPassword");
+
+        ViewBag.Email = email;
+        return View("~/Views/Auth/ResetForgotPassword.cshtml");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ResetForgotPassword(string newPassword, string confirmPassword)
+    {
+        var userId = HttpContext.Session.GetString("fp_userId");
+        var token  = HttpContext.Session.GetString("fp_resetToken");
+        var email  = HttpContext.Session.GetString("fp_email");
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token) || string.IsNullOrEmpty(email))
+            return RedirectToAction("ForgotPassword");
+
+        ViewBag.Email = email;
+
+        if (string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(confirmPassword))
+        {
+            ModelState.AddModelError(string.Empty, "Both password fields are required.");
+            return View("~/Views/Auth/ResetForgotPassword.cshtml");
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            ModelState.AddModelError(string.Empty, "Passwords do not match.");
+            return View("~/Views/Auth/ResetForgotPassword.cshtml");
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            TempData["Success"] = "If the account exists, the password has been reset.";
+            return RedirectToAction("Login");
+        }
+
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+        if (result.Succeeded)
+        {
+            // Re-activate account if it was locked
+            if (!user.IsActive)
+            {
+                user.IsActive = true;
+                await _userManager.UpdateAsync(user);
+            }
+
+            // Clear failed attempts
+            await _loginSecurity.RecordSuccessAsync(email);
+
+            // Log: Password reset completed
+            await LogForgotPasswordEventAsync(user, "Password Reset Completed",
+                $"Password was successfully reset for {email} ({user.FullName}) via forgot password flow.");
+
+            // Clear all forgot-password session data
+            HttpContext.Session.Remove("fp_userId");
+            HttpContext.Session.Remove("fp_email");
+            HttpContext.Session.Remove("fp_resetToken");
+            HttpContext.Session.Remove("fp_otpAttempts");
+
+            TempData["Success"] = "Password reset successfully. You can now sign in with your new password.";
+            return RedirectToAction("Login");
+        }
+
+        foreach (var error in result.Errors)
+            ModelState.AddModelError(string.Empty, error.Description);
+
+        return View("~/Views/Auth/ResetForgotPassword.cshtml");
+    }
+
+
+    // ── Forgot Password Logging Helper ────────────────────────────────────────
+    private async Task LogForgotPasswordEventAsync(ApplicationUser user, string action, string description)
+    {
+        var ip        = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+        var userAgent = Request.Headers["User-Agent"].ToString();
+        if (userAgent.Length > 500) userAgent = userAgent[..500];
+
+        // AuditLog — visible in Manager (company) view
+        if (user.CompanyId.HasValue)
+        {
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserId     = user.Id,
+                Action     = action,
+                EntityType = "Security",
+                EntityId   = user.Id,
+                NewValues  = description,
+                IpAddress  = ip,
+                UserAgent  = userAgent,
+                CompanyId  = user.CompanyId,
+                CreatedAt  = DateTime.UtcNow
+            });
+        }
+
+        // VendorLog — visible in SuperAdmin view
+        _context.VendorLogs.Add(new VendorLog
+        {
+            VendorId    = user.Id,
+            VendorName  = user.FullName,
+            Action      = action,
+            EntityType  = "Security",
+            EntityId    = user.Id,
+            Description = description,
+            IpAddress   = ip,
+            UserAgent   = userAgent,
+            RequestPath = Request.Path.ToString(),
+            IsSuccess   = action == "Password Reset Completed" || action == "Password Reset OTP Verified",
+            CreatedAt   = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     private async Task<bool> VerifyRecaptchaAsync(string token)
     {
@@ -353,6 +671,7 @@ public class AuthController : Controller
                 EntityType  = "Security",
                 EntityId    = user.Id,
                 NewValues   = description,
+                IpAddress   = ip,
                 CompanyId   = user.CompanyId,
                 CreatedAt   = DateTime.UtcNow
             });
@@ -551,7 +870,27 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;padding:20px;}}
     public async Task<IActionResult> Logout()
     {
         var user = await _userManager.GetUserAsync(User);
-        if (user != null) await _auditLogService.LogLogoutAsync(user.Id);
+        if (user != null)
+        {
+            var logoutIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            await _auditLogService.LogLogoutAsync(user.Id, user.CompanyId);
+
+            // Also log to VendorLog for SuperAdmin visibility
+            _context.VendorLogs.Add(new VendorLog
+            {
+                VendorId    = user.Id,
+                VendorName  = user.FullName,
+                Action      = "Logout",
+                EntityType  = "Authentication",
+                Description = $"{user.FullName} ({user.Email}) logged out from {logoutIp}",
+                IpAddress   = logoutIp,
+                UserAgent   = Request.Headers["User-Agent"].ToString(),
+                RequestPath = "/Auth/Logout",
+                IsSuccess   = true,
+                CreatedAt   = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+        }
 
         await _signInManager.SignOutAsync();
         Response.Cookies.Delete(".AspNetCore.Identity.Application");

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PayroTech.Data;
 using PayroTech.Models.Entities;
+using System.Security.Cryptography;
 
 namespace PayroTech.Services;
 
@@ -35,8 +36,8 @@ public class TwoFactorService : ITwoFactorService
 
     public async Task<string> GenerateAndSendOtpAsync(string userId, string userEmail, string userName)
     {
-        // Generate 6-digit OTP
-        var code = new Random().Next(100000, 999999).ToString();
+        // Generate 6-digit OTP using cryptographically secure random
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
         // Invalidate any existing OTP for this user
         var existing = await _context.TwoFactorCodes

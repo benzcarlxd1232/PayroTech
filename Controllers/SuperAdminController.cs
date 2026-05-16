@@ -360,6 +360,15 @@ public class SuperAdminController : Controller
                     new { Email = model.AdminEmail, CompanyId = company.Id },
                     null);
 
+                // Log to VendorLog for SuperAdmin visibility
+                await _vendorAuditService.LogVendorActionAsync(
+                    currentUser?.Id ?? "system",
+                    currentUser?.FullName ?? "System",
+                    "Created Company",
+                    "Company",
+                    company.Id.ToString(),
+                    $"Created company '{company.CompanyName}' (Code: {company.CompanyCode}) with admin {model.AdminEmail}");
+
                 // Send welcome email
                 var emailSent = await _emailService.SendWelcomeEmailAsync(
                     model.AdminEmail,
@@ -494,6 +503,16 @@ public class SuperAdminController : Controller
         }
 
         await _context.SaveChangesAsync();
+
+        // Log to VendorLog for SuperAdmin visibility
+        var editUser = await _userManager.GetUserAsync(User);
+        await _vendorAuditService.LogVendorActionAsync(
+            editUser?.Id ?? "system",
+            editUser?.FullName ?? "System",
+            "Updated Company",
+            "Company",
+            company.Id.ToString(),
+            $"Updated company '{company.CompanyName}' (Code: {company.CompanyCode})");
 
         TempData["Success"] = $"Company '{company.CompanyName}' updated successfully.";
         return RedirectToAction(nameof(Companies));
@@ -679,6 +698,45 @@ public class SuperAdminController : Controller
         ViewBag.Search = search;
         ViewData["Title"] = "System Logs - Vendor Activity";
         return View("SystemLogs", logs);
+    }
+
+    // Company Status — shows active/inactive/expiring companies
+    public async Task<IActionResult> CompanyStatus()
+    {
+        if (!await IsSuperAdmin())
+            return RedirectToAction("Index", "Home");
+
+        var companies = await _context.Companies
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => new CompanyListItem
+            {
+                Id = c.Id,
+                CompanyCode = c.CompanyCode,
+                CompanyName = c.CompanyName,
+                IsActive = c.IsActive,
+                IsSubscriptionActive = c.IsSubscriptionActive,
+                SubscriptionStart = c.SubscriptionStart,
+                SubscriptionEnd = c.SubscriptionEnd,
+                EmployeeCount = c.Employees.Count(e => e.IsActive)
+            })
+            .ToListAsync();
+
+        ViewData["Title"] = "Company Status";
+        ViewBag.ActiveCount = companies.Count(c => c.IsActive && c.IsSubscriptionActive);
+        ViewBag.InactiveCount = companies.Count(c => !c.IsActive || !c.IsSubscriptionActive);
+        ViewBag.ExpiringCount = companies.Count(c => c.IsSubscriptionActive && c.SubscriptionEnd.HasValue &&
+            c.SubscriptionEnd.Value <= DateTime.UtcNow.AddDays(30));
+        return View(companies);
+    }
+
+    // Subscription Plans — view/manage subscription tiers
+    public async Task<IActionResult> SubscriptionPlans()
+    {
+        if (!await IsSuperAdmin())
+            return RedirectToAction("Index", "Home");
+
+        ViewData["Title"] = "Subscription Plans";
+        return View();
     }
 
     // System Settings — redirect to Companies for now

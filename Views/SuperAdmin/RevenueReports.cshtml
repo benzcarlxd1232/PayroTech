@@ -11,29 +11,14 @@
 }
 
 <style>
-    .stat-card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 1px 4px rgba(0,0,0,.08);
-        border: 1px solid #e2e8f0;
-    }
-    .stat-card .stat-icon {
-        width: 48px; height: 48px;
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.4rem;
-    }
-    .stat-card h3 { font-size: 1.8rem; font-weight: 700; margin: 0; }
-    .stat-card p { color: #64748b; margin: 0; font-size: .875rem; }
-    body.dark-mode .stat-card { background: var(--bg-card); border-color: var(--border-color); }
-    body.dark-mode .stat-card h3, body.dark-mode .stat-card p { color: var(--text-light); }
+    body.dark-mode .stats-card { background: var(--bg-card) !important; border-color: var(--border-color) !important; }
+    body.dark-mode .stats-card h3, body.dark-mode .stats-card p { color: var(--text-light) !important; }
 </style>
 
 <!-- Summary Cards -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
-        <div class="stat-card">
+        <div class="stats-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <p class="mb-1">Total Revenue (Est.)</p>
@@ -47,7 +32,7 @@
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="stat-card">
+        <div class="stats-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <p class="mb-1">Active Companies</p>
@@ -61,7 +46,7 @@
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="stat-card">
+        <div class="stats-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <p class="mb-1">New This Month</p>
@@ -75,7 +60,7 @@
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="stat-card">
+        <div class="stats-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <p class="mb-1">Expiring Soon</p>
@@ -137,15 +122,15 @@
                                 <td>
                                     @if ((bool)c.IsSubscriptionActive && (bool)c.IsActive)
                                     {
-                                        <span class="fw-semibold" style="color:#16a34a;">Active</span>
+                                        <span class="badge bg-success">Active</span>
                                     }
                                     else if (!(bool)c.IsSubscriptionActive)
                                     {
-                                        <span class="fw-semibold" style="color:#dc2626;">Expired</span>
+                                        <span class="badge bg-danger">Expired</span>
                                     }
                                     else
                                     {
-                                        <span class="fw-semibold" style="color:#6b7280;">Inactive</span>
+                                        <span class="badge bg-secondary">Inactive</span>
                                     }
                                 </td>
                             </tr>

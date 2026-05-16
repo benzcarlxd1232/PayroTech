@@ -8,8 +8,8 @@ public interface IAuditLogService
 {
     Task LogAsync(string userId, string action, string entityName, string? entityId = null, 
                   object? oldValues = null, object? newValues = null, int? companyId = null);
-    Task LogLoginAsync(string userId, string ipAddress);
-    Task LogLogoutAsync(string userId);
+    Task LogLoginAsync(string userId, string ipAddress, int? companyId = null);
+    Task LogLogoutAsync(string userId, int? companyId = null);
     Task<List<AuditLog>> GetLogsForUserAsync(string userId, int days = 30);
     Task<List<AuditLog>> GetLogsForCompanyAsync(int companyId, int days = 30);
 }
@@ -45,16 +45,16 @@ public class AuditLogService : IAuditLogService
         await _context.SaveChangesAsync();
     }
 
-    public async Task LogLoginAsync(string userId, string ipAddress)
+    public async Task LogLoginAsync(string userId, string ipAddress, int? companyId = null)
     {
         await LogAsync(userId, "Login", "Authentication", null, null, 
-            new { LoginTime = DateTime.UtcNow, IpAddress = ipAddress });
+            new { LoginTime = DateTime.UtcNow, IpAddress = ipAddress }, companyId);
     }
 
-    public async Task LogLogoutAsync(string userId)
+    public async Task LogLogoutAsync(string userId, int? companyId = null)
     {
         await LogAsync(userId, "Logout", "Authentication", null, null,
-            new { LogoutTime = DateTime.UtcNow });
+            new { LogoutTime = DateTime.UtcNow, IpAddress = GetClientIpAddress() }, companyId);
     }
 
     public async Task<List<AuditLog>> GetLogsForUserAsync(string userId, int days = 30)
