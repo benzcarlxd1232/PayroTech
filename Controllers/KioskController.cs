@@ -248,13 +248,16 @@ public class KioskController : Controller
                 employee = await _context.Employees
                     .Include(e => e.Shift)
                     .FirstOrDefaultAsync(e => e.UserId == user.Id);
+
+                if (employee == null)
+                    return Json(new { success = false, message = "Employee record could not be created. Please contact your manager." });
             }
 
             var today = DateTime.Today;
             var now   = DateTime.Now;
 
             var attendance = await _context.Attendances
-                .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.Date == today);
+                .FirstOrDefaultAsync(a => a.EmployeeId == employee!.Id && a.Date == today);
 
             string type;
             if (attendance == null || attendance.TimeIn == null)
@@ -286,7 +289,7 @@ public class KioskController : Controller
                 }
 
                 // --- Late detection ---
-                var shift = employee.Shift;
+                var shift = employee!.Shift;
                 if (shift == null && user.ShiftId.HasValue)
                     shift = await _context.Shifts.FindAsync(user.ShiftId.Value);
 
@@ -319,7 +322,7 @@ public class KioskController : Controller
                 attendance.WorkedMinutes = (int)(now - attendance.TimeIn!.Value).TotalMinutes;
 
                 // --- Overtime detection ---
-                var shift = employee.Shift;
+                var shift = employee!.Shift;
                 if (shift == null && user.ShiftId.HasValue)
                     shift = await _context.Shifts.FindAsync(user.ShiftId.Value);
 

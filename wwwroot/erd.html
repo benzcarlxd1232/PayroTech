@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>PayroTech ERD</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#fff; font-family:Arial,sans-serif; }
+  .section { page-break-after:always; padding:40px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+  .section h2 { font-size:28px; margin-bottom:30px; color:#0f172a; text-align:center; }
+  .mermaid { font-size:18px !important; width:100%; max-width:1400px; }
+  .mermaid svg { width:100% !important; height:auto !important; min-height:500px; }
+  nav { position:fixed; top:0; left:0; right:0; background:#0f172a; color:#fff; padding:12px 30px; display:flex; gap:15px; z-index:99; font-size:14px; }
+  nav a { color:#7dd3fc; text-decoration:none; }
+  nav a:hover { color:#fff; }
+  @media print { nav { display:none; } .section { padding:20px; } }
+</style>
+</head><body>
+<nav>
+  <strong>PayroTech ERD</strong>
+  <a href="#s1">1. Company</a>
+  <a href="#s2">2. Users & Employees</a>
+  <a href="#s3">3. Attendance</a>
+  <a href="#s4">4. Payroll</a>
+  <a href="#s5">5. Security</a>
+  <a href="#s6">6. Support</a>
+</nav>
+
+<div class="section" id="s1" style="padding-top:80px;">
+<h2>Section 1: Core — Company & Organization</h2>
+<div class="mermaid">
+erDiagram
+    Company ||--o{ Branch : "has"
+    Company ||--o{ Department : "has"
+    Company ||--o{ Shift : "defines"
+    Company ||--o{ Holiday : "observes"
+    Company ||--o{ CompanyModule : "uses"
+    Company {
+        int Id PK
+        string CompanyCode UK
+        string CompanyName
+        string Address
+        string Email
+        string TIN
+        string SSSEmployerNumber
+        string PhilHealthEmployerNumber
+        string PagIbigEmployerNumber
+        datetime SubscriptionStart
+        datetime SubscriptionEnd
+        bool IsSubscriptionActive
+        int WorkDaysPerWeek
+        decimal OvertimeRatePerHour
+        string PayrollFrequency
+    }
+    Branch {
+        int Id PK
+        int CompanyId FK
+        string BranchName
+        string BranchCode
+        string Address
+        bool IsMainBranch
+    }
+    Department {
+        int Id PK
+        int CompanyId FK
+        string DepartmentCode UK
+        string DepartmentName
+        int ManagerId FK
+    }
+    Shift {
+        int Id PK
+        int CompanyId FK
+        string ShiftName
+        time StartTime
+        time EndTime
+        int BreakMinutes
+    }
+    Holiday {
+        int Id PK
+        int CompanyId FK
+        string HolidayName
+        date HolidayDate
+        string HolidayType
+    }
+    CompanyModule {
+        int Id PK
+        int CompanyId FK
+        string ModuleName
+        bool IsEnabled
+    }
+</div>
+</div>
+
+<div class="section" id="s2">
+<h2>Section 2: User & Employee Management</h2>
+<div class="mermaid">
+erDiagram
+    Company ||--o{ Employee : "employs"
+    ApplicationUser }o--o| Company : "belongs to"
+    ApplicationUser }o--o| Branch : "assigned to"
+    ApplicationUser }o--o| Department : "member of"
+    ApplicationUser ||--o| Employee : "linked 1-to-1"
+    Employee }o--o| Department : "in dept"
+    Employee }o--o| Shift : "works"
+    Employee }o--o| Employee : "supervised by"
+    Department }o--o| ApplicationUser : "managed by"
+    ApplicationUser {
+        string Id PK
+        string FirstName
+        string MiddleName
+        string LastName
+        string Email
+        string PasswordHash
+        int CompanyId FK
+        string Role
+        int BranchId FK
+        int DepartmentId FK
+        string EmployeeNumber
+        decimal DailyRate
+        datetime StartDate
+        string StaffCode
+        string KioskPin
+        string QRCodeHash
+        bool MustChangePassword
+        bool IsFaceEnrolled
+    }
+    Employee {
+        int Id PK
+        int CompanyId FK
+        string EmployeeNumber UK
+        string FirstName
+        string LastName
+        datetime HireDate
+        decimal BasicSalary
+        string SalaryType
+        decimal DailyRate
+        string SSSNumber
+        string PhilHealthNumber
+        string PagIbigNumber
+        string TINNumber
+        string BankName
+        string BankAccountNumber
+        int DepartmentId FK
+        int ShiftId FK
+        int SupervisorId FK
+        string UserId FK
+    }
+    Company { int Id PK }
+    Branch { int Id PK }
+    Department { int Id PK }
+    Shift { int Id PK }
+</div>
+</div>
+
+<div class="section" id="s3">
+<h2>Section 3: Attendance & Time Management</h2>
+<div class="mermaid">
+erDiagram
+    Employee ||--o{ Attendance : "records"
+    Employee ||--o{ Leave : "requests"
+    Employee ||--o{ LeaveBalance : "has"
+    Employee ||--o{ Overtime : "logs"
+    Attendance }o--o| Employee : "approved by"
+    Leave }o--o| Employee : "approved by"
+    Overtime }o--o| Employee : "approved by"
+    Employee {
+        int Id PK
+        string EmployeeNumber
+        string FirstName
+        string LastName
+    }
+    Attendance {
+        int Id PK
+        int EmployeeId FK
+        date Date UK
+        datetime TimeIn
+        datetime TimeOut
+        string Status
+        int LateMinutes
+        int OvertimeMinutes
+        int WorkedMinutes
+        decimal LateDeductionAmount
+        decimal OvertimeAmount
+        bool IsApproved
+        int ApprovedById FK
+        string Remarks
+    }
+    Leave {
+        int Id PK
+        int EmployeeId FK
+        string LeaveType
+        date StartDate
+        date EndDate
+        decimal TotalDays
+        string Reason
+        string Status
+        int ApprovedById FK
+        string ApproverRemarks
+    }
+    LeaveBalance {
+        int Id PK
+        int EmployeeId FK
+        int Year
+        decimal VacationLeaveBalance
+        decimal SickLeaveBalance
+        decimal VacationLeaveUsed
+        decimal SickLeaveUsed
+    }
+    Overtime {
+        int Id PK
+        int EmployeeId FK
+        date Date
+        decimal Hours
+        decimal Multiplier
+        string Reason
+        string Status
+        int ApprovedById FK
+    }
+</div>
+</div>
+
+<div class="section" id="s4">
+<h2>Section 4: Payroll & Compensation</h2>
+<div class="mermaid">
+erDiagram
+    Company ||--o{ PayrollPeriod : "schedules"
+    Company ||--o{ PayrollDeadline : "manages"
+    PayrollPeriod ||--o{ Payroll : "contains"
+    Employee ||--o{ Payroll : "receives"
+    Payroll }o--o| Employee : "processed by"
+    Company { int Id PK }
+    Employee { int Id PK }
+    PayrollPeriod {
+        int Id PK
+        int CompanyId FK
+        string PeriodName
+        date StartDate
+        date EndDate
+        date PayDate
+        string Status
+        int ProcessedById FK
+    }
+    Payroll {
+        int Id PK
+        int EmployeeId FK
+        int PayrollPeriodId FK
+        decimal BasicPay
+        decimal OvertimePay
+        decimal HolidayPay
+        decimal Allowances
+        decimal GrossPay
+        decimal SSSContribution
+        decimal PhilHealthContribution
+        decimal PagIbigContribution
+        decimal WithholdingTax
+        decimal TotalDeductions
+        decimal NetPay
+        string Status
+        decimal DaysWorked
+        decimal OvertimeHours
+    }
+    PayrollDeadline {
+        int Id PK
+        int CompanyId FK
+        int DepartmentId FK
+        string SubmittedById FK
+        string ApprovedById FK
+        string Status
+        datetime Deadline
+    }
+</div>
+</div>
+
+<div class="section" id="s5">
+<h2>Section 5: Security & Audit</h2>
+<div class="mermaid">
+erDiagram
+    Company ||--o{ AuditLog : "tracks"
+    ApplicationUser ||--o{ AuditLog : "generates"
+    ApplicationUser ||--o{ VendorLog : "vendor logs"
+    ApplicationUser ||--o{ TwoFactorCode : "has 2FA"
+    ApplicationUser { string Id PK }
+    Company { int Id PK }
+    AuditLog {
+        int Id PK
+        int CompanyId FK
+        string UserId FK
+        string Action
+        string EntityName
+        string EntityId
+        string OldValues
+        string NewValues
+        string IpAddress
+        string UserAgent
+        string Details
+        datetime CreatedAt
+    }
+    VendorLog {
+        int Id PK
+        string VendorId FK
+        string VendorName
+        string Action
+        string EntityType
+        string EntityId
+        string OldValues
+        string NewValues
+        string IpAddress
+        string RequestPath
+        datetime CreatedAt
+    }
+    LoginAttempt {
+        int Id PK
+        string Email
+        string IpAddress
+        string UserAgent
+        bool IsSuccessful
+        string FailureReason
+        datetime AttemptedAt
+    }
+    TwoFactorCode {
+        int Id PK
+        string UserId FK
+        string Code
+        bool IsUsed
+        datetime ExpiresAt
+    }
+</div>
+</div>
+
+<div class="section" id="s6">
+<h2>Section 6: Support & Notifications</h2>
+<div class="mermaid">
+erDiagram
+    ApplicationUser ||--o{ Notification : "receives"
+    ApplicationUser ||--o{ IDRequest : "requests"
+    ApplicationUser ||--o{ IncidentReport : "reports"
+    Company ||--o{ IncidentReport : "records"
+    Company ||--o{ IDRequest : "processes"
+    IDRequest }o--o| ApplicationUser : "approved by"
+    IncidentReport }o--o| ApplicationUser : "assigned to"
+    ApplicationUser { string Id PK }
+    Company { int Id PK }
+    Notification {
+        int Id PK
+        string UserId FK
+        string Title
+        string Message
+        bool IsRead
+        string Type
+        string ActionUrl
+        datetime CreatedAt
+    }
+    IncidentReport {
+        int Id PK
+        int CompanyId FK
+        string ReportedById FK
+        string AssignedToId FK
+        string Title
+        string Description
+        string WhatHappened
+        string WhyHappened
+        string Status
+        string Priority
+    }
+    IDRequest {
+        int Id PK
+        string UserId FK
+        int CompanyId FK
+        string Reason
+        string Status
+        string ApprovalNotes
+        string ApprovedByUserId FK
+    }
+</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', er:{fontSize:16,useMaxWidth:false}});</script>
+</body></html>

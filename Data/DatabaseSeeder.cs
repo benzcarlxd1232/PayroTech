@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using PayroTech.Controllers;
 using PayroTech.Models.Entities;
 using PayroTech.Models.Enums;
+using System.Security.Cryptography;
 
 namespace PayroTech.Data;
 
@@ -9,23 +10,74 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
-        // Seed ERP Super Admin
-        await SeedSuperAdminAsync(userManager);
+        // Each step is wrapped in try-catch so failures on constrained hosting
+        // (e.g., MonsterASP free plan timeouts) don't abort the entire seeder.
 
-        // Seed Sample Company
-        await SeedSampleCompanyAsync(context, userManager);
+        // Step 1: Seed ERP Super Admin (CRITICAL — must succeed for login)
+        try
+        {
+            await SeedSuperAdminAsync(userManager);
+            Console.WriteLine("SEED: SuperAdmin accounts created successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SEED ERROR [SuperAdmin]: {ex.Message}");
+        }
 
-        // Seed Demo Company with full payroll data
-        await SeedDemoCompanyAsync(context, userManager);
+        // Step 2: Seed Sample Company
+        try
+        {
+            await SeedSampleCompanyAsync(context, userManager);
+            Console.WriteLine("SEED: Sample company (PayroTech Solutions) created successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SEED ERROR [SampleCompany]: {ex.Message}");
+        }
 
-        // Seed Presentation Demo Company (clean flow for professor demo)
-        await SeedPresentationCompanyAsync(context, userManager);
+        // Step 3: Seed Demo Company with full payroll data
+        try
+        {
+            await SeedDemoCompanyAsync(context, userManager);
+            Console.WriteLine("SEED: Demo company (Demo Corp) created successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SEED ERROR [DemoCompany]: {ex.Message}");
+        }
 
-        // Update demo passwords to meet new 12-char requirement
-        await UpdateDemoPasswordsAsync(userManager);
+        // Step 4: Seed Presentation Demo Company
+        try
+        {
+            await SeedPresentationCompanyAsync(context, userManager);
+            Console.WriteLine("SEED: Presentation company (Sunrise Bakery) created successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SEED ERROR [PresentationCompany]: {ex.Message}");
+        }
 
-        // Ensure manager without face photo is flagged for enrollment
-        await EnsureFaceEnrollmentFlagsAsync(userManager);
+        // Step 5: Update demo passwords
+        try
+        {
+            await UpdateDemoPasswordsAsync(userManager);
+            Console.WriteLine("SEED: Demo passwords updated successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SEED ERROR [UpdatePasswords]: {ex.Message}");
+        }
+
+        // Step 6: Ensure face enrollment flags
+        try
+        {
+            await EnsureFaceEnrollmentFlagsAsync(userManager);
+            Console.WriteLine("SEED: Face enrollment flags set successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SEED ERROR [FaceEnrollment]: {ex.Message}");
+        }
     }
 
     private static async Task EnsureFaceEnrollmentFlagsAsync(UserManager<ApplicationUser> userManager)
@@ -554,7 +606,7 @@ public static class DatabaseSeeder
             IsActive = true, EmailConfirmed = true,
             MustChangePassword = false, RequiresFaceEnrollment = false, IsFaceEnrolled = true,
             QRCodeHash = KioskController.GenerateQRCodeHash(email), QRCodeGeneratedAt = DateTime.UtcNow,
-            StaffCode = $"{(role == UserRole.HR ? "HR" : role == UserRole.Accountant ? "ACC" : role == UserRole.CompanyAdmin ? "MGR" : "EMP")}-DC-{new Random().Next(1000,9999)}",
+            StaffCode = $"{(role == UserRole.HR ? "HR" : role == UserRole.Accountant ? "ACC" : role == UserRole.CompanyAdmin ? "MGR" : "EMP")}-DC-{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000,9999)}",
             DailyRate = role == UserRole.HR ? 900 : role == UserRole.Accountant ? 950 : 700
         };
 
@@ -646,7 +698,7 @@ public static class DatabaseSeeder
             .Where(d => d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
             .Take(22).ToList();
 
-        var rng = new Random(42);
+
         foreach (var emp in employees)
         {
             var dailyRate  = emp.DailyRate  ?? 700m;
@@ -655,12 +707,12 @@ public static class DatabaseSeeder
             foreach (var day in workDays)
             {
                 // 90% attendance rate
-                if (rng.NextDouble() < 0.10) continue;
+                if (RandomNumberGenerator.GetInt32(100) < 10) continue;
 
-                var lateMinutes = rng.NextDouble() < 0.15 ? rng.Next(5, 45) : 0;
+                var lateMinutes = RandomNumberGenerator.GetInt32(100) < 15 ? RandomNumberGenerator.GetInt32(5, 45) : 0;
                 var timeIn  = dayShift.StartTime.Add(TimeSpan.FromMinutes(lateMinutes));
-                var timeOut = dayShift.EndTime.Add(TimeSpan.FromMinutes(rng.Next(-10, 30)));
-                var otMinutes = rng.NextDouble() < 0.20 ? rng.Next(60, 180) : 0; // 1–3 hrs OT
+                var timeOut = dayShift.EndTime.Add(TimeSpan.FromMinutes(RandomNumberGenerator.GetInt32(0, 40) - 10));
+                var otMinutes = RandomNumberGenerator.GetInt32(100) < 20 ? RandomNumberGenerator.GetInt32(60, 180) : 0; // 1–3 hrs OT
 
                 var lateDeduct = (hourlyRate / 60m) * lateMinutes;
                 var otAmount   = (hourlyRate * 1.25m) * (otMinutes / 60m);
@@ -877,7 +929,7 @@ public static class DatabaseSeeder
                 IsActive = true, EmailConfirmed = true,
                 MustChangePassword = false, RequiresFaceEnrollment = false, IsFaceEnrolled = true,
                 QRCodeHash = KioskController.GenerateQRCodeHash(email), QRCodeGeneratedAt = DateTime.UtcNow,
-                StaffCode = $"{(role == UserRole.HR ? "HR" : role == UserRole.Accountant ? "ACC" : role == UserRole.CompanyAdmin ? "MGR" : "EMP")}-SR-{new Random().Next(1000,9999)}",
+                StaffCode = $"{(role == UserRole.HR ? "HR" : role == UserRole.Accountant ? "ACC" : role == UserRole.CompanyAdmin ? "MGR" : "EMP")}-SR-{System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000,9999)}",
                 DailyRate = rate
             };
 
@@ -950,7 +1002,7 @@ public static class DatabaseSeeder
             .Where(d => d.DayOfWeek != DayOfWeek.Sunday)  // Mon–Sat for bakery
             .Take(22).ToList();
 
-        var rng = new Random(99);
+
         var attendanceRecords = new List<Attendance>();
         foreach (var emp in employees)
         {
@@ -959,12 +1011,12 @@ public static class DatabaseSeeder
 
             foreach (var day in workDays)
             {
-                if (rng.NextDouble() < 0.08) continue; // 92% attendance
+                if (RandomNumberGenerator.GetInt32(100) < 8) continue; // 92% attendance
 
-                var lateMinutes = rng.NextDouble() < 0.12 ? rng.Next(5, 30) : 0;
+                var lateMinutes = RandomNumberGenerator.GetInt32(100) < 12 ? RandomNumberGenerator.GetInt32(5, 30) : 0;
                 var timeIn  = shift.StartTime.Add(TimeSpan.FromMinutes(lateMinutes));
-                var timeOut = shift.EndTime.Add(TimeSpan.FromMinutes(rng.Next(-5, 45)));
-                var otMinutes = rng.NextDouble() < 0.25 ? rng.Next(30, 120) : 0;
+                var timeOut = shift.EndTime.Add(TimeSpan.FromMinutes(RandomNumberGenerator.GetInt32(0, 50) - 5));
+                var otMinutes = RandomNumberGenerator.GetInt32(100) < 25 ? RandomNumberGenerator.GetInt32(30, 120) : 0;
 
                 attendanceRecords.Add(new Attendance
                 {

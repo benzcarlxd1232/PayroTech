@@ -6,6 +6,10 @@
     int totalPages  = ViewBag.TotalPages  ?? 1;
     int startP      = Math.Max(1, currentPage - 2);
     int endP        = Math.Min(totalPages, currentPage + 2);
+
+    var selectedDays   = ViewBag.SelectedDays as string ?? "7";
+    var selectedAction = ViewBag.SelectedAction as string ?? "";
+    var selectedSearch = ViewBag.SelectedSearch as string ?? "";
 }
 
 <div class="container-fluid py-4">
@@ -17,34 +21,61 @@
                 </div>
                 <div class="card-body">
                     <form method="get" class="row g-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Date Range</label>
                             <select name="days" class="form-select">
-                                <option value="7" selected>Last 7 days</option>
-                                <option value="30">Last 30 days</option>
-                                <option value="90">Last 90 days</option>
-                                <option value="365">This Year</option>
+                                <option value="7" selected="@(selectedDays == "7" ? "selected" : null)">Last 7 days</option>
+                                <option value="30" selected="@(selectedDays == "30" ? "selected" : null)">Last 30 days</option>
+                                <option value="90" selected="@(selectedDays == "90" ? "selected" : null)">Last 90 days</option>
+                                <option value="365" selected="@(selectedDays == "365" ? "selected" : null)">This Year</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Action Type</label>
                             <select name="action" class="form-select">
                                 <option value="">All Actions</option>
-                                <option>Login</option>
-                                <option>Logout</option>
-                                <option>Created HR Account</option>
-                                <option>Created Accountant Account</option>
-                                <option>Approved Payroll</option>
-                                <option>Rejected Payroll</option>
+                                <optgroup label="Authentication">
+                                    <option value="Login" selected="@(selectedAction == "Login" ? "selected" : null)">Login</option>
+                                    <option value="Logout" selected="@(selectedAction == "Logout" ? "selected" : null)">Logout</option>
+                                    <option value="Failed Login" selected="@(selectedAction == "Failed Login" ? "selected" : null)">Failed Login</option>
+                                    <option value="Password Changed" selected="@(selectedAction == "Password Changed" ? "selected" : null)">Password Changed</option>
+                                    <option value="Password Reset Completed" selected="@(selectedAction == "Password Reset Completed" ? "selected" : null)">Password Reset Completed</option>
+                                </optgroup>
+                                <optgroup label="Staff Management">
+                                    <option value="Created HR Account" selected="@(selectedAction == "Created HR Account" ? "selected" : null)">Created HR Account</option>
+                                    <option value="Created Accountant Account" selected="@(selectedAction == "Created Accountant Account" ? "selected" : null)">Created Accountant Account</option>
+                                    <option value="Created Employee Account" selected="@(selectedAction == "Created Employee Account" ? "selected" : null)">Created Employee Account</option>
+                                    <option value="Created Team" selected="@(selectedAction == "Created Team" ? "selected" : null)">Created Team</option>
+                                </optgroup>
+                                <optgroup label="Approvals">
+                                    <option value="Approved Payroll" selected="@(selectedAction == "Approved Payroll" ? "selected" : null)">Approved Payroll</option>
+                                    <option value="Rejected Payroll" selected="@(selectedAction == "Rejected Payroll" ? "selected" : null)">Rejected Payroll</option>
+                                    <option value="Approved Leave" selected="@(selectedAction == "Approved Leave" ? "selected" : null)">Approved Leave</option>
+                                    <option value="Rejected Leave" selected="@(selectedAction == "Rejected Leave" ? "selected" : null)">Rejected Leave</option>
+                                    <option value="Approved Overtime" selected="@(selectedAction == "Approved Overtime" ? "selected" : null)">Approved Overtime</option>
+                                </optgroup>
+                                <optgroup label="Reports">
+                                    <option value="Downloaded" selected="@(selectedAction == "Downloaded" ? "selected" : null)">Downloaded Report</option>
+                                </optgroup>
+                                <optgroup label="Settings">
+                                    <option value="Updated Company Settings" selected="@(selectedAction == "Updated Company Settings" ? "selected" : null)">Updated Company Settings</option>
+                                    <option value="Updated Staff Shift" selected="@(selectedAction == "Updated Staff Shift" ? "selected" : null)">Updated Staff Shift</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Search</label>
-                            <input type="text" name="search" class="form-control" placeholder="Search by action or details...">
+                            <input type="text" name="search" class="form-control" placeholder="Search by action or details..." value="@selectedSearch">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i>
+                            </button>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search me-2"></i>Search
+                            <button type="button" class="btn btn-outline-danger w-100"
+                                    onclick="requestPdfDownload('/ReportDownload/ManagerAuditLogReport?days=@selectedDays', 'AuditLogs')">
+                                <i class="bi bi-file-pdf me-1"></i>Export PDF
                             </button>
                         </div>
                     </form>
@@ -55,10 +86,8 @@
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Your Activity Logs</h5>
-            <button class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-download me-2"></i>Export
-            </button>
+            <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Company Activity Logs</h5>
+            <span class="badge bg-primary">@(Model?.Count ?? 0) entries</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -66,6 +95,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>Date & Time</th>
+                            <th>User</th>
                             <th>Action</th>
                             <th>Details</th>
                             <th>IP Address</th>
@@ -77,10 +107,31 @@
                         {
                             foreach (var log in Model)
                             {
-                                <tr>
+                                var isWarning = log.Action == "Failed Login"
+                                             || log.Action == "Password Reset Requested"
+                                             || log.Action == "Password Reset OTP Max Attempts"
+                                             || log.Action?.Contains("Failed") == true;
+
+                                var isApproval = log.Action?.Contains("Approved") == true
+                                              || log.Action?.Contains("Rejected") == true;
+
+                                var isDownload = log.Action?.Contains("Downloaded") == true;
+
+                                <tr class="@(isWarning ? "table-warning" : "")">
                                     <td>
                                         <strong>@log.Timestamp.ToString("MMM dd, yyyy")</strong>
                                         <div class="text-muted small">@log.Timestamp.ToString("hh:mm tt")</div>
+                                    </td>
+                                    <td>
+                                        @if (log.User != null)
+                                        {
+                                            <span>@log.User.FullName</span>
+                                            <div class="text-muted small">@log.User.Role</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">System</span>
+                                        }
                                     </td>
                                     <td>
                                         @{
@@ -88,19 +139,42 @@
                                             {
                                                 "Login" => "bg-primary",
                                                 "Logout" => "bg-secondary",
+                                                "Failed Login" => "bg-danger",
+                                                "Password Changed" => "bg-info",
+                                                "Password Reset Completed" => "bg-info",
+                                                "Password Reset Requested" => "bg-warning text-dark",
+                                                "Password Reset OTP Max Attempts" => "bg-danger",
+                                                "Password Reset OTP Failed" => "bg-warning text-dark",
                                                 "Created HR Account" => "bg-success",
-                                                "Created Accountant Account" => "bg-warning text-dark",
+                                                "Created Accountant Account" => "bg-success",
+                                                "Created Employee Account" => "bg-success",
+                                                "Created Team" => "bg-success",
                                                 "Approved Payroll" => "bg-success",
                                                 "Rejected Payroll" => "bg-danger",
-                                                _ => "bg-info"
+                                                "Approved Leave" => "bg-success",
+                                                "Rejected Leave" => "bg-danger",
+                                                "Approved Overtime" => "bg-success",
+                                                "Updated Company Settings" => "bg-info",
+                                                "Updated Staff Shift" => "bg-info",
+                                                _ when log.Action?.Contains("Downloaded") == true => "bg-primary",
+                                                _ when log.Action?.Contains("Approved") == true => "bg-success",
+                                                _ when log.Action?.Contains("Rejected") == true => "bg-danger",
+                                                _ when log.Action?.Contains("Failed") == true => "bg-danger",
+                                                _ => "bg-secondary"
                                             };
+                                        }
+                                        @if (isWarning)
+                                        {
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>
                                         }
                                         <span class="badge @badgeClass">@log.Action</span>
                                     </td>
-                                    <td>
+                                    <td style="max-width:300px;">
                                         @if (!string.IsNullOrEmpty(log.NewValues))
                                         {
-                                            <span>@log.NewValues.Substring(0, Math.Min(50, log.NewValues.Length))...</span>
+                                            <span class="text-truncate d-inline-block" style="max-width:280px;" title="@log.NewValues">
+                                                @log.NewValues.Substring(0, Math.Min(80, log.NewValues.Length))@(log.NewValues.Length > 80 ? "..." : "")
+                                            </span>
                                         }
                                         else
                                         {
@@ -108,14 +182,23 @@
                                         }
                                     </td>
                                     <td><code>@(log.IpAddress ?? "N/A")</code></td>
-                                    <td><span class="text-success"><i class="bi bi-check-circle"></i> Success</span></td>
+                                    <td>
+                                        @if (isWarning)
+                                        {
+                                            <span class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Warning</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success"><i class="bi bi-check-circle"></i> Success</span>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         }
                         else
                         {
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">
+                                <td colspan="6" class="text-center py-4 text-muted">
                                     <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
                                     No activity logs found
                                 </td>
@@ -129,26 +212,26 @@
         {
             <div class="pt-pagination">
                 <small class="text-muted me-auto ps-1">
-                    Showing @(Model?.Count ?? 0) of @(totalPages * 20) activities
+                    Page @currentPage of @totalPages
                 </small>
                 <button class="pt-pagination-btn" @(currentPage == 1 ? "disabled" : "")
-                        onclick="window.location.href='?page=@(currentPage - 1)'">
+                        onclick="window.location.href='?page=@(currentPage - 1)&days=@selectedDays&action=@selectedAction&search=@selectedSearch'">
                     <i class="bi bi-chevron-left"></i>
                 </button>
                 @if (startP > 1) {
-                    <button class="pt-pagination-btn" onclick="window.location.href='?page=1'">1</button>
+                    <button class="pt-pagination-btn" onclick="window.location.href='?page=1&days=@selectedDays&action=@selectedAction&search=@selectedSearch'">1</button>
                     if (startP > 2) { <span class="pt-pagination-ellipsis">…</span> }
                 }
                 @for (int i = startP; i <= endP; i++) {
                     <button class="pt-pagination-btn @(currentPage == i ? "active" : "")"
-                            onclick="window.location.href='?page=@i'">@i</button>
+                            onclick="window.location.href='?page=@i&days=@selectedDays&action=@selectedAction&search=@selectedSearch'">@i</button>
                 }
                 @if (endP < totalPages) {
                     if (endP < totalPages - 1) { <span class="pt-pagination-ellipsis">…</span> }
-                    <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages'">@totalPages</button>
+                    <button class="pt-pagination-btn" onclick="window.location.href='?page=@totalPages&days=@selectedDays&action=@selectedAction&search=@selectedSearch'">@totalPages</button>
                 }
                 <button class="pt-pagination-btn" @(currentPage == totalPages ? "disabled" : "")
-                        onclick="window.location.href='?page=@(currentPage + 1)'">
+                        onclick="window.location.href='?page=@(currentPage + 1)&days=@selectedDays&action=@selectedAction&search=@selectedSearch'">
                     <i class="bi bi-chevron-right"></i>
                 </button>
             </div>
@@ -161,3 +244,5 @@
         }
     </div>
 </div>
+
+@await Html.PartialAsync("_PdfDownloadModal")

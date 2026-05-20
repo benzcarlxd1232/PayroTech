@@ -1,0 +1,153 @@
+<!-- Password Verification Modal for PDF Downloads -->
+<div class="modal fade" id="pdfPasswordModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 20px 60px rgba(0,0,0,.15);">
+            <div class="modal-header border-0 pb-0" style="padding:28px 28px 0;">
+                <div>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-shield-lock me-2 text-primary"></i>Verify Identity</h5>
+                    <p class="text-muted mb-0" style="font-size:.85rem;">Enter your account password to download this encrypted report</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px 28px;">
+                <div id="pdf-password-error" class="alert alert-danger d-none" style="border-radius:10px;font-size:.85rem;">
+                    <i class="bi bi-exclamation-circle me-1"></i><span id="pdf-password-error-text"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:.85rem;">Account Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" class="form-control" id="pdfPasswordInput" placeholder="Enter your password" autocomplete="current-password">
+                        <button class="btn btn-outline-secondary" type="button" onclick="togglePdfPw()">
+                            <i class="bi bi-eye" id="pdfPwEye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 p-3 rounded-3" style="background:#f0f9ff;border:1px solid #bae6fd;">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <small class="text-muted">The PDF will be encrypted with your password. You'll need it to open the file.</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0" style="padding:0 28px 28px;">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" id="pdfDownloadBtn" onclick="submitPdfDownload()">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                    <span class="spinner-border spinner-border-sm d-none ms-2" id="pdfSpinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Store the pending download URL
+    let _pendingPdfUrl = '';
+    let _pendingReportName = '';
+
+    function requestPdfDownload(downloadUrl, reportName) {
+        _pendingPdfUrl = downloadUrl;
+        _pendingReportName = reportName || 'Report';
+        document.getElementById('pdfPasswordInput').value = '';
+        document.getElementById('pdf-password-error').classList.add('d-none');
+        document.getElementById('pdfDownloadBtn').disabled = false;
+        document.getElementById('pdfSpinner').classList.add('d-none');
+        var modal = new bootstrap.Modal(document.getElementById('pdfPasswordModal'));
+        modal.show();
+        setTimeout(() => document.getElementById('pdfPasswordInput').focus(), 300);
+    }
+
+    function togglePdfPw() {
+        const i = document.getElementById('pdfPasswordInput');
+        const e = document.getElementById('pdfPwEye');
+        if (i.type === 'password') { i.type = 'text'; e.className = 'bi bi-eye-slash'; }
+        else { i.type = 'password'; e.className = 'bi bi-eye'; }
+    }
+
+    async function submitPdfDownload() {
+        const password = document.getElementById('pdfPasswordInput').value;
+        if (!password) {
+            showPdfError('Please enter your password.');
+            return;
+        }
+
+        const btn = document.getElementById('pdfDownloadBtn');
+        const spinner = document.getElementById('pdfSpinner');
+        btn.disabled = true;
+        spinner.classList.remove('d-none');
+
+        try {
+            // Step 1: Verify password
+            const verifyRes = await fetch('/ReportDownload/VerifyPassword', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+                body: JSON.stringify({ password: password })
+            });
+            const verifyData = await verifyRes.json();
+
+            if (!verifyData.success) {
+                showPdfError(verifyData.message || 'Password verification failed.');
+                btn.disabled = false;
+                spinner.classList.add('d-none');
+                return;
+            }
+
+            // Step 2: Download the PDF
+            const pdfRes = await fetch(_pendingPdfUrl);
+            if (!pdfRes.ok) {
+                const errText = await pdfRes.text();
+                showPdfError('Failed to generate report. Please try again.');
+                btn.disabled = false;
+                spinner.classList.add('d-none');
+                return;
+            }
+
+            const blob = await pdfRes.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            // Extract filename from Content-Disposition or use default
+            const disposition = pdfRes.headers.get('Content-Disposition');
+            let filename = _pendingReportName + '.pdf';
+            if (disposition) {
+                const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (match && match[1]) filename = match[1].replace(/['"]/g, '');
+            }
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('pdfPasswordModal'))?.hide();
+
+        } catch (ex) {
+            showPdfError('Network error. Please try again.');
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    }
+
+    function showPdfError(msg) {
+        const el = document.getElementById('pdf-password-error');
+        document.getElementById('pdf-password-error-text').textContent = msg;
+        el.classList.remove('d-none');
+    }
+
+    function getAntiForgeryToken() {
+        const el = document.querySelector('input[name="__RequestVerificationToken"]');
+        return el ? el.value : '';
+    }
+
+    // Allow Enter key in password field
+    document.addEventListener('DOMContentLoaded', function() {
+        const pwInput = document.getElementById('pdfPasswordInput');
+        if (pwInput) {
+            pwInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); submitPdfDownload(); }
+            });
+        }
+    });
+</script>
+@Html.AntiForgeryToken()

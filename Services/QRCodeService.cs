@@ -16,17 +16,18 @@ public interface IQRCodeService
 public class QRCodeService : IQRCodeService
 {
     private readonly IConfiguration _configuration;
-    private const string SECRET_KEY = "PayroTech_QR_2026";
+    private readonly string _secretKey;
 
     public QRCodeService(IConfiguration configuration)
     {
         _configuration = configuration;
+        _secretKey = _configuration["QRCode:SecretKey"] ?? Guid.NewGuid().ToString("N");
     }
 
     public string GenerateQRCodeHash(string userId, int companyId)
     {
         var timestamp = DateTime.UtcNow.Ticks;
-        var data = $"{userId}:{companyId}:{timestamp}:{SECRET_KEY}";
+        var data = $"{userId}:{companyId}:{timestamp}:{_secretKey}";
         
         using var sha256 = SHA256.Create();
         var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(data));
@@ -41,7 +42,7 @@ public class QRCodeService : IQRCodeService
     public string GenerateUniqueCode(string userId)
     {
         var timestamp = DateTime.UtcNow.Ticks;
-        var data = $"{userId}:{timestamp}:{Guid.NewGuid()}:{SECRET_KEY}";
+        var data = $"{userId}:{timestamp}:{Guid.NewGuid()}:{_secretKey}";
         
         using var sha256 = SHA256.Create();
         var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(data));

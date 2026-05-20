@@ -5,6 +5,7 @@ using PayroTech.Models.Entities;
 using PayroTech.Models.Enums;
 using PayroTech.Services;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 namespace PayroTech.Controllers;
 
@@ -201,12 +202,11 @@ public class RegisterController : Controller
     private async Task<string> GenerateCompanyCodeAsync(string name)
     {
         var prefix = new string(name.ToUpper().Where(char.IsLetter).Take(3).ToArray()).PadRight(3, 'X');
-        var rng = new Random();
         string code;
         int tries = 0;
         do
         {
-            code = $"{prefix}{rng.Next(1000, 9999)}";
+            code = $"{prefix}{RandomNumberGenerator.GetInt32(1000, 9999)}";
             tries++;
         }
         while (await _context.Companies.AnyAsync(c => c.CompanyCode == code) && tries < 10);

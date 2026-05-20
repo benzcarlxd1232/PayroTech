@@ -1,45 +1,30 @@
 @{
     ViewData["Title"] = "Reports";
     Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+
+    var currentMonth = DateTime.Now.Month;
+    var currentYear = DateTime.Now.Year;
 }
 
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1">Reports & Analytics</h4>
-        <p class="text-muted mb-0">Generate and view payroll reports</p>
+        <p class="text-muted mb-0">Generate and download password-protected PDF reports</p>
     </div>
-</div>
-
-<!-- Quick Stats -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="pt-stats-card success">
-            <div class="pt-stats-value">₱ 2.8M</div>
-            <div class="pt-stats-label">YTD Payroll</div>
-            <i class="bi bi-cash-stack pt-stats-icon"></i>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="pt-stats-card">
-            <div class="pt-stats-value">148</div>
-            <div class="pt-stats-label">Active Employees</div>
-            <i class="bi bi-people pt-stats-icon"></i>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="pt-stats-card warning">
-            <div class="pt-stats-value">₱ 459K</div>
-            <div class="pt-stats-label">YTD Government</div>
-            <i class="bi bi-bank pt-stats-icon"></i>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="pt-stats-card">
-            <div class="pt-stats-value">12</div>
-            <div class="pt-stats-label">Reports Generated</div>
-            <i class="bi bi-file-earmark-text pt-stats-icon"></i>
-        </div>
+    <div class="d-flex gap-2">
+        <select id="reportMonth" class="form-select form-select-sm" style="width:auto;">
+            @for (int m = 1; m <= 12; m++)
+            {
+                <option value="@m" selected="@(m == currentMonth ? "selected" : null)">@(new DateTime(2026, m, 1).ToString("MMMM"))</option>
+            }
+        </select>
+        <select id="reportYear" class="form-select form-select-sm" style="width:auto;">
+            @for (int y = currentYear; y >= currentYear - 2; y--)
+            {
+                <option value="@y">@y</option>
+            }
+        </select>
     </div>
 </div>
 
@@ -51,327 +36,120 @@
                 <i class="bi bi-cash-stack text-success me-2"></i>Payroll Reports
             </div>
             <div class="pt-card-body p-0">
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none" data-bs-toggle="modal" data-bs-target="#generateReportModal">
+                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none"
+                   onclick="downloadReport('/ReportDownload/ManagerPayrollSummary', 'PayrollSummary', true); return false;">
                     <div class="report-icon me-3" style="background: #dcfce7; color: #059669;">
                         <i class="bi bi-file-earmark-spreadsheet"></i>
                     </div>
-                    <div>
+                    <div class="flex-grow-1">
                         <strong>Payroll Summary</strong>
                         <div class="small text-muted">Monthly payroll breakdown by team</div>
                     </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                    <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-download"></i> PDF</span>
                 </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
+                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none"
+                   onclick="downloadReport('/ReportDownload/ManagerGovernmentReport', 'GovernmentCompliance', true); return false;">
                     <div class="report-icon me-3" style="background: #dcfce7; color: #059669;">
                         <i class="bi bi-calculator"></i>
                     </div>
-                    <div>
-                        <strong>Payroll Register</strong>
-                        <div class="small text-muted">Detailed employee payroll records</div>
+                    <div class="flex-grow-1">
+                        <strong>Government Contributions</strong>
+                        <div class="small text-muted">SSS, PhilHealth, Pag-IBIG, Tax</div>
                     </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 text-decoration-none">
-                    <div class="report-icon me-3" style="background: #dcfce7; color: #059669;">
-                        <i class="bi bi-graph-up"></i>
-                    </div>
-                    <div>
-                        <strong>Payroll Variance</strong>
-                        <div class="small text-muted">Period-over-period comparison</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                    <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-download"></i> PDF</span>
                 </a>
             </div>
         </div>
     </div>
 
     <div class="col-md-4">
-        <div class="pt-card h-100">
-            <div class="pt-card-header">
-                <i class="bi bi-bank text-primary me-2"></i>Government Reports
-            </div>
-            <div class="pt-card-body p-0">
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
-                    <div class="report-icon me-3" style="background: #dbeafe; color: #2563eb;">
-                        <i class="bi bi-file-text"></i>
-                    </div>
-                    <div>
-                        <strong>SSS R3 Report</strong>
-                        <div class="small text-muted">Monthly contribution list</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
-                    <div class="report-icon me-3" style="background: #dbeafe; color: #2563eb;">
-                        <i class="bi bi-file-medical"></i>
-                    </div>
-                    <div>
-                        <strong>PhilHealth RF-1</strong>
-                        <div class="small text-muted">Premium remittance form</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 text-decoration-none">
-                    <div class="report-icon me-3" style="background: #dbeafe; color: #2563eb;">
-                        <i class="bi bi-house"></i>
-                    </div>
-                    <div>
-                        <strong>Pag-IBIG MCRF</strong>
-                        <div class="small text-muted">Contribution remittance form</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="pt-card h-100">
-            <div class="pt-card-header">
-                <i class="bi bi-percent text-warning me-2"></i>Tax Reports
-            </div>
-            <div class="pt-card-body p-0">
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
-                    <div class="report-icon me-3" style="background: #fef3c7; color: #f59e0b;">
-                        <i class="bi bi-file-earmark-ruled"></i>
-                    </div>
-                    <div>
-                        <strong>BIR 1601-C</strong>
-                        <div class="small text-muted">Monthly withholding tax</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
-                    <div class="report-icon me-3" style="background: #fef3c7; color: #f59e0b;">
-                        <i class="bi bi-file-earmark-check"></i>
-                    </div>
-                    <div>
-                        <strong>BIR 2316</strong>
-                        <div class="small text-muted">Annual income tax return</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 text-decoration-none">
-                    <div class="report-icon me-3" style="background: #fef3c7; color: #f59e0b;">
-                        <i class="bi bi-file-zip"></i>
-                    </div>
-                    <div>
-                        <strong>Alphalist</strong>
-                        <div class="small text-muted">Annual list of employees</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- More Reports -->
-<div class="row mb-4">
-    <div class="col-md-6">
         <div class="pt-card h-100">
             <div class="pt-card-header">
                 <i class="bi bi-people text-info me-2"></i>Employee Reports
             </div>
             <div class="pt-card-body p-0">
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
+                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none"
+                   onclick="downloadReport('/ReportDownload/ManagerEmployeeMasterlist', 'EmployeeMasterlist', false); return false;">
                     <div class="report-icon me-3" style="background: #e0f2fe; color: #0891b2;">
                         <i class="bi bi-person-lines-fill"></i>
                     </div>
-                    <div>
+                    <div class="flex-grow-1">
                         <strong>Employee Masterlist</strong>
                         <div class="small text-muted">Complete employee directory</div>
                     </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                    <span class="badge bg-info bg-opacity-10 text-info"><i class="bi bi-download"></i> PDF</span>
                 </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
+                <a href="#" class="report-item d-flex align-items-center p-3 text-decoration-none"
+                   onclick="downloadReport('/ReportDownload/ManagerAttendanceReport', 'AttendanceReport', true); return false;">
                     <div class="report-icon me-3" style="background: #e0f2fe; color: #0891b2;">
                         <i class="bi bi-calendar-check"></i>
                     </div>
-                    <div>
+                    <div class="flex-grow-1">
                         <strong>Attendance Report</strong>
                         <div class="small text-muted">Attendance summary by period</div>
                     </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 text-decoration-none">
-                    <div class="report-icon me-3" style="background: #e0f2fe; color: #0891b2;">
-                        <i class="bi bi-calendar-x"></i>
-                    </div>
-                    <div>
-                        <strong>Leave Report</strong>
-                        <div class="small text-muted">Leave usage and balance</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                    <span class="badge bg-info bg-opacity-10 text-info"><i class="bi bi-download"></i> PDF</span>
                 </a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="pt-card h-100">
             <div class="pt-card-header">
-                <i class="bi bi-wallet2 text-purple me-2"></i>Budget Reports
+                <i class="bi bi-shield-check text-warning me-2"></i>Security & Audit
             </div>
             <div class="pt-card-body p-0">
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
-                    <div class="report-icon me-3" style="background: #f3e8ff; color: #7c3aed;">
-                        <i class="bi bi-pie-chart"></i>
+                <a href="#" class="report-item d-flex align-items-center p-3 text-decoration-none"
+                   onclick="downloadAuditReport(); return false;">
+                    <div class="report-icon me-3" style="background: #fef3c7; color: #f59e0b;">
+                        <i class="bi bi-journal-text"></i>
                     </div>
-                    <div>
-                        <strong>Budget Utilization</strong>
-                        <div class="small text-muted">Budget vs actual by team</div>
+                    <div class="flex-grow-1">
+                        <strong>Activity Logs</strong>
+                        <div class="small text-muted">Full audit trail (last 30 days)</div>
                     </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 border-bottom text-decoration-none">
-                    <div class="report-icon me-3" style="background: #f3e8ff; color: #7c3aed;">
-                        <i class="bi bi-bar-chart"></i>
-                    </div>
-                    <div>
-                        <strong>Cost Center Analysis</strong>
-                        <div class="small text-muted">Department cost breakdown</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                </a>
-                <a href="#" class="report-item d-flex align-items-center p-3 text-decoration-none">
-                    <div class="report-icon me-3" style="background: #f3e8ff; color: #7c3aed;">
-                        <i class="bi bi-graph-down"></i>
-                    </div>
-                    <div>
-                        <strong>Overtime Analysis</strong>
-                        <div class="small text-muted">OT trends and costs</div>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                    <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-download"></i> PDF</span>
                 </a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Recent Reports -->
+<!-- Security Notice -->
 <div class="row">
     <div class="col-12">
-        <div class="pt-table-wrapper">
-            <div class="pt-card-header">
-                <i class="bi bi-clock-history me-2"></i>Recently Generated Reports
+        <div class="pt-card">
+            <div class="pt-card-body">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:48px;height:48px;background:linear-gradient(135deg,#dbeafe,#e0f2fe);">
+                        <i class="bi bi-shield-lock-fill text-primary fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Password-Protected Reports</h6>
+                        <p class="text-muted mb-0" style="font-size:.85rem;">
+                            All downloaded PDF reports are encrypted with <strong>AES-256</strong> using your account password.
+                            You will need to enter your password when opening the PDF file. This ensures confidential payroll
+                            and employee data remains secure even if the file is shared or intercepted.
+                        </p>
+                    </div>
+                </div>
             </div>
-            <table class="pt-table">
-                <thead>
-                    <tr>
-                        <th>Report Name</th>
-                        <th>Type</th>
-                        <th>Period</th>
-                        <th>Generated By</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Payroll Summary - March 2026</strong></td>
-                        <td><span class="pt-badge pt-badge-success pt-badge-sm">Payroll</span></td>
-                        <td>March 2026</td>
-                        <td>Maria Garcia</td>
-                        <td>Mar 28, 2026 10:30 AM</td>
-                        <td>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye me-1"></i>View</button>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-download me-1"></i>PDF</button>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-file-excel me-1"></i>Excel</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>SSS R3 Report - March 2026</strong></td>
-                        <td><span class="pt-badge pt-badge-primary pt-badge-sm">Government</span></td>
-                        <td>March 2026</td>
-                        <td>Jose Reyes</td>
-                        <td>Mar 27, 2026 3:45 PM</td>
-                        <td>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye me-1"></i>View</button>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-download me-1"></i>PDF</button>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-file-excel me-1"></i>Excel</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>Employee Attendance - March 2026</strong></td>
-                        <td><span class="pt-badge pt-badge-info pt-badge-sm">Employee</span></td>
-                        <td>March 2026</td>
-                        <td>Maria Garcia</td>
-                        <td>Mar 25, 2026 9:15 AM</td>
-                        <td>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-eye me-1"></i>View</button>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-download me-1"></i>PDF</button>
-                            <button class="pt-btn pt-btn-ghost pt-btn-sm"><i class="bi bi-file-excel me-1"></i>Excel</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
 
-<!-- Generate Report Modal -->
-<div class="modal fade" id="generateReportModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-file-earmark-plus me-2"></i>Generate Report</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <div class="mb-3">
-                        <label class="form-label">Report Type</label>
-                        <select class="form-select">
-                            <option>Payroll Summary</option>
-                        </select>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Period</label>
-                            <select class="form-select">
-                                <option>March 2026</option>
-                                <option>February 2026</option>
-                                <option>January 2026</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Format</label>
-                            <select class="form-select">
-                                <option>PDF</option>
-                                <option>Excel</option>
-                                <option>CSV</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Department/Team</label>
-                        <select class="form-select">
-                            <option>All Departments</option>
-                            <option>Engineering</option>
-                            <option>Design</option>
-                            <option>Marketing</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="pt-btn pt-btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="pt-btn pt-btn-primary">
-                    <i class="bi bi-download me-2"></i>Generate Report
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_PdfDownloadModal")
 
 <style>
     .report-item {
         color: var(--pt-text-primary);
-        transition: background 0.2s;
+        transition: background 0.2s, transform 0.1s;
     }
     .report-item:hover {
         background: var(--pt-bg-secondary);
+        transform: translateX(2px);
     }
     .report-icon {
         width: 45px;
@@ -381,5 +159,22 @@
         align-items: center;
         justify-content: center;
         font-size: 1.2rem;
+        flex-shrink: 0;
     }
 </style>
+
+<script>
+    function downloadReport(baseUrl, reportName, usePeriod) {
+        let url = baseUrl;
+        if (usePeriod) {
+            const month = document.getElementById('reportMonth').value;
+            const year = document.getElementById('reportYear').value;
+            url += `?year=${year}&month=${month}`;
+        }
+        requestPdfDownload(url, reportName);
+    }
+
+    function downloadAuditReport() {
+        requestPdfDownload('/ReportDownload/ManagerAuditLogReport?days=30', 'AuditLogs');
+    }
+</script>

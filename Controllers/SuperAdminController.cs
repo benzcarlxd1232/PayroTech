@@ -7,6 +7,7 @@ using PayroTech.Models.Entities;
 using PayroTech.Models.Enums;
 using PayroTech.Models.ViewModels;
 using PayroTech.Services;
+using System.Security.Cryptography;
 
 namespace PayroTech.Controllers;
 
@@ -54,48 +55,63 @@ public class SuperAdminController : Controller
         if (!await IsSuperAdmin())
             return RedirectToAction("Index", "Home");
 
-        var dashboard = new SuperAdminDashboardViewModel
+        try
         {
-            TotalCompanies    = await _context.Companies.CountAsync(),
-            ActiveCompanies   = await _context.Companies.CountAsync(c => c.IsActive && c.IsSubscriptionActive),
-            TotalUsers        = await _context.Users.CountAsync(u => u.Role != UserRole.ErpSuperAdmin && u.IsActive),
-            TotalEmployees    = await _context.Employees.CountAsync(e => e.IsActive),
-            TotalStaff        = await _context.Users.CountAsync(u => u.Role != UserRole.ErpSuperAdmin && u.IsActive),
-            TotalHR           = await _context.Users.CountAsync(u => u.Role == UserRole.HR && u.IsActive),
-            TotalAccountants  = await _context.Users.CountAsync(u => u.Role == UserRole.Accountant && u.IsActive),
-            TotalCompanyAdmins= await _context.Users.CountAsync(u => u.Role == UserRole.CompanyAdmin && u.IsActive),
-            RecentCompanies = await _context.Companies
-                .OrderByDescending(c => c.CreatedAt)
-                .Take(5)
-                .Select(c => new CompanyListItem
-                {
-                    Id = c.Id,
-                    CompanyCode = c.CompanyCode,
-                    CompanyName = c.CompanyName,
-                    IsActive = c.IsActive,
-                    IsSubscriptionActive = c.IsSubscriptionActive,
-                    SubscriptionEnd = c.SubscriptionEnd,
-                    EmployeeCount = c.Employees.Count(e => e.IsActive)
-                })
-                .ToListAsync(),
-            ExpiringSubscriptions = await _context.Companies
-                .Where(c => c.IsSubscriptionActive && c.SubscriptionEnd <= DateTime.UtcNow.AddDays(30))
-                .OrderBy(c => c.SubscriptionEnd)
-                .Take(5)
-                .Select(c => new CompanyListItem
-                {
-                    Id = c.Id,
-                    CompanyCode = c.CompanyCode,
-                    CompanyName = c.CompanyName,
-                    IsActive = c.IsActive,
-                    IsSubscriptionActive = c.IsSubscriptionActive,
-                    SubscriptionEnd = c.SubscriptionEnd,
-                    EmployeeCount = c.Employees.Count(e => e.IsActive)
-                })
-                .ToListAsync()
-        };
+            var dashboard = new SuperAdminDashboardViewModel
+            {
+                TotalCompanies    = await _context.Companies.CountAsync(),
+                ActiveCompanies   = await _context.Companies.CountAsync(c => c.IsActive && c.IsSubscriptionActive),
+                TotalUsers        = await _context.Users.CountAsync(u => u.Role != UserRole.ErpSuperAdmin && u.IsActive),
+                TotalEmployees    = await _context.Employees.CountAsync(e => e.IsActive),
+                TotalStaff        = await _context.Users.CountAsync(u => u.Role != UserRole.ErpSuperAdmin && u.IsActive),
+                TotalHR           = await _context.Users.CountAsync(u => u.Role == UserRole.HR && u.IsActive),
+                TotalAccountants  = await _context.Users.CountAsync(u => u.Role == UserRole.Accountant && u.IsActive),
+                TotalCompanyAdmins= await _context.Users.CountAsync(u => u.Role == UserRole.CompanyAdmin && u.IsActive),
+                RecentCompanies = await _context.Companies
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(5)
+                    .Select(c => new CompanyListItem
+                    {
+                        Id = c.Id,
+                        CompanyCode = c.CompanyCode,
+                        CompanyName = c.CompanyName,
+                        IsActive = c.IsActive,
+                        IsSubscriptionActive = c.IsSubscriptionActive,
+                        SubscriptionEnd = c.SubscriptionEnd,
+                        EmployeeCount = c.Employees.Count(e => e.IsActive)
+                    })
+                    .ToListAsync(),
+                ExpiringSubscriptions = await _context.Companies
+                    .Where(c => c.IsSubscriptionActive && c.SubscriptionEnd <= DateTime.UtcNow.AddDays(30))
+                    .OrderBy(c => c.SubscriptionEnd)
+                    .Take(5)
+                    .Select(c => new CompanyListItem
+                    {
+                        Id = c.Id,
+                        CompanyCode = c.CompanyCode,
+                        CompanyName = c.CompanyName,
+                        IsActive = c.IsActive,
+                        IsSubscriptionActive = c.IsSubscriptionActive,
+                        SubscriptionEnd = c.SubscriptionEnd,
+                        EmployeeCount = c.Employees.Count(e => e.IsActive)
+                    })
+                    .ToListAsync()
+            };
 
-        return View(dashboard);
+            return View(dashboard);
+        }
+        catch (Exception ex)
+        {
+            // Log the error and return empty dashboard rather than crashing
+            var logger = HttpContext.RequestServices.GetService<ILogger<SuperAdminController>>();
+            logger?.LogError(ex, "SuperAdmin dashboard query failed: {Message}", ex.Message);
+
+            return View(new SuperAdminDashboardViewModel
+            {
+                RecentCompanies = new List<CompanyListItem>(),
+                ExpiringSubscriptions = new List<CompanyListItem>()
+            });
+        }
     }
 
     // Company Management
@@ -409,13 +425,12 @@ public class SuperAdminController : Controller
         if (prefix.Length < 3)
             prefix = prefix.PadRight(3, 'X');
 
-        var random = new Random();
         string code;
         int attempts = 0;
         
         do
         {
-            code = $"{prefix}{random.Next(1000, 9999)}";
+            code = $"{prefix}{RandomNumberGenerator.GetInt32(1000, 9999)}";
             attempts++;
         } while (await _context.Companies.AnyAsync(c => c.CompanyCode == code) && attempts < 10);
 

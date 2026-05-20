@@ -9,10 +9,12 @@ using PayroTech.Services;
 using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 
 namespace PayroTech.Controllers;
 
 [Authorize]
+[SupportedOSPlatform("windows")]
 public class IDCardController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -127,9 +129,9 @@ public class IDCardController : Controller
 
     // Request new ID form
     [HttpGet]
-    public new IActionResult Request()
+    public new async Task<IActionResult> Request()
     {
-        var user = _userManager.GetUserAsync(User).Result;
+        var user = await _userManager.GetUserAsync(User);
         if (user == null || user.Role == UserRole.CompanyAdmin)
             return RedirectToAction("Index", "Home");
 

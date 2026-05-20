@@ -1,49 +1,113 @@
 @{
     ViewData["Title"] = "Reports & Analytics";
     Layout = "~/Views/Shared/_SuperAdminLayout.cshtml";
+
+    var currentMonth = DateTime.Now.Month;
+    var currentYear = DateTime.Now.Year;
 }
 
-<div class="row mb-4">
-    <div class="col-12">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
         <h4 class="mb-1"><i class="bi bi-graph-up me-2"></i>Reports & Analytics</h4>
-        <p class="text-muted mb-0">Comprehensive reporting and analytics dashboard</p>
+        <p class="text-muted mb-0">Download password-protected platform reports</p>
+    </div>
+    <div class="d-flex gap-2">
+        <select id="reportMonth" class="form-select form-select-sm" style="width:auto;">
+            @for (int m = 1; m <= 12; m++)
+            {
+                <option value="@m" selected="@(m == currentMonth ? "selected" : null)">@(new DateTime(2026, m, 1).ToString("MMMM"))</option>
+            }
+        </select>
+        <select id="reportYear" class="form-select form-select-sm" style="width:auto;">
+            @for (int y = currentYear; y >= currentYear - 2; y--)
+            {
+                <option value="@y">@y</option>
+            }
+        </select>
     </div>
 </div>
 
-<div class="row g-4">
-    <!-- Revenue Reports -->
+<div class="row g-4 mb-4">
+    <!-- Company Directory -->
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-cash-stack fs-1 text-primary mb-3"></i>
-                <h5>Revenue Reports</h5>
-                <p class="text-muted">Track subscription revenue and payment trends</p>
-                <button class="btn btn-outline-primary" disabled>Coming Soon</button>
+        <div class="card h-100 border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width:64px;height:64px;background:linear-gradient(135deg,#dbeafe,#e0f2fe);">
+                    <i class="bi bi-building fs-3 text-primary"></i>
+                </div>
+                <h5 class="fw-bold">Company Directory</h5>
+                <p class="text-muted" style="font-size:.85rem;">All registered companies with status and subscription details</p>
+                <button class="btn btn-primary px-4"
+                        onclick="requestPdfDownload('/ReportDownload/SuperAdminCompanyReport', 'CompanyDirectory')">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Company Analytics -->
+    <!-- Revenue Report -->
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-building fs-1 text-success mb-3"></i>
-                <h5>Company Analytics</h5>
-                <p class="text-muted">Analyze company growth and engagement</p>
-                <button class="btn btn-outline-success" disabled>Coming Soon</button>
+        <div class="card h-100 border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width:64px;height:64px;background:linear-gradient(135deg,#dcfce7,#d1fae5);">
+                    <i class="bi bi-cash-stack fs-3 text-success"></i>
+                </div>
+                <h5 class="fw-bold">Revenue Report</h5>
+                <p class="text-muted" style="font-size:.85rem;">Subscription revenue and payment transactions for selected period</p>
+                <button class="btn btn-success px-4"
+                        onclick="downloadRevenue()">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Module Usage -->
+    <!-- System Activity -->
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-grid fs-1 text-info mb-3"></i>
-                <h5>Module Usage</h5>
-                <p class="text-muted">Monitor module adoption and usage patterns</p>
-                <button class="btn btn-outline-info" disabled>Coming Soon</button>
+        <div class="card h-100 border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width:64px;height:64px;background:linear-gradient(135deg,#fef3c7,#fde68a);">
+                    <i class="bi bi-shield-check fs-3 text-warning"></i>
+                </div>
+                <h5 class="fw-bold">System Activity</h5>
+                <p class="text-muted" style="font-size:.85rem;">Platform-wide audit logs and vendor activity (last 30 days)</p>
+                <button class="btn btn-warning text-dark px-4"
+                        onclick="requestPdfDownload('/ReportDownload/SuperAdminActivityReport?days=30', 'SystemActivity')">
+                    <i class="bi bi-download me-2"></i>Download PDF
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Security Notice -->
+<div class="card border-0 shadow-sm" style="border-radius:14px;">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-start gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:48px;height:48px;background:linear-gradient(135deg,#dbeafe,#e0f2fe);">
+                <i class="bi bi-shield-lock-fill text-primary fs-5"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1">Password-Protected Reports</h6>
+                <p class="text-muted mb-0" style="font-size:.85rem;">
+                    All downloaded PDF reports are encrypted with <strong>AES-256</strong> using your account password.
+                    You will need to enter your password when opening the PDF file.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_PdfDownloadModal")
+
+<script>
+    function downloadRevenue() {
+        const month = document.getElementById('reportMonth').value;
+        const year = document.getElementById('reportYear').value;
+        requestPdfDownload(`/ReportDownload/SuperAdminRevenueReport?year=${year}&month=${month}`, 'RevenueReport');
+    }
+</script>

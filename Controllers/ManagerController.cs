@@ -354,7 +354,11 @@ public class ManagerController : Controller
                 await System.IO.File.WriteAllBytesAsync(Path.Combine(uploadPath, fileName), imageBytes);
                 faceImagePath = $"/uploads/faces/{fileName}";
             }
-            catch { /* continue without face image */ }
+            catch (Exception ex)
+            {
+                // Continue without face image — log for debugging
+                System.Diagnostics.Debug.WriteLine($"Face image processing failed: {ex.Message}");
+            }
         }
 
         var newUser = new ApplicationUser
@@ -786,22 +790,23 @@ public class ManagerController : Controller
 
         // Query ALL logs for the manager's company (not just their own)
         var query = _context.AuditLogs
+            .Include(l => l.User)
             .Where(l => l.CompanyId == user.CompanyId && l.CreatedAt >= fromDate)
             .OrderByDescending(l => l.CreatedAt)
             .AsQueryable();
 
-        if (!string.IsNullOrEmpty(action)) query = query.Where(l => l.Action == action);
+        if (!string.IsNullOrEmpty(action)) query = query.Where(l => l.Action.Contains(action));
         if (!string.IsNullOrEmpty(search)) query = query.Where(l =>
             l.Action.Contains(search) || (l.NewValues != null && l.NewValues.Contains(search)));
 
         var totalCount = await query.CountAsync();
         var logs       = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        ViewBag.CurrentPage = page;
-        ViewBag.TotalPages  = (int)Math.Ceiling(totalCount / (double)pageSize);
-        ViewBag.Days        = days;
-        ViewBag.Action      = action;
-        ViewBag.Search      = search;
+        ViewBag.CurrentPage    = page;
+        ViewBag.TotalPages     = (int)Math.Ceiling(totalCount / (double)pageSize);
+        ViewBag.SelectedDays   = days.ToString();
+        ViewBag.SelectedAction = action ?? "";
+        ViewBag.SelectedSearch = search ?? "";
 
         return View(logs);
     }

@@ -125,7 +125,7 @@ public class BackgroundEmailService : IBackgroundEmailService, IHostedService, I
             using var client = new SmtpClient(smtpServer, smtpPort)
             {
                 Credentials = new NetworkCredential(smtpUsername, smtpPassword),
-                EnableSsl = enableSsl,
+                EnableSsl = true, // Always enforce TLS for SMTP
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 Timeout = 30000
             };

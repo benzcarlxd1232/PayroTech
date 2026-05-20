@@ -1,0 +1,16 @@
+sonar.projectKey=myproject
+sonar.projectName=PayroTech
+sonar.projectVersion=1.0
+
+# Only scan actual source code — NOT compiled output, published artifacts, or IDE files
+sonar.sources=Controllers,Services,Models,Utilities,Data,Views,wwwroot/js,wwwroot/css,Program.cs
+
+# Exclude build artifacts, publish output, migrations, SQL scripts, and IDE files
+sonar.exclusions=bin/**,obj/**,publish/**,publish_web/**,.vs/**,.git/**,.scannerwork/**,.github/**,Migrations/**,docs/**,PayroTech/**,wwwroot/lib/**,wwwroot/uploads/**,**/*.sql,**/*.zip,**/*.dll,**/*.pdb,**/*.exe,**/*.bat,**/*.htm,**/node_modules/**
+
+# Duplication exclusions — don't flag email HTML templates or auto-generated migration files
+sonar.cpd.exclusions=Views/**,wwwroot/**,Migrations/**,Services/EmailService.cs
+
+sonar.host.url=http://localhost:9000
+
+sonar.token=squ_1fd2a3883195c02d3c404d2981ba6d65d98ce1ec

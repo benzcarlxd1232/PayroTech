@@ -62,7 +62,7 @@ public class EmailService : IEmailService
             using var client = new SmtpClient(smtpServer, smtpPort)
             {
                 Credentials = new NetworkCredential(smtpUsername, smtpPassword),
-                EnableSsl = enableSsl,
+                EnableSsl = true, // Always enforce TLS for SMTP
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 Timeout = 15000 // Reduced to 15 seconds to fail faster
             };

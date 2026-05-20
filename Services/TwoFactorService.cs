@@ -80,8 +80,18 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;padding:20px;}}
   <p class='note'>If you did not attempt to sign in, your account may be at risk. Contact your administrator immediately.</p>
 </div></body></html>";
 
-        await _emailService.SendEmailAsync(smtpEmail, smtpName, $"PayroTech 2FA Code: {code}", html);
-        _logger.LogInformation("2FA OTP sent for user {UserId} to SMTP account", userId);
+        try
+        {
+            var sent = await _emailService.SendEmailAsync(smtpEmail, smtpName, $"PayroTech 2FA Code: {code}", html);
+            if (sent)
+                _logger.LogInformation("2FA OTP sent for user {UserId} to SMTP account", userId);
+            else
+                _logger.LogWarning("2FA OTP email failed for user {UserId} — OTP is saved in DB, user can still verify", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "2FA OTP email threw exception for user {UserId} — OTP saved in DB", userId);
+        }
 
         return code;
     }
