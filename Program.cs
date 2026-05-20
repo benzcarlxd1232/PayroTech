@@ -76,6 +76,12 @@ builder.Services.AddScoped<ILoginSecurityService, LoginSecurityService>();
 builder.Services.AddScoped<IVendorAuditService, VendorAuditService>();
 builder.Services.AddScoped<ISubscriptionMonitorService, SubscriptionMonitorService>();
 
+// PDF Report service
+builder.Services.AddScoped<IPdfReportService, PdfReportService>();
+
+// QuestPDF community license (free for non-commercial / school projects)
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 // Background services
 builder.Services.AddSingleton<BackgroundEmailService>();
 builder.Services.AddSingleton<IBackgroundEmailService>(sp => sp.GetRequiredService<BackgroundEmailService>());
@@ -96,7 +102,8 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
 
-        context.Database.SetCommandTimeout(180);
+        // Higher timeout for migrations on constrained hosting (free plans)
+        context.Database.SetCommandTimeout(300);
 
         // Apply pending migrations
         try
@@ -111,14 +118,24 @@ using (var scope = app.Services.CreateScope())
             // Continue — app can still run with existing schema
         }
 
-        // Only seed if database is empty (first run)
+        // Seed if database is empty OR if only SuperAdmin exists (partial seed recovery)
         try
         {
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            if (!context.Users.Any())
+            var needsSeed = !context.Users.Any();
+            var needsReseed = !needsSeed && !context.Companies.Any() && context.Users.Any();
+
+            if (needsSeed)
             {
+                Console.WriteLine("SEED: First run — seeding all data...");
                 await DatabaseSeeder.SeedAsync(context, userManager);
                 logger.LogInformation("Database seeding completed.");
+            }
+            else if (needsReseed)
+            {
+                Console.WriteLine("SEED: Partial seed detected (users exist but no companies) — re-seeding...");
+                await DatabaseSeeder.SeedAsync(context, userManager);
+                logger.LogInformation("Database re-seeding completed.");
             }
         }
         catch (Exception seedEx)
@@ -136,10 +153,12 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
+// TEMPORARY: Show detailed errors to diagnose production crash
+// TODO: Revert this after fixing the issue
+app.UseDeveloperExceptionPage();
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    // app.UseExceptionHandler("/Home/Error");
     // Note: HSTS disabled — hosting plan does not support SSL
     // app.UseHsts();
 }

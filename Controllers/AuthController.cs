@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PayroTech.Controllers;
 using PayroTech.Data;
 using PayroTech.Models.Entities;
 using PayroTech.Models.Enums;
@@ -23,6 +22,7 @@ public class AuthController : Controller
     private readonly ILoginSecurityService _loginSecurity;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public AuthController(
         SignInManager<ApplicationUser> signInManager,
@@ -34,7 +34,8 @@ public class AuthController : Controller
         ITwoFactorService twoFactorService,
         ILoginSecurityService loginSecurity,
         IEmailService emailService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHttpClientFactory httpClientFactory)
     {
         _signInManager        = signInManager;
         _userManager          = userManager;
@@ -46,6 +47,7 @@ public class AuthController : Controller
         _loginSecurity        = loginSecurity;
         _emailService         = emailService;
         _configuration        = configuration;
+        _httpClientFactory    = httpClientFactory;
     }
 
     [HttpGet]
@@ -617,9 +619,10 @@ public class AuthController : Controller
         try
         {
             var secretKey = _configuration["ReCaptcha:SecretKey"];
-            if (string.IsNullOrEmpty(secretKey)) return true; // skip if not configured
+            if (string.IsNullOrEmpty(secretKey) || secretKey == "YOUR_RECAPTCHA_SECRET_KEY")
+                return true; // skip if not configured
 
-            using var http = new System.Net.Http.HttpClient();
+            using var http = _httpClientFactory.CreateClient();
             var response = await http.PostAsync(
                 "https://www.google.com/recaptcha/api/siteverify",
                 new System.Net.Http.FormUrlEncodedContent(new Dictionary<string, string>
@@ -629,12 +632,23 @@ public class AuthController : Controller
                 }));
 
             var json = await response.Content.ReadAsStringAsync();
-            // Parse "success": true from the JSON response
-            return json.Contains("\"success\": true") || json.Contains("\"success\":true");
+            System.Diagnostics.Debug.WriteLine($"reCAPTCHA response: {json}");
+
+            // Parse properly using System.Text.Json
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("success", out var successProp))
+            {
+                return successProp.GetBoolean();
+            }
+
+            System.Diagnostics.Debug.WriteLine($"reCAPTCHA response missing 'success' property: {json}");
+            return false;
         }
-        catch
+        catch (Exception ex)
         {
-            return true; // fail open — don't block login if reCAPTCHA service is down
+            // Fail open — don't block login if reCAPTCHA service is down
+            System.Diagnostics.Debug.WriteLine($"reCAPTCHA verification error: {ex.Message}");
+            return true;
         }
     }
 
@@ -820,7 +834,11 @@ body{{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;padding:20px;}}
                     await System.IO.File.WriteAllBytesAsync(Path.Combine(uploadPath, fileName), imageBytes);
                     user.FaceImagePath = $"/uploads/faces/{fileName}";
                 }
-                catch { }
+                catch (Exception imgEx)
+                {
+                    // Face image file save failed — face data still in DB
+                    System.Diagnostics.Debug.WriteLine($"Face image save error: {imgEx.Message}");
+                }
             }
 
             if (string.IsNullOrEmpty(user.QRCodeHash))
